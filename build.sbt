@@ -14,7 +14,7 @@ val scalaVersion2_11 = "2.11.8"
 
 val scalaVersion2_12 = "2.12.1"
 
-crossScalaVersions := Seq(scalaVersion2_12, scalaVersion2_11)
+//crossScalaVersions := Seq(scalaVersion2_12, scalaVersion2_11)
 
 scalaVersion in ThisBuild := scalaVersion2_11
 
