@@ -7,7 +7,7 @@
 Smtp server based on akka actors.
 
 For minimal usage you need to provide Consumer Actor.
-Consumer Actor receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/Mail.scala) object and it repeats with SuccessfulConsumed or FailedConsumed.
+Consumer Actor receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with SuccessfulConsumed or FailedConsumed.
 
 [AddressHandler.scala](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is optional implementation for fail fast address resolution (blacklist).
 
