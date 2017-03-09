@@ -1,0 +1,95 @@
+                                                                                                                                                                                                                                                               
+Delivered-To: andrzej.jozwik@gmail.com
+Received: by 10.27.186.65 with SMTP id k62csp350699wlf;
+        Sat, 20 Feb 2016 07:20:16 -0800 (PST)
+X-Received: by 10.25.79.16 with SMTP id d16mr5975635lfb.73.1455981616697;
+        Sat, 20 Feb 2016 07:20:16 -0800 (PST)
+Return-Path: <ajozwik@jozwik.pl>
+Received: from dotmail1.jozwik.pl (83-144-69-30.static.chello.pl. [83.143.63.34])
+        by mx.google.com with ESMTPS id rg5si9310020lbb.72.2016.02.20.07.20.16
+        for <andrzej.jozwik@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 20 Feb 2016 07:20:16 -0800 (PST)
+Received-SPF: neutral (google.com: 83.143.63.34 is neither permitted nor denied by best guess record for domain of ajozwik@jozwik.pl) client-ip=83.143.63.34;
+Authentication-Results: mx.google.com;
+       spf=neutral (google.com: 83.143.63.34 is neither permitted nor denied by best guess record for domain of ajozwik@jozwik.pl) smtp.mailfrom=ajozwik@jozwik.pl
+Received: from localhost (localhost [127.0.0.1])
+	by dotmail1.jozwik.pl (Postfix) with ESMTP id C0FE12D383F
+	for <andrzej.jozwik@gmail.com>; Sat, 20 Feb 2016 16:20:15 +0100 (CET)
+Received: from dotmail1.jozwik.pl ([127.0.0.1])
+	by localhost (dotmail1.jozwik.pl [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id 8Cqs6VQ7NCEe for <andrzej.jozwik@gmail.com>;
+	Sat, 20 Feb 2016 16:20:13 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by dotmail1.jozwik.pl (Postfix) with ESMTP id 728E12D3837
+	for <andrzej.jozwik@gmail.com>; Sat, 20 Feb 2016 16:20:13 +0100 (CET)
+X-Virus-Scanned: amavisd-new at jozwik.pl
+Received: from dotmail1.jozwik.pl ([127.0.0.1])
+	by localhost (dotmail1.jozwik.pl [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id YCsb4uR_iRPa for <andrzej.jozwik@gmail.com>;
+	Sat, 20 Feb 2016 16:20:13 +0100 (CET)
+Received: from dotmail1.jozwik.pl (dotmail1.jozwik.pl [192.168.0.32])
+	by dotmail1.jozwik.pl (Postfix) with ESMTP id 2BA4F2D3830
+	for <andrzej.jozwik@gmail.com>; Sat, 20 Feb 2016 16:20:13 +0100 (CET)
+Date: Sat, 20 Feb 2016 16:20:12 +0100 (CET)
+From: Andrzej Jozwik <ajozwik@jozwik.pl>
+To: andrzej.jozwik@gmail.com
+Message-ID: <1280536739.25130462.1455981612961.JavaMail.zimbra@jozwik.pl>
+Subject: With attachment
+MIME-Version: 1.0
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_25130458_1594526512.1455981612960"
+X-Originating-IP: [95.49.100.214]
+X-Mailer: Zimbra 8.6.0_GA_1153 (ZimbraWebClient - FF44 (Linux)/8.6.0_GA_1153)
+Thread-Topic: With attachment
+Thread-Index: qrIiSICDDFcnggDl70B/7VZFw5LOGg==
+
+------=_Part_25130458_1594526512.1455981612960
+Content-Type: multipart/alternative; 
+	boundary="----=_Part_25130459_2031515691.1455981612960"
+
+------=_Part_25130459_2031515691.1455981612960
+Content-Type: text/plain; charset=ISO-8859-2
+Content-Transfer-Encoding: 7bit
+
+Body with html 
+
+------=_Part_25130459_2031515691.1455981612960
+Content-Type: text/html; charset=ISO-8859-2
+Content-Transfer-Encoding: 7bit
+
+<html><body><div style="font-family: tahoma, new york, times, serif; font-size: 12pt; color: #000000"><div><em>Body with html</em><br data-mce-bogus="1"></div></div></body></html>
+------=_Part_25130459_2031515691.1455981612960--
+
+------=_Part_25130458_1594526512.1455981612960
+Content-Type: application/x-genesis-rom; name=README.md
+Content-Disposition: attachment; filename=README.md
+Content-Transfer-Encoding: base64
+
+IyBha2thLXNtdHAtc2VydmVyClshW0J1aWxkIFN0YXR1c10oaHR0cHM6Ly90cmF2aXMtY2kub3Jn
+L2Fqb3p3aWsvYWtrYS1zbXRwLXNlcnZlci5zdmc/YnJhbmNoPW1hc3RlcildKGh0dHBzOi8vdHJh
+dmlzLWNpLm9yZy9ham96d2lrL2Fra2Etc210cC1zZXJ2ZXIpClshW0NvdmVyYWdlIFN0YXR1c10o
+aHR0cHM6Ly9jb3ZlcmFsbHMuaW8vcmVwb3MvZ2l0aHViL2Fqb3p3aWsvYWtrYS1zbXRwLXNlcnZl
+ci9iYWRnZS5zdmc/YnJhbmNoPW1hc3RlcildKGh0dHBzOi8vY292ZXJhbGxzLmlvL2dpdGh1Yi9h
+am96d2lrL2Fra2Etc210cC1zZXJ2ZXI/YnJhbmNoPW1hc3RlcikKWyFbQ29kYWN5IEJhZGdlXSho
+dHRwczovL2FwaS5jb2RhY3kuY29tL3Byb2plY3QvYmFkZ2UvZ3JhZGUvOGZlN2EyZTUwNGRkNGIw
+M2EyZDFiOGRjZmI2ZTBmM2IpXShodHRwczovL3d3dy5jb2RhY3kuY29tL2FwcC9hbmRyemVqam96
+d2lrXzMwODQvYWtrYS1zbXRwLXNlcnZlcikKCkFra2Egc210cCBzZXJ2ZXIKCllvdSBuZWVkIHRv
+IGltcGxlbWVudCBgTWVzc2FnZUhhbmRsZXJgCgpgYGBzY2FsYQppbXBvcnQgcGwuam96d2lrLnNt
+dHAue01haWxBZGRyZXNzLCBNYWlsfQoKdHJhaXQgTWVzc2FnZUhhbmRsZXIgewogIGRlZiBoYW5k
+bGVNZXNzYWdlKG1haWw6IE1haWwpOiBVbml0Cn0KYGBgCgpFeGFtcGxlIG9mIHVzYWdlOgoKYGBg
+c2NhbGEKaW1wb3J0IGFra2EuYWN0b3IuQWN0b3JTeXN0ZW0KaW1wb3J0IGNvbS50eXBlc2FmZS5z
+Y2FsYWxvZ2dpbmcuU3RyaWN0TG9nZ2luZwppbXBvcnQgcGwuam96d2lrLnNtdHAue01haWxBZGRy
+ZXNzLCBNYWlsfQppbXBvcnQgcGwuam96d2lrLnNtdHAuc2VydmVyLntDb25maWd1cmF0aW9uLExv
+Z01lc3NhZ2VIYW5kbGVyLFNtdHBTZXJ2ZXJ9CgpvYmplY3QgTWFpbiBleHRlbmRzIEFwcCB7Cgog
+IHByaXZhdGUgdmFsIFBPUlQgPSAxNTg3CgogIHByaXZhdGUgdmFsIGFjdG9yU3lzdGVtID0gQWN0
+b3JTeXN0ZW0oIlNNVFAiKQoKICBTbXRwU2VydmVyKGFjdG9yU3lzdGVtLCBMb2dNZXNzYWdlSGFu
+ZGxlciwgQ29uZmlndXJhdGlvbihQT1JUKSkKCn0KYGBgCldoZXJlIGBMb2dNZXNzYWdlSGFuZGxl
+cmAgaXMgZXhhbXBsZSBvZiBpbXBsZW1lbnRhdGlvbiBvZiBgTWVzc2FnZUhhbmRsZXJgCgpgYGBz
+Y2FsYQppbXBvcnQgY29tLnR5cGVzYWZlLnNjYWxhbG9nZ2luZy5TdHJpY3RMb2dnaW5nCmltcG9y
+dCBwbC5qb3p3aWsuc210cC57TWFpbEFkZHJlc3MsIE1haWx9CmltcG9ydCBwbC5qb3p3aWsuc210
+cC5zZXJ2ZXIuTWVzc2FnZUhhbmRsZXIKCm9iamVjdCBMb2dNZXNzYWdlSGFuZGxlciBleHRlbmRz
+IE1lc3NhZ2VIYW5kbGVyIHdpdGggU3RyaWN0TG9nZ2luZyB7CgogIGRlZiBoYW5kbGVNZXNzYWdl
+KG1haWw6IE1haWwpOiBVbml0ID0gewogICAgbG9nZ2VyLmRlYnVnKHMiUmVjZWl2ZWRcbiRtYWls
+IikKICB9Cn0KYGBgCgo=
+------=_Part_25130458_1594526512.1455981612960--

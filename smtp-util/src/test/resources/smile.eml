@@ -1,0 +1,170 @@
+                                                                                                                                                                                                                                                               
+Delivered-To: andrzej.jozwik@gmail.com
+Received: by 10.27.108.149 with SMTP id h143csp1704718wlc;
+        Mon, 8 Feb 2016 15:00:11 -0800 (PST)
+X-Received: by 10.25.169.74 with SMTP id s71mr11138000lfe.128.1454972411915;
+        Mon, 08 Feb 2016 15:00:11 -0800 (PST)
+Return-Path: <sender@jozwik.pl>
+Received: from mx3.wp.pl (mx3.wp.pl. [212.77.101.9])
+        by mx.google.com with ESMTPS id b199si521754lfb.14.2016.02.08.15.00.11
+        for <andrzej.jozwik@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 08 Feb 2016 15:00:11 -0800 (PST)
+Received-SPF: pass (google.com: domain of sender@jozwik.pl designates 212.77.101.9 as permitted sender) client-ip=212.77.101.9;
+Authentication-Results: mx.google.com;
+       spf=pass (google.com: domain of sender@jozwik.pl designates 212.77.101.9 as permitted sender) smtp.mailfrom=sender@jozwik.pl;
+       dkim=pass (test mode) header.i=@wp.pl
+Received: (wp-smtpd smtp.wp.pl 23759 invoked from network); 9 Feb 2016 00:00:10 +0100
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=wp.pl; s=1024a;
+          t=1454972410; bh=VZMqnyT7EjVfMy8xLf5LDNoxuQvJFo08whvWjxZo5y4=;
+          h=From:To:Subject;
+          b=Zp/nD/jHQO9gdKafQXYT5uPb5AT96kUSSOfUoXrWyAMu+Kf2HSb1PAP2iJaPdZyd2
+           IWpFSKM4PI3Z7j01VgmD7RNL5hZopXzRTBsbsE1bTGzoOVVYZ16xzE1StezDkIL8FZ
+           RJr5dyWwCGjuoKExHHYFj+67Wb+eGoqdy0w5zuWQ=
+Received: from dip145.neoplus.adsl.tpnet.pl (HELO UserKomputer) (gosiakulik1@[83.23.223.145])
+          (envelope-sender <sender@jozwik.pl>)
+          by smtp.wp.pl (WP-SMTPD) with ECDHE-RSA-AES256-SHA encrypted SMTP
+          for <andrzej.jozwik@gmail.com>; 9 Feb 2016 00:00:10 +0100
+Message-ID: <2EB515D7C1234F0098D8F66F1D9E3B6D@UserKomputer>
+Reply-To: "Gosia" <sender@jozwik.pl>
+From: "Gosia" <sender@jozwik.pl>
+To: =?UTF-8?Q?Andrzej_J=C3=B3=C5=BAwik?= <andrzej.jozwik@gmail.com>
+References: <E2DEA0919A8F44F7ADCEFA1A0358E7FB@UserKomputer> <CAHMTv8nDmtajQ0K09GygmmV-Ht-2vk0v8k6nQrcr9=0e+NVV0g@mail.gmail.com>
+In-Reply-To: <CAHMTv8nDmtajQ0K09GygmmV-Ht-2vk0v8k6nQrcr9=0e+NVV0g@mail.gmail.com>
+Subject: =?UTF-8?Q?Re:_wysy=C5=82ka?=
+Date: Tue, 9 Feb 2016 00:00:13 +0100
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="multipart/alternative";
+	boundary="----=_NextPart_000_001A_01D162CC.D96217F0"
+X-Priority: 3
+X-MSMail-Priority: Normal
+Importance: Normal
+X-Mailer: Microsoft Windows Live Mail 15.4.3555.308
+Disposition-Notification-To: "Gosia" <sender@jozwik.pl>
+X-MimeOLE: Produced By Microsoft MimeOLE V15.4.3555.308
+X-WP-MailID: 61a66a3c58a92b51a5d3f4bc3b6feef4
+X-WP-AV: skaner antywirusowy poczty Wirtualnej Polski S. A.
+X-WP-SPAM: NO 0000000 [8TLk]                               
+
+To jest wieloczêœciowa wiadomoœæ w formacie MIME.
+
+------=_NextPart_000_001A_01D162CC.D96217F0
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_001_001B_01D162CC.D96217F0"
+
+
+------=_NextPart_001_001B_01D162CC.D96217F0
+Content-Type: text/plain;
+	charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+
+
+From: Andrzej J=C3=B3=C5=BAwik=20
+Sent: Monday, February 08, 2016 8:42 PM
+To: Gosia=20
+Subject: Re: wysy=C5=82ka
+
+Dzie=C5=84 dobry,
+
+Otrzyma=C5=82em ksi=C4=85=C5=BCk=C4=99. Dzi=C4=99kuj=C4=99 za =
+szybk=C4=85 wysy=C5=82k=C4=99,
+
+Pozdrawiam,
+
+Andrzej J=C3=B3=C5=BAwik
+
+
+2016-01-29 16:22 GMT+01:00 Gosia <sender@jozwik.pl>:
+
+  Witam! Ksi=C4=85=C5=BCk=C4=99 wys=C5=82a=C5=82am.pozdrawiam Gosia
+
+------=_NextPart_001_001B_01D162CC.D96217F0
+Content-Type: text/html;
+	charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<HTML><HEAD></HEAD>
+<BODY dir=3Dltr>
+<DIV dir=3Dltr>
+<DIV style=3D"FONT-SIZE: 12pt; FONT-FAMILY: 'Calibri'; COLOR: #000000">
+<DIV><IMG class=3D"wlEmoticon wlEmoticon-smile"=20
+style=3D"BORDER-TOP-STYLE: none; BORDER-BOTTOM-STYLE: none; =
+BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none"=20
+alt=3DU=C5=9Bmiech =
+src=3D"cid:AB8A4618A01D4DB1B336FDED2236F368@UserKomputer"></DIV>
+<DIV=20
+style=3D'FONT-SIZE: small; TEXT-DECORATION: none; FONT-FAMILY: =
+"Calibri"; FONT-WEIGHT: normal; COLOR: #000000; FONT-STYLE: normal; =
+DISPLAY: inline'>
+<DIV style=3D"FONT: 10pt tahoma">
+<DIV>&nbsp;</DIV>
+<DIV style=3D"BACKGROUND: #f5f5f5">
+<DIV style=3D"font-color: black"><B>From:</B> <A =
+title=3Dandrzej.jozwik@gmail.com=20
+href=3D"mailto:andrzej.jozwik@gmail.com">Andrzej J=C3=B3=C5=BAwik</A> =
+</DIV>
+<DIV><B>Sent:</B> Monday, February 08, 2016 8:42 PM</DIV>
+<DIV><B>To:</B> <A title=3Dsender@jozwik.pl=20
+href=3D"mailto:sender@jozwik.pl">Gosia</A> </DIV>
+<DIV><B>Subject:</B> Re: wysy=C5=82ka</DIV></DIV></DIV>
+<DIV>&nbsp;</DIV></DIV>
+<DIV=20
+style=3D'FONT-SIZE: small; TEXT-DECORATION: none; FONT-FAMILY: =
+"Calibri"; FONT-WEIGHT: normal; COLOR: #000000; FONT-STYLE: normal; =
+DISPLAY: inline'>
+<DIV dir=3Dltr>
+<DIV>
+<DIV>
+<DIV>Dzie=C5=84 dobry,<BR></DIV>Otrzyma=C5=82em ksi=C4=85=C5=BCk=C4=99. =
+Dzi=C4=99kuj=C4=99 za szybk=C4=85=20
+wysy=C5=82k=C4=99,<BR></DIV>Pozdrawiam,<BR></DIV>Andrzej =
+J=C3=B3=C5=BAwik<BR></DIV>
+<DIV class=3Dgmail_extra>
+<DIV>&nbsp;</DIV>
+<DIV class=3Dgmail_quote>2016-01-29 16:22 GMT+01:00 Gosia <SPAN =
+dir=3Dltr>&lt;<A=20
+href=3D"mailto:sender@jozwik.pl"=20
+target=3D_blank>sender@jozwik.pl</A>&gt;</SPAN>:<BR>
+<BLOCKQUOTE class=3Dgmail_quote=20
+style=3D"PADDING-LEFT: 1ex; MARGIN: 0px 0px 0px 0.8ex; BORDER-LEFT: #ccc =
+1px solid">
+  <DIV dir=3Dltr>
+  <DIV dir=3Dltr>
+  <DIV style=3D"FONT-SIZE: 12pt; FONT-FAMILY: 'Calibri'; COLOR: =
+#000000">Witam!=20
+  Ksi=C4=85=C5=BCk=C4=99 wys=C5=82a=C5=82am.pozdrawiam =
+Gosia</DIV></DIV></DIV></BLOCKQUOTE></DIV>
+<DIV>&nbsp;</DIV></DIV></DIV></DIV></DIV></BODY></HTML>
+
+------=_NextPart_001_001B_01D162CC.D96217F0--
+
+------=_NextPart_000_001A_01D162CC.D96217F0
+Content-Type: image/png;
+	name="wlEmoticon-smile[1].png"
+Content-Transfer-Encoding: base64
+Content-ID: <AB8A4618A01D4DB1B336FDED2236F368@UserKomputer>
+
+iVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAAAAXNSR0IArs4c6QAAAARnQU1BAACx
+jwv8YQUAAAAJcEhZcwAADsEAAA7BAbiRa+0AAAOrSURBVDhPdVR9aFN3FD2bLJtbERE6xEoZMkUc
+yGAbjhpY1cHY3MAPtK10E9xWVxSdH2u7ZXPrPujIFD8qlarFYbeS1NJ27TQtFROaWYjt/JprjM7F
+2pRUU5u0qW1es+Tsvl+SP7TmwoHHu7933r3nnvvD4+KBFVmjv8IUqoVj+AR8Q8fBwWr4/Ifh8B2E
+6c4+ZCWPpg/WwxC2wDxqwfiE6w1G/93EmH8rGdzOWF8eo1dyONY6m31mjN/6AeZrX8OQ/PThGLUi
+M2yFS+tZQU5UkZHD5PhPZPgbcmQ3ObSZvJdP3jEy7n6B4ToD3V/BdeNzZCYpEqEqEqLJv9ew+9AG
+tm3JVrh0tIjx8LdCVsLYvU+m5CJW8OouuB6qUFqr0C6upLu+gNcbv+dE0K/QazHxn99WClkp3bWv
+Tc0dA4NHwO5iVCgiJbYFGqMW2oqzqIXvMxUT932qCo6Wps+dF7IiaM73kY2ROpRH/lxFxhvYujFD
+HaypqWFhYaF6bsqDkH2WPucC7+4HnRtQDhm/M9pfSv5XS9vm2RxyOykFKwxetql3HPk0fa4LjNSB
+59bDieGf4Y8HfyS1anrbCtXfUmgumMa+trfJ0FZ6W3Km5sR//AOMnQbProYfgWOi15hZRNgvdhBo
+J8loJzlpJx8cEqJt4rOPSP8a8q7YxLeT9H5M3pRWnULWKegA29+FBnG2Pza4S/z0XRLlotGXSqcE
+UZGQiL9uLyd7XyIvPi86Pa0qokNwTiprAm1vSWX6ikR718mHJezYs4TejjylEYNbyGGpSCfqe5O8
+vpi8Mpe88KyaoFcs0VEkZGfBcbFI6wo40H8AZWGbHBwupqfxHTZ8+CJDfwlBYGOiNe8y0vOyEIkN
+umeI4NMYagQb1oKevULWBt4sEQ2XoQwDB5Ddv1d0G8jn5O0C9lS9ysqcDNr3zKPn5EIG7Qs41jmH
+wdMZ9FQ+Sfs2sPIVsMcETraA8Wbw91xoLUvFZ3roSxs+NUfayRUY6amdz6ZNM1m11MCKBU+wfC5Y
+MR+sWiKTzE9W1C44I8875J0RZkWkh75b+tJqjbNEm3nkNdHmUiZDZ55joMHAgAUMiJdCpxIapYgG
+vpD2jHDVL3rk9tC3/+puuILVBpnWMyL0U8qQamr6+GVqikg00lu7IRXpRFbjI7dGKrp2YLosrfmC
+7JpfWon8kjBkavz61G6VJTTSW7O+junJT9NH1wfI6iyAyb4eDt3Z7e8lfKSPvzkXptblj7tpgf8B
+gIw0T8FFbXIAAAAASUVORK5CYII=
+
+------=_NextPart_000_001A_01D162CC.D96217F0--
+

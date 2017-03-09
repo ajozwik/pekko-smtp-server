@@ -1,0 +1,31 @@
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
+
+language: scala
+scala:
+  - 2.10.6
+  - 2.11.8
+  - 2.12.1
+
+jdk:
+  - oraclejdk8
+
+env:
+  - CODACY_PROJECT_TOKEN=35ba725e22e74812adba7f7f9a086bfb
+
+script:
+  - sbt clean coverage test
+  - sbt coverageReport
+  - sbt coverageAggregate
+  - sbt codacyCoverage
+
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+after_success:
+  - sbt coveralls

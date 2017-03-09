@@ -1,0 +1,10 @@
+HELO localhost
+MAIL FROM:<ajozwik@tuxedo-wifi>
+RCPT TO:<ajozwik@tuxedo-wifi>
+DATA
+Subject:My Subject
+
+Content 1
+.
+
+QUIT
