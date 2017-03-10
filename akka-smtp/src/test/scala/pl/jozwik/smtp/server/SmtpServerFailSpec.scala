@@ -172,7 +172,7 @@ class SmtpServerFailSpec extends AbstractSmtpServerSpec {
       writeLineAndValidateAnswer(s"$MAIL_FROM:<a@pl>", REQUEST_COMPLETE)
       writeLineAndValidateAnswer(s"$RCPT_TO:<a@op>", REQUEST_COMPLETE)
       writeLineAndValidateAnswer(s"$DATA", START_MAIL_INPUT)
-      writeLineAndValidateAnswer(".", REQUEST_COMPLETE)
+      writeLineAndValidateAnswer(END_DATA, REQUEST_COMPLETE)
     }
 
   }

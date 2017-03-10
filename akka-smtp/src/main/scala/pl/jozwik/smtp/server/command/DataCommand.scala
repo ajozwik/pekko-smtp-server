@@ -26,7 +26,7 @@ package command
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.Errors._
 import pl.jozwik.smtp.util.Utils._
-import pl.jozwik.smtp.util.{Mail, SizeParameterHandler}
+import pl.jozwik.smtp.util.{Constants, Mail, SizeParameterHandler}
 
 object DataCommand extends StrictLogging {
 
@@ -67,6 +67,6 @@ object DataCommand extends StrictLogging {
   }
 
   private def isFinished(line: String): Boolean =
-    line == "."
+    line == Constants.END_DATA
 
 }

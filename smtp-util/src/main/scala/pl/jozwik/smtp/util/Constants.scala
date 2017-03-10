@@ -29,6 +29,7 @@ object Constants {
   val SPACE = ' '
   val delimiter = "\n"
   val endOfLine = s"\r$delimiter"
+  val Subject = "Subject"
   val START_MAIL_INPUT = 354
   val CLOSING_TERMINATION_CHANNEL = 221
   val SERVICE_READY = 220
@@ -65,7 +66,10 @@ object Constants {
   val OK_8_BIT = s"$REQUEST_COMPLETE-8BITMIME"
   val OK_SIZE = s"$REQUEST_COMPLETE-SIZE"
   val OK_PIPELINE = s"$SMTP_OK PIPELINE"
+  val END_DATA = "."
 
   val FOUR = HELO.length
+
+  val maximumFrameLength = 1024
 
 }

@@ -35,7 +35,7 @@ object Errors {
   val SENDER_ALREADY_SPECIFIED = s"$BAD_SEQUENCE_OF_COMMANDS 5.5.0 Sender already specified"
   val MAIL_MISSING = s"$BAD_SEQUENCE_OF_COMMANDS 5.0.0 Need $MAIL command before $RCPT"
   val RCPT_MISSING = s"$BAD_SEQUENCE_OF_COMMANDS 5.0.0 Need $RCPT (recipient)"
-  val START_INPUT = s"""$START_MAIL_INPUT Enter mail, end with "." on a line by itself"""
+  val START_INPUT = s"""$START_MAIL_INPUT Enter mail, end with "$END_DATA" on a line by itself"""
   val CANNOT_VERIFY = s"$CANNOT_VRFY Cannot VRFY user; try RCPT to attempt delivery (or try finger)"
   val HELLO_FIRST = s"$BAD_SEQUENCE_OF_COMMANDS 5.5.1 Error: send $HELO/$EHLO first"
 }

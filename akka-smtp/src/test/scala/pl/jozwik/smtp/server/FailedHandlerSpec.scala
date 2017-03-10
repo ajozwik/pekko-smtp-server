@@ -22,46 +22,14 @@
 package pl.jozwik.smtp
 package server
 
-import akka.actor.Props
-import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.client.{FailedResult, MailWithAddress}
-import pl.jozwik.smtp.util.{EmailContent, FailedConsumed, Mail, MailAddress}
-
-import scala.concurrent.Await
 import akka.pattern._
+import pl.jozwik.smtp.client.{FailedResult, MailWithAddress}
+import pl.jozwik.smtp.util._
 
-object FailedConsumerActor {
-  def props: Props = Props[FailedConsumerActor]
-}
-
-class FailedConsumerActor extends AbstractActor with StrictLogging {
-
-  def receive: Receive = {
-    case mail: Mail =>
-      logger.debug(s"Receive: $mail")
-      sender() ! FailedConsumed("Always failed")
-  }
-}
-
-object NotSupportedConsumerActor {
-  def props: Props = Props[NotSupportedConsumerActor]
-}
-
-class NotSupportedConsumerActor extends AbstractActor with StrictLogging {
-
-  def receive: Receive = {
-    case mail: Mail =>
-      logger.debug(s"Receive: $mail")
-      sender() ! "Not supported"
-  }
-}
-
-class NotSupportedHandlerSpec extends FailedHandlerSpec {
-  override protected def consumerProps: Props = NotSupportedConsumerActor.props
-}
+import scala.concurrent.Future
 
 class FailedConsumerHandlerSpec extends FailedHandlerSpec {
-  override protected def consumerProps: Props = FailedConsumerActor.props
+  override protected def consumer(mail: Mail): Future[ConsumedResult] = Future.successful(FailedConsumed("Always failed"))
 }
 
 abstract class FailedHandlerSpec extends AbstractSmtpSpec {

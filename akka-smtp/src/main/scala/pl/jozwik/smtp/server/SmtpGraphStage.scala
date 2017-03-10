@@ -23,8 +23,7 @@ package pl.jozwik.smtp.server
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern._
+import akka.actor.ActorSystem
 import akka.stream
 import akka.stream.stage._
 import akka.util.Timeout
@@ -33,6 +32,7 @@ import pl.jozwik.smtp.server.command.MessageHandler
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object SmtpTimerGraphStageLogic {
@@ -48,7 +48,7 @@ class SmtpTimerGraphStageLogic(
   sizeHandler: SizeParameterHandler,
   localHostName: String,
   remote: InetSocketAddress,
-  consumerRef: ActorRef,
+  consumer: Mail => Future[ConsumedResult],
   readTimeout: FiniteDuration
 )(implicit
   system: ActorSystem,
@@ -75,16 +75,16 @@ class SmtpTimerGraphStageLogic(
     case `TickTimeout` =>
       pushWithEndOfLine(Errors.serviceNotAvailable(localHostName, readTimeout.toSeconds))
       failStage(new RuntimeException("Service timeout"))
-    case x =>
-      logger.error(s"Unsupported response: $x")
-      pushWithEndOfLine(s"$TRANSACTION_FAILED Unsupported response")
+    //    case x =>
+    //      logger.error(s"Unsupported response: $x")
+    //      pushWithEndOfLine(s"$TRANSACTION_FAILED Unsupported response")
   }
 
   private var accumulator = MailAccumulator.empty
 
   private val messageHandler = MessageHandler(addressHandler, sizeHandler, localHostName, remote, mail => {
     import system.dispatcher
-    (consumerRef ? mail).foreach {
+    consumer(mail).foreach {
       response => scheduleOnce(response, IMMEDIATELY)
     }
   })
@@ -123,8 +123,8 @@ class SmtpTimerGraphStageLogic(
   }
 }
 
-class MyGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
-  remote: InetSocketAddress, consumerRef: ActorRef,
+class SmtpGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
+  remote: InetSocketAddress, consumer: Mail => Future[ConsumedResult],
   readTimeout: FiniteDuration)(implicit
   system: ActorSystem,
   timeout: Timeout) extends GraphStage[stream.FlowShape[String, String]]
@@ -136,6 +136,6 @@ class MyGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHan
   override val shape = stream.FlowShape(in, out)
 
   override def createLogic(inheritedAttributes: stream.Attributes): GraphStageLogic =
-    new SmtpTimerGraphStageLogic(shape, in, out, addressHandler, sizeHandler, localHostName, remote, consumerRef, readTimeout)
+    new SmtpTimerGraphStageLogic(shape, in, out, addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
 
 }

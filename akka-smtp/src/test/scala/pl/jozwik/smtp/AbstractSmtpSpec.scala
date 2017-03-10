@@ -24,7 +24,7 @@ package pl.jozwik.smtp
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
@@ -32,9 +32,9 @@ import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
 import pl.jozwik.smtp.client.ClientActor
 import pl.jozwik.smtp.server._
-import pl.jozwik.smtp.util.{AbstractAsyncSpec, SocketAddress, TestUtils}
+import pl.jozwik.smtp.util._
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 object ActorSpec {
@@ -74,35 +74,35 @@ trait SmtpSpec extends ActorSpec {
 
   import TestUtils._
 
-  protected val host = InetAddress.getLocalHost.getHostAddress
+  protected val host: String = InetAddress.getLocalHost.getHostAddress
 
   import scala.language.postfixOps
 
   private val defaultMaxSize = 1024
 
-  protected def readTimeout = 30 seconds
+  protected def readTimeout: FiniteDuration = 30 seconds
 
-  protected def maxSize = defaultMaxSize
+  protected def maxSize: Int = defaultMaxSize
 
   protected final val configuration = Configuration(notOccupiedPortNumber, maxSize, readTimeout)
 
-  protected def consumerProps = LogConsumerActor.props
+  protected def consumer(mail: Mail): Future[ConsumedResult] = LogConsumer.consumer(mail)
 
   protected def addressHandler: AddressHandler = NopAddressHandler
 
-  protected final val clientRef = actorSystem.actorOf(ClientActor.props(), "ClientActor")
+  protected final val clientRef: ActorRef = actorSystem.actorOf(ClientActor.props(), "ClientActor")
   protected val materializer = ActorMaterializer()
   protected implicit val address = SocketAddress(host, configuration.port)
-  protected final val server = StreamServer(consumerProps, configuration, addressHandler)(actorSystem, materializer)
+  protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
 }
 
 trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {
 
-  override protected def beforeAll() = {
+  override protected def beforeAll(): Unit = {
 
   }
 
-  override protected def afterAll() = {
+  override protected def afterAll(): Unit = {
     server.close()
     super.afterAll()
 

@@ -6,15 +6,9 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&utm_medium=referral&utm_content=ajozwik/akka-smtp-server&utm_campaign=Badge_Coverage)
 Smtp server based on akka stream.
 
-For minimal usage you need to provide Consumer Actor.
-Consumer Actor receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with SuccessfulConsumed or FailedConsumed.
+For minimal usage you need to provide `consumer` method with signature (Mail=>Future[ConsumedResult]).
+`consumer` method receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
 
 [AddressHandler.scala](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is optional implementation for fail fast address resolution (blacklist).
 
-
-
 Example of usage (with dummy consumer - just send to log mail object) in [Main.scala](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/Main.scala)
-
-
-
-

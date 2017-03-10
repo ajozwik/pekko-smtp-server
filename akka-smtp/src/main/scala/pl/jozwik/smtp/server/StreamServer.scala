@@ -21,69 +21,54 @@
  */
 package pl.jozwik.smtp.server
 
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.pattern._
+import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.{ByteString, Timeout}
 import akka.{NotUsed, stream}
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.Supervisor
 import pl.jozwik.smtp.util.Constants.SERVICE_READY
 import pl.jozwik.smtp.util.Utils.now
 import pl.jozwik.smtp.util._
 
-import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
 object StreamServer extends StrictLogging {
-  def apply(consumerProps: Props, configuration: Configuration,
+  def apply(consumer: Mail => Future[ConsumedResult], configuration: Configuration,
     addressHandler: AddressHandler = NopAddressHandler)(implicit
     actorSystem: ActorSystem,
     materializer: Materializer): StreamServer =
-    new StreamServer(consumerProps, configuration, addressHandler)
-
-  private val maximumFrameLength = 1024
+    new StreamServer(consumer, configuration, addressHandler)
 
   private val address = "0.0.0.0"
 
   implicit private final val timeout = Timeout(1, TimeUnit.SECONDS)
 
-  private def createActorRef(
-    supervisorRef: ActorRef,
-    propsWithName: PropsWithName
-  ): ActorRef = {
-    val future = supervisorRef ? propsWithName
-    Await.result(future.mapTo[ActorRef], timeout.duration)
-  }
 }
 
 class StreamServer private (
-  consumerProps: Props,
+  consumer: Mail => Future[ConsumedResult],
   configuration: Configuration,
   addressHandler: AddressHandler
 )(implicit
   system: ActorSystem,
   materializer: Materializer)
     extends AutoCloseable with StrictLogging {
-  import StreamServer._
   import IOUtils._
-
-  private val supervisorRef = system.actorOf(Supervisor.props)
-
-  private val consumerRef = createActorRef(supervisorRef, PropsWithName(consumerProps, "Consumer"))
+  import StreamServer._
 
   private val sizeHandler = SizeParameterHandler(configuration.size)
 
   private val port = configuration.port
 
   private def handler(remote: InetSocketAddress, readTimeout: FiniteDuration) =
-    new MyGraphStage(addressHandler, sizeHandler, localHostName, remote, consumerRef, readTimeout)
+    new SmtpGraphStage(addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
 
   private def serverLogic(conn: Tcp.IncomingConnection): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
@@ -94,7 +79,7 @@ class StreamServer private (
         }")
       ))
       val logic = b.add(Flow[ByteString]
-        .via(Framing.delimiter(ByteString(Constants.delimiter), maximumFrameLength, allowTruncation = true))
+        .via(Framing.delimiter(ByteString(Constants.delimiter), Constants.maximumFrameLength, allowTruncation = true))
         .map(_.utf8String)
         .map { msg => logger.debug(s"Server received: $msg"); msg + Constants.delimiter }
         .via(handler(conn.remoteAddress, configuration.readTimeout))

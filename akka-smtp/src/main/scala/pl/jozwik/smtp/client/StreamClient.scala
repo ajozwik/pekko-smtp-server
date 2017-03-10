@@ -21,45 +21,45 @@
  */
 package pl.jozwik.smtp.client
 
-import java.util.concurrent.{Executors, TimeUnit}
-
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow, Framing, Source, Tcp}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.util.{EmailContent, Mail, MailAddress, SocketAddress}
+import pl.jozwik.smtp.util.{Constants, Mail, Utils}
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.Future
 
-object SmtpClient extends App with StrictLogging {
+class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: Materializer) extends StrictLogging {
 
-  implicit val actorSystem = ActorSystem("Client")
+  private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =
+    Tcp().outgoingConnection(address, port)
 
-  implicit val materializer = ActorMaterializer()
-
-  val executor = Executors.newSingleThreadScheduledExecutor()
-
-  val ref = actorSystem.actorOf(ClientActor.props(), "ClientActor")
-  private val number = 1
-  private val TIMEOUT = 4 + number / 50
-  private val port = 1587
-  private val address = "localhost"
-
-  (1 to number).foreach { i =>
-    executor.schedule(new Runnable() {
-      def run(): Unit = {
-        val serverAddress = SocketAddress(address, port)
-        val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
-        val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", s"Content $i"))
-        ref ! MailWithAddress(mail, serverAddress)
+  def sendMail(mail: Mail): Future[Result] = {
+    import Constants._
+    Source.single(mail).map { mail =>
+      Seq(
+        EHLO,
+        s"$MAIL_FROM: ${mail.from}"
+      ) ++
+        mail.to.map(to => s"$RCPT_TO:$to") ++
+        Seq(
+          s"$DATA",
+          s"$Subject:${mail.emailContent.subject}",
+          "",
+          mail.emailContent.txtBody.getOrElse(""),
+          END_DATA,
+          QUIT
+        )
+    }.map(seq => ByteString(seq.map(Utils.withEndOfLine).mkString))
+      .via(connection).via(Framing.delimiter(
+        ByteString("\n"),
+        Constants.maximumFrameLength,
+        allowTruncation = true
+      )).runFold(SuccessResult) {
+        case (acc, message) =>
+          logger.debug(s"${message.utf8String}")
+          acc
       }
-    }, 20 * i, TimeUnit.MILLISECONDS)
   }
-
-  import scala.language.postfixOps
-
-  TimeUnit.SECONDS.sleep(TIMEOUT)
-
-  Await.result(actorSystem.terminate(), TIMEOUT second)
-  executor.shutdown()
 }

@@ -22,29 +22,26 @@
 package pl.jozwik.smtp
 package server
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util._
-import concurrent.duration._
 
-object LogConsumerActor {
-  def props: Props = Props[LogConsumerActor]
-}
-
-class LogConsumerActor extends AbstractActor {
-
-  def receive: Receive = {
-    case mail: Mail =>
-      logger.debug(s"Receive: $mail from ${sender()}")
-      sender() ! SuccessfulConsumed
-  }
-}
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object NopAddressHandler extends AddressHandler {
 
   def acceptFrom(from: MailAddress): Boolean = true
 
   def acceptTo(from: MailAddress): Boolean = true
+}
+
+object LogConsumer extends StrictLogging {
+  def consumer(mail: Mail): Future[ConsumedResult] = {
+    logger.debug(s"$mail")
+    Future.successful(SuccessfulConsumed)
+  }
 }
 
 object Main extends App {
@@ -59,10 +56,8 @@ object Main extends App {
 
   private implicit val m = ActorMaterializer()
 
-  private val consumerProps = LogConsumerActor.props // akka props of mail consumer
-
   private val configuration = Configuration(port, size, 2.minutes)
 
-  val server = StreamServer(consumerProps, configuration, NopAddressHandler) // NopAddressHandler - accepts all mail addresses
+  val server = StreamServer(LogConsumer.consumer, configuration, NopAddressHandler) // NopAddressHandler - accepts all mail addresses
 
 }

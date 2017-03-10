@@ -122,7 +122,7 @@ class ClientActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   def sendData: Receive = {
     case Received(d) =>
       val sub = mail.emailContent.subject.map { s =>
-        s"Subject:$s$endOfLine$endOfLine"
+        s"$Subject:$s$endOfLine$endOfLine"
       } getOrElse {
         ""
       }

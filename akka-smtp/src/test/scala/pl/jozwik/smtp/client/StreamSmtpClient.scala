@@ -21,45 +21,49 @@
  */
 package pl.jozwik.smtp.client
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream._
+import akka.stream.scaladsl.{Flow, Framing, Source, Tcp}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.util.{EmailContent, Mail, MailAddress, SocketAddress}
+import pl.jozwik.smtp.client.SmtpClient.{address, port}
+import pl.jozwik.smtp.util._
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.Future
 
-object SmtpClient extends App with StrictLogging {
+object StreamSmtpClient extends App with StrictLogging {
 
-  implicit val actorSystem = ActorSystem("Client")
+  implicit val system = ActorSystem("Client")
 
   implicit val materializer = ActorMaterializer()
 
-  val executor = Executors.newSingleThreadScheduledExecutor()
-
-  val ref = actorSystem.actorOf(ClientActor.props(), "ClientActor")
-  private val number = 1
-  private val TIMEOUT = 4 + number / 50
   private val port = 1587
+
+  private val WAIT_MILLIS = 1000
+
   private val address = "localhost"
 
-  (1 to number).foreach { i =>
-    executor.schedule(new Runnable() {
-      def run(): Unit = {
-        val serverAddress = SocketAddress(address, port)
-        val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
-        val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", s"Content $i"))
-        ref ! MailWithAddress(mail, serverAddress)
-      }
-    }, 20 * i, TimeUnit.MILLISECONDS)
+  val serverAddress = SocketAddress(address, port)
+  val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
+  val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", "Content"))
+  import system.dispatcher
+  val client = new StreamClient(address, port)
+  val futures = (1 to 5).map {
+    _ =>
+      TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS)
+      client.sendMail(mail)
   }
 
-  import scala.language.postfixOps
+  Future.sequence(futures).foreach {
+    seq =>
+      seq.foreach { result =>
+        logger.debug(s"$result")
+      }
+      TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS * 9)
+      system.terminate()
+  }
 
-  TimeUnit.SECONDS.sleep(TIMEOUT)
-
-  Await.result(actorSystem.terminate(), TIMEOUT second)
-  executor.shutdown()
 }
