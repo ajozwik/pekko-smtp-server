@@ -25,11 +25,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.stream._
-import akka.stream.scaladsl.{Flow, Framing, Source, Tcp}
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.client.SmtpClient.{address, port}
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.Future
@@ -51,18 +47,24 @@ object StreamSmtpClient extends App with StrictLogging {
   val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", "Content"))
   import system.dispatcher
   val client = new StreamClient(address, port)
-  val futures = (1 to 5).map {
+  val futures = (1 to 1).map {
     _ =>
       TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS)
-      client.sendMail(mail)
+      client.sendMail(mail).recover {
+        case e =>
+          logger.error("", e)
+          e
+      }
   }
 
   Future.sequence(futures).foreach {
     seq =>
-      seq.foreach { result =>
-        logger.debug(s"$result")
+      logger.debug(s"${seq.size} $seq")
+      seq.foreach {
+        result =>
+          logger.debug(s"Result:$result")
       }
-      TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS * 9)
+      //TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS * 9)
       system.terminate()
   }
 

@@ -24,18 +24,18 @@ package pl.jozwik.smtp
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
-import pl.jozwik.smtp.client.ClientActor
+import pl.jozwik.smtp.client.StreamClient
 import pl.jozwik.smtp.server._
 import pl.jozwik.smtp.util._
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 object ActorSpec {
   private val number = Iterator from 1
@@ -90,8 +90,8 @@ trait SmtpSpec extends ActorSpec {
 
   protected def addressHandler: AddressHandler = NopAddressHandler
 
-  protected final val clientRef: ActorRef = actorSystem.actorOf(ClientActor.props(), "ClientActor")
-  protected val materializer = ActorMaterializer()
+  protected implicit val materializer = ActorMaterializer()
+  protected final val clientStream: StreamClient = new StreamClient(host, configuration.port)
   protected implicit val address = SocketAddress(host, configuration.port)
   protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
 }

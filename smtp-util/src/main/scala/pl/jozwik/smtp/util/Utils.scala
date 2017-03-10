@@ -39,7 +39,7 @@ object Utils {
 
   def now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC)
 
-  def withEndOfLine(line: String): String = s"$line$endOfLine"
+  def withEndOfLine(line: String): String = s"$line$crLf"
 
   def splitLineByColon(message: String): (String, String) = {
     val (head, argument) = message.indexOf(":") match {

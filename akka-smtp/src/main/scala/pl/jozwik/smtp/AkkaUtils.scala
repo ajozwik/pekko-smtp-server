@@ -23,9 +23,14 @@ package pl.jozwik.smtp
 
 import akka.io.Tcp.Write
 import akka.util.ByteString
+import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Utils
 
-object AkkaUtils {
+import scala.util.Try
+
+object AkkaUtils extends StrictLogging {
   import Utils.withEndOfLine
   def toWrite(line: String): Write = Write(ByteString(withEndOfLine(line)))
+
+  def toInt(code: String): Option[Int] = Try(code.toInt).toOption
 }

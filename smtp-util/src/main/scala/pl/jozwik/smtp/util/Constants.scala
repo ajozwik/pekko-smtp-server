@@ -28,7 +28,7 @@ object Constants {
   val CLOSE_BRACKET_STRING = '>'.toString
   val SPACE = ' '
   val delimiter = "\n"
-  val endOfLine = s"\r$delimiter"
+  val crLf = s"\r$delimiter"
   val Subject = "Subject"
   val START_MAIL_INPUT = 354
   val CLOSING_TERMINATION_CHANNEL = 221

@@ -21,29 +21,17 @@
  */
 package pl.jozwik.smtp
 
-import java.util.concurrent.TimeoutException
-
-import akka.pattern._
-import org.scalatest.compatible.Assertion
-import pl.jozwik.smtp.client.{FailedResult, MailWithAddress, SuccessResult}
+import pl.jozwik.smtp.client.{FailedResult, SuccessResult}
 import pl.jozwik.smtp.util.{EmailContent, Mail, Utils}
 
 class SmtpIntegrationSpec extends AbstractSmtpSpec {
 
   "Smtp integration test" should {
 
-    s"Wrong message" in {
-      val f = clientRef ? "OK"
-      f.recover {
-        case x =>
-          x shouldBe a[TimeoutException]
-      }.mapTo[Assertion]
-    }
-
     "finished without error" in {
 
       val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", "Content"))
-      val future = clientRef ? MailWithAddress(mail, address)
+      val future = clientStream.sendMail(mail)
       future.map { _ shouldBe SuccessResult }
 
     }
@@ -55,7 +43,7 @@ class SmtpIntegrationSpec extends AbstractSmtpSpec {
       val largeContent = Seq.fill(size)(line).mkString
       logger.debug(s"$size $maxSize ${line.length} ${largeContent.length}")
       val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", largeContent))
-      val future = clientRef ? MailWithAddress(mail, address)
+      val future = clientStream.sendMail(mail)
       future.map { result =>
         result shouldBe a[FailedResult]
       }

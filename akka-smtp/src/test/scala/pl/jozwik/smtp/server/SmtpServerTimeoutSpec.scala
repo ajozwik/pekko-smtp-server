@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit
 
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
-import concurrent.duration._
+
+import scala.concurrent.duration._
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
 

@@ -26,6 +26,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Framing, Source, Tcp}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
+import pl.jozwik.smtp.AkkaUtils
 import pl.jozwik.smtp.util.{Constants, Mail, Utils}
 
 import scala.concurrent.Future
@@ -37,7 +38,7 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
 
   def sendMail(mail: Mail): Future[Result] = {
     import Constants._
-    Source.single(mail).map { mail =>
+    val future = Source.single(mail).map { mail =>
       Seq(
         EHLO,
         s"$MAIL_FROM: ${mail.from}"
@@ -56,10 +57,21 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
         ByteString("\n"),
         Constants.maximumFrameLength,
         allowTruncation = true
-      )).runFold(SuccessResult) {
+      )).runFold[Result](SuccessResult) {
         case (acc, message) =>
-          logger.debug(s"${message.utf8String}")
-          acc
+          val response = AkkaUtils.toInt(message.take(3).utf8String)
+          logger.debug(s"`$response`  ${message.utf8String}")
+          if (acc != SuccessResult || response.exists(r => r >= 200 && r < 400)) {
+            acc
+          } else {
+            FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
+          }
       }
+    import system.dispatcher
+    future.recover {
+      case e =>
+        logger.error("", e)
+        FailedResult(e.getMessage)
+    }
   }
 }

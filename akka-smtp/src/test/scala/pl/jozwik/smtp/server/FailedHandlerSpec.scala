@@ -22,8 +22,7 @@
 package pl.jozwik.smtp
 package server
 
-import akka.pattern._
-import pl.jozwik.smtp.client.{FailedResult, MailWithAddress}
+import pl.jozwik.smtp.client.FailedResult
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.Future
@@ -45,7 +44,7 @@ abstract class FailedHandlerSpec extends AbstractSmtpSpec {
   }
 
   private def shouldFailed[T](mail: Mail) = {
-    val f = clientRef ? MailWithAddress(mail, address)
+    val f = clientStream.sendMail(mail)
     f.map(_ shouldBe a[FailedResult])
   }
 

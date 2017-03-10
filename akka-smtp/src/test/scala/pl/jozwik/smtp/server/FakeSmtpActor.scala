@@ -26,7 +26,7 @@ import java.net.InetSocketAddress
 
 import akka.actor.Props
 import akka.io.Tcp._
-import AkkaUtils._
+import pl.jozwik.smtp.AkkaUtils._
 import pl.jozwik.smtp.util.Constants._
 
 object FakeSmtpActor {

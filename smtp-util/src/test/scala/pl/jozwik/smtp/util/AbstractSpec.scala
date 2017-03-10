@@ -30,7 +30,7 @@ import org.scalatest.{AsyncWordSpecLike, Matchers, WordSpecLike}
 trait AbstractSpecScalaCheck extends AbstractSpec with Checkers
 
 trait Spec extends StrictLogging {
-  val TIMEOUT_SECONDS = 6
+  val TIMEOUT_SECONDS = 600
   val timeLimit = Span(TIMEOUT_SECONDS, Seconds)
   protected val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
 }
