@@ -1,4 +1,4 @@
-import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
+//import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import com.typesafe.sbt.SbtScalariform.autoImport._
@@ -14,7 +14,9 @@ val scalaVersion2_11 = "2.11.8"
 
 val scalaVersion2_12 = "2.12.1"
 
-//crossScalaVersions := Seq(scalaVersion2_12, scalaVersion2_11)
+//scapegoatVersion in ThisBuild := "1.3.0"
+
+crossScalaVersions := Seq(scalaVersion2_11, scalaVersion2_12)
 
 scalaVersion in ThisBuild := scalaVersion2_11
 
@@ -34,7 +36,6 @@ scalacOptions in ThisBuild ++= Seq(
   "-Ywarn-inaccessible",
   "-Ywarn-dead-code",
   "-language:reflectiveCalls",
-  "-Ybackend:GenBCode",
   "-Ydelambdafy:method"
 )
 
@@ -81,8 +82,7 @@ def projectName(name: String, file: File): Project = Project(name, file).setting
   publishArtifact in(Compile, packageDoc) := false,
   sources in(Compile, doc) := Seq.empty,
   scalariformSettings,
-  scapegoatVersion in Scapegoat := "1.3.0",
-  scapegoatIgnoredFiles := Seq(".*/target/.*"),
+//  scapegoatIgnoredFiles := Seq(".*/target/.*"),
   ScalariformKeys.preferences := ScalariformKeys.preferences.value.
     setPreference(AlignSingleLineCaseStatements, true).
     setPreference(SpacesAroundMultiImports, false)

@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/ajozwik/akka-smtp-server.svg?branch=master)](https://travis-ci.org/ajozwik/akka-smtp-server)
 [![Coverage Status](https://coveralls.io/repos/github/ajozwik/akka-smtp-server/badge.svg?branch=master)](https://coveralls.io/github/ajozwik/akka-smtp-server?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/e604aa27b4ae4b5484225b31151c5e01)](https://www.codacy.com/app/ajozwik/akka-smtp-server)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ajozwik/akka-smtp-server&amp;utm_campaign=Badge_Grade)
 
-Smtp server based on akka actors.
+Smtp server based on akka stream.
 
 For minimal usage you need to provide Consumer Actor.
 Consumer Actor receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with SuccessfulConsumed or FailedConsumed.

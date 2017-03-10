@@ -28,7 +28,7 @@ import pl.jozwik.smtp.util.TestUtils._
 import pl.jozwik.smtp.util._
 
 abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAfter with BeforeAndAfterAll with SocketSpec {
-  val port = TestUtils.notOccupiedPortNumber
+  val port: Int = TestUtils.notOccupiedPortNumber
 
   protected val sizeOfMailBody: Int = 10 * 1000
   System.setProperty(RuntimeConstants.portKey, port.toString)
@@ -64,7 +64,7 @@ abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAf
 
   }
 
-  protected def sendEhlo(): Unit = {
+  protected def sendEhlo(): Assertion = {
     writeLineAndValidateAnswer(s"$EHLO localhost", REQUEST_COMPLETE)
   }
 
