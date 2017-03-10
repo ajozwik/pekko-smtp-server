@@ -32,7 +32,7 @@ abstract class AbstractSmtpActor(bindAddress: InetSocketAddress) extends Abstrac
   import context.system
 
   override def unhandled(message: Any): Unit = message match {
-    case b @ Bound(localAddress) =>
+    case b @ Bound(_) =>
       logger.debug(s"$b")
     case CommandFailed(c) =>
       logger.error(s"$c\n${c.failureMessage}")

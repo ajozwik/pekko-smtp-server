@@ -48,12 +48,14 @@ object StreamServer extends StrictLogging {
     materializer: Materializer): StreamServer =
     new StreamServer(consumerProps, configuration, addressHandler)
 
+  private val hostname = System.getenv.get("HOSTNAME",System.getenv.get("COMPUTERNAME"))
+
   private val localHostName = Try(InetAddress.getLocalHost.getHostName) match {
     case Success(name) =>
       name
     case Failure(th) =>
       logger.error(th.getMessage, th)
-      "127.0.0.1"
+      hostname
   }
   private val maximumFrameLength = 1024
 

@@ -39,16 +39,34 @@ class FailedConsumerActor extends AbstractActor with StrictLogging {
   def receive: Receive = {
     case mail: Mail =>
       logger.debug(s"Receive: $mail")
-      sender() ! "Not supported"
       sender() ! FailedConsumed("Always failed")
   }
 }
 
-class FailedHandlerSpec extends AbstractSmtpSpec {
+object NotSupportedConsumerActor {
+  def props: Props = Props[NotSupportedConsumerActor]
+}
+
+class NotSupportedConsumerActor extends AbstractActor with StrictLogging {
+
+  def receive: Receive = {
+    case mail: Mail =>
+      logger.debug(s"Receive: $mail")
+      sender() ! "Not supported"
+  }
+}
+
+class NotSupportedHandlerSpec extends FailedHandlerSpec {
+  override protected def consumerProps: Props = NotSupportedConsumerActor.props
+}
+
+class FailedConsumerHandlerSpec extends FailedHandlerSpec {
+  override protected def consumerProps: Props = FailedConsumerActor.props
+}
+
+abstract class FailedHandlerSpec extends AbstractSmtpSpec {
   private val notAcceptedDomain = "notaccepted"
   private val userUnknown = "userUnknown"
-
-  override protected def consumerProps = FailedConsumerActor.props
 
   override protected def addressHandler = new AddressHandler {
     def acceptFrom(from: MailAddress): Boolean =
