@@ -48,15 +48,6 @@ object StreamServer extends StrictLogging {
     materializer: Materializer): StreamServer =
     new StreamServer(consumerProps, configuration, addressHandler)
 
-  private val hostname = System.getenv.get("HOSTNAME",System.getenv.get("COMPUTERNAME"))
-
-  private val localHostName = Try(InetAddress.getLocalHost.getHostName) match {
-    case Success(name) =>
-      name
-    case Failure(th) =>
-      logger.error(th.getMessage, th)
-      hostname
-  }
   private val maximumFrameLength = 1024
 
   private val address = "0.0.0.0"
@@ -81,6 +72,7 @@ class StreamServer private (
   materializer: Materializer)
     extends AutoCloseable with StrictLogging {
   import StreamServer._
+  import IOUtils._
 
   private val supervisorRef = system.actorOf(Supervisor.props)
 

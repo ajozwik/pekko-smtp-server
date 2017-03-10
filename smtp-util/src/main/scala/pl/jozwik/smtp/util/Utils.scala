@@ -22,15 +22,20 @@
 package pl.jozwik.smtp
 package util
 
+import java.net.InetAddress
 import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.regex.Pattern
+
+import com.typesafe.scalalogging.StrictLogging
+
+import scala.util.{Failure, Success, Try}
 
 object Utils {
 
   import Constants._
   import Response._
 
-  val WHITE_SPACES_PATTERN = Pattern.compile("""\s+""")
+  private val WHITE_SPACES_PATTERN = Pattern.compile("""\s+""")
 
   def now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC)
 
@@ -205,4 +210,12 @@ object Response {
 
   def sizeExceedsMaximum(size: Long): String = s"$SIZE_EXCEEDS_MAXIMUM 5.2.3 Message size exceeds maximum value: $size"
 
+}
+
+object IOUtils extends StrictLogging {
+  import sys.env
+  val defaultHostName = "127.0.0.1"
+  def hostnameFromEnvVariable(name: String): String = env.getOrElse(name, defaultHostName)
+
+  def localHostName: String = Try(InetAddress.getLocalHost.getHostName).getOrElse(hostnameFromEnvVariable("HOSTNAME"))
 }

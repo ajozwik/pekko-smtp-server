@@ -21,20 +21,15 @@
  */
 package pl.jozwik.smtp.util
 
-import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.concurrent.{AsyncTimeLimitedTests, TimeLimitedTests}
-import org.scalatest.prop.Checkers
-import org.scalatest.time.{Seconds, Span}
-import org.scalatest.{AsyncWordSpecLike, Matchers, WordSpecLike}
+class IOUtilsSpec extends AbstractSpec {
+  import IOUtils._
+  "IOUtilsSpec" should {
 
-trait AbstractSpecScalaCheck extends AbstractSpec with Checkers
+    "localHostName" in {
+      localHostName shouldBe a[String]
+      hostnameFromEnvVariable("HOSTNAME") shouldBe a[String]
+      hostnameFromEnvVariable("EE") shouldBe defaultHostName
+    }
 
-trait Spec extends StrictLogging {
-  val TIMEOUT_SECONDS = 6
-  val timeLimit = Span(TIMEOUT_SECONDS, Seconds)
-  protected val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
+  }
 }
-
-trait AbstractSpec extends WordSpecLike with TimeLimitedTests with Spec with Matchers
-
-trait AbstractAsyncSpec extends AsyncWordSpecLike with AsyncTimeLimitedTests with Spec with Matchers
