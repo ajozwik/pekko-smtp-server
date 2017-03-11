@@ -75,9 +75,7 @@ class SmtpTimerGraphStageLogic(
     case `TickTimeout` =>
       pushWithEndOfLine(Errors.serviceNotAvailable(localHostName, readTimeout.toSeconds))
       failStage(new RuntimeException("Service timeout"))
-    //    case x =>
-    //      logger.error(s"Unsupported response: $x")
-    //      pushWithEndOfLine(s"$TRANSACTION_FAILED Unsupported response")
+
   }
 
   private var accumulator = MailAccumulator.empty

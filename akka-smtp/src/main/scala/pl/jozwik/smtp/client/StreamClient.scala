@@ -57,18 +57,26 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
         ByteString("\n"),
         Constants.maximumFrameLength,
         allowTruncation = true
-      )).runFold[Result](SuccessResult) {
-        case (acc, message) =>
+      )).runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) {
+        case ((acc, codes), message) =>
           val response = AkkaUtils.toInt(message.take(3).utf8String)
-          logger.debug(s"`$response`  ${message.utf8String}")
-          if (acc != SuccessResult || response.exists(r => r >= 200 && r < 400)) {
+          logger.debug(s"${message.utf8String}")
+          val newAcc = if (acc != SuccessResult || response.exists(r => r >= 200 && r < 400)) {
             acc
           } else {
             FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
           }
+          (newAcc, response.map(c => c +: codes).getOrElse(codes))
       }
     import system.dispatcher
-    future.recover {
+    future.map {
+      case (result, codes) =>
+        if (result == SuccessResult && !codes.containsSlice(Seq(Constants.REQUEST_COMPLETE, Constants.START_MAIL_INPUT))) {
+          FailedResult("")
+        } else {
+          result
+        }
+    }.recover {
       case e =>
         logger.error("", e)
         FailedResult(e.getMessage)

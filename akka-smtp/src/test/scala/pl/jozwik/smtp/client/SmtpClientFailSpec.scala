@@ -50,10 +50,10 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
       successFuture.map(_ shouldBe SuccessResult)
     }
 
-    //    "Handle wrong answer" in {
-    //      val future = new StreamClient(address.host, fakePort).sendMail(mail)
-    //      future.map(_ shouldBe a[FailedResult])
-    //    }
+    "Handle wrong answer" in {
+      val future = new StreamClient(address.host, fakePort).sendMail(mail)
+      future.map(_ shouldBe a[FailedResult])
+    }
 
     "Close connection " in {
       val socket = new Socket(serverAddress.getHostName, serverAddress.getPort)
