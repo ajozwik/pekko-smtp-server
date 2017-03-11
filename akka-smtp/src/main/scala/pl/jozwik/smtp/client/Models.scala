@@ -31,11 +31,6 @@ case class Counter(senderRef: ActorRef, result: Result)
 
 sealed trait Result
 
-object Result {
-  def apply(error: Option[String]): Result =
-    error.map(e => FailedResult(e)).getOrElse(SuccessResult)
-}
-
 case object SuccessResult extends Result
 
 case class FailedResult(error: String) extends Result

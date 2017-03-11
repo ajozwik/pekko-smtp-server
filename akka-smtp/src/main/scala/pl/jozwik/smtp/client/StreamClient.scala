@@ -61,25 +61,36 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
         case ((acc, codes), message) =>
           val response = AkkaUtils.toInt(message.take(3).utf8String)
           logger.debug(s"${message.utf8String}")
-          val newAcc = if (acc != SuccessResult || response.exists(r => r >= 200 && r < 400)) {
-            acc
-          } else {
-            FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
+          val newAcc = acc match {
+            case f: FailedResult =>
+              f
+            case _ if isResponseSuccess(response) =>
+              acc
+            case _ =>
+              FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
           }
+
           (newAcc, response.map(c => c +: codes).getOrElse(codes))
       }
+    mapToResult(future)
+  }
+
+  private def mapToResult(future: Future[(Result, Seq[Int])]) = {
     import system.dispatcher
     future.map {
-      case (result, codes) =>
-        if (result == SuccessResult && !codes.containsSlice(Seq(Constants.REQUEST_COMPLETE, Constants.START_MAIL_INPUT))) {
-          FailedResult("")
-        } else {
-          result
-        }
+      case (SuccessResult, codes) if !codes.containsSlice(Seq(Constants.REQUEST_COMPLETE, Constants.START_MAIL_INPUT)) =>
+        FailedResult("")
+      case (result, _) =>
+        result
+
     }.recover {
       case e =>
         logger.error("", e)
         FailedResult(e.getMessage)
     }
+  }
+
+  private def isResponseSuccess(response: Option[Int]) = {
+    response.exists(r => r >= 200 && r < 400)
   }
 }
