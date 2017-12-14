@@ -77,8 +77,7 @@ object MailCommand {
   private def extractSender(
     argument: String,
     addressHandler: AddressHandler,
-    address: String
-  ): (String, MailAddress) = toMailAddress(address) match {
+    address: String): (String, MailAddress) = toMailAddress(address) match {
     case Right(from) =>
       val response = if (addressHandler.acceptFrom(from)) {
         senderOk(from)

@@ -41,8 +41,7 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
     val future = Source.single(mail).map { mail =>
       Seq(
         EHLO,
-        s"$MAIL_FROM: ${mail.from}"
-      ) ++
+        s"$MAIL_FROM: ${mail.from}") ++
         mail.to.map(to => s"$RCPT_TO:$to") ++
         Seq(
           s"$DATA",
@@ -50,14 +49,12 @@ class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: 
           "",
           mail.emailContent.txtBody.getOrElse(""),
           END_DATA,
-          QUIT
-        )
+          QUIT)
     }.map(seq => ByteString(seq.map(Utils.withEndOfLine).mkString))
       .via(connection).via(Framing.delimiter(
         ByteString("\n"),
         Constants.maximumFrameLength,
-        allowTruncation = true
-      )).runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) {
+        allowTruncation = true)).runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) {
         case ((acc, codes), message) =>
           val response = AkkaUtils.toInt(message.take(3).utf8String)
           logger.debug(s"${message.utf8String}")

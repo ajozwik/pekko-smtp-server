@@ -55,11 +55,10 @@ object StreamServer extends StrictLogging {
 class StreamServer private (
   consumer: Mail => Future[ConsumedResult],
   configuration: Configuration,
-  addressHandler: AddressHandler
-)(implicit
+  addressHandler: AddressHandler)(implicit
   system: ActorSystem,
   materializer: Materializer)
-    extends AutoCloseable with StrictLogging {
+  extends AutoCloseable with StrictLogging {
   import IOUtils._
   import StreamServer._
 
@@ -76,8 +75,7 @@ class StreamServer private (
       val welcome = Source.single(ByteString(
         Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER ${
           DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
-        }")
-      ))
+        }")))
       val logic = b.add(Flow[ByteString]
         .via(Framing.delimiter(ByteString(Constants.delimiter), Constants.maximumFrameLength, allowTruncation = true))
         .map(_.utf8String)

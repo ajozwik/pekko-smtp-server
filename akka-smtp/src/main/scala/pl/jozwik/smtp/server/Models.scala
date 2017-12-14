@@ -58,14 +58,13 @@ object MailAccumulator {
 }
 
 case class MailAccumulator(
-    needHello: Boolean = false,
-    from: MailAddress = MailAddress.empty,
-    to: Seq[MailAddress] = Seq.empty[MailAddress],
-    content: Content = Content(),
-    readData: Boolean = false,
-    notCompletedLine: Option[String] = None,
-    lastMessageTimestamp: ZonedDateTime = now
-) {
+  needHello: Boolean = false,
+  from: MailAddress = MailAddress.empty,
+  to: Seq[MailAddress] = Seq.empty[MailAddress],
+  content: Content = Content(),
+  readData: Boolean = false,
+  notCompletedLine: Option[String] = None,
+  lastMessageTimestamp: ZonedDateTime = now) {
   def addLine(line: String): MailAccumulator = {
     this.copy(content = Content(content.content :+ line, content.size + line.length))
   }

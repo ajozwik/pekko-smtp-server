@@ -47,8 +47,7 @@ trait ActorSpec extends StrictLogging {
 
   protected implicit val actorSystem = ActorSystem(
     s"test-${number.next()}",
-    ConfigFactory.parseResources("application-test.conf")
-  )
+    ConfigFactory.parseResources("application-test.conf"))
 
   private val TIMEOUT = 3000
   protected implicit val timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)

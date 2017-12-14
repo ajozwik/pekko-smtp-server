@@ -5,20 +5,16 @@ import com.typesafe.sbt.SbtScalariform.autoImport._
 
 import scalariform.formatter.preferences.{AlignSingleLineCaseStatements, SpacesAroundMultiImports}
 
-import com.banno.license.Plugin.LicenseKeys._
-import com.banno.license.Licenses._
 
+val scalaVersion2_11 = "2.11.12"
 
-
-val scalaVersion2_11 = "2.11.8"
-
-val scalaVersion2_12 = "2.12.1"
+val scalaVersion2_12 = "2.12.4"
 
 //scapegoatVersion in ThisBuild := "1.3.0"
 
 crossScalaVersions := Seq(scalaVersion2_11, scalaVersion2_12)
 
-scalaVersion in ThisBuild := scalaVersion2_11
+scalaVersion in ThisBuild := scalaVersion2_12
 
 organization in ThisBuild := "com.github.ajozwik"
 
@@ -66,7 +62,7 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
 lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp")).settings(
   libraryDependencies ++= Seq(
     `com.typesafe.akka_akka-slf4j`,
-    `com.typesafe.akka_stream` 
+    `com.typesafe.akka_stream`
   )
 ).dependsOn(`smtp-util`, `smtp-util` % "test->test")
 
@@ -75,14 +71,12 @@ def projectName(name: String, file: File): Project = Project(name, file).setting
     `org.scalatest_scalatest`,
     `org.scalacheck_scalacheck`
   ),
-  licenseSettings,
-  removeExistingHeaderBlock := true,
-  license := mit("Copyright (c) 2017 Andrzej Jozwik"),
-    SbtScalariform.scalariformSettings,
+  licenseReportTitle := "Copyright (c) 2017 Andrzej Jozwik",
+  licenseSelection := Seq(LicenseCategory.MIT),
+  SbtScalariform.scalariformSettings,
   publishArtifact in(Compile, packageDoc) := false,
   sources in(Compile, doc) := Seq.empty,
-  scalariformSettings,
-//  scapegoatIgnoredFiles := Seq(".*/target/.*"),
+  //  scapegoatIgnoredFiles := Seq(".*/target/.*"),
   ScalariformKeys.preferences := ScalariformKeys.preferences.value.
     setPreference(AlignSingleLineCaseStatements, true).
     setPreference(SpacesAroundMultiImports, false)

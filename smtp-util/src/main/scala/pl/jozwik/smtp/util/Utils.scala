@@ -138,8 +138,7 @@ object Utils {
 
   private def validateBrackets[T](
     withoutBrackets: String,
-    f: (String => Either[String, T])
-  ): Either[String, T] =
+    f: (String => Either[String, T])): Either[String, T] =
     (withoutBrackets.contains(CLOSE_BRACKET), withoutBrackets.contains(OPEN_BRACKET)) match {
       case (true, _) =>
         Left(unbalanced(withoutBrackets, CLOSE_BRACKET))

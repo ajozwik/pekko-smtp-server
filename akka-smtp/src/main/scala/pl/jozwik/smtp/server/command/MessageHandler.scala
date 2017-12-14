@@ -54,15 +54,14 @@ object MessageHandler {
 }
 
 case class MessageHandler(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
-    remote: InetSocketAddress, consumer: (Mail => Unit)) {
+  remote: InetSocketAddress, consumer: (Mail => Unit)) {
 
   import MessageHandler._
 
   def handleMessage(
     line: String,
     stripped: String,
-    accumulator: MailAccumulator
-  ): (MailAccumulator, ResponseMessage) =
+    accumulator: MailAccumulator): (MailAccumulator, ResponseMessage) =
     if (accumulator.readData) {
       DataCommand.readContent(line, stripped, accumulator, sizeHandler, consumer)
     } else {
@@ -75,8 +74,7 @@ case class MessageHandler(addressHandler: AddressHandler, sizeHandler: SizeParam
     command: String,
     line: String, commandIterator: Iterator[String],
     argument: String,
-    accumulator: MailAccumulator
-  ): (MailAccumulator, ResponseMessage) =
+    accumulator: MailAccumulator): (MailAccumulator, ResponseMessage) =
     commandIterator.next() match {
       case HELO =>
         HelloCommand.handleHelo(localHostName, remote)
