@@ -27,7 +27,7 @@ import java.time.ZonedDateTime
 import akka.actor.Props
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.Utils._
-import pl.jozwik.smtp.util.{MailAddress, SizeParameterHandler}
+import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -58,13 +58,13 @@ object MailAccumulator {
 }
 
 case class MailAccumulator(
-  needHello: Boolean = false,
-  from: MailAddress = MailAddress.empty,
-  to: Seq[MailAddress] = Seq.empty[MailAddress],
-  content: Content = Content(),
-  readData: Boolean = false,
-  notCompletedLine: Option[String] = None,
-  lastMessageTimestamp: ZonedDateTime = now) {
+    needHello: Boolean = false,
+    from: MailAddress = MailAddress.empty,
+    to: Seq[MailAddress] = Seq.empty[MailAddress],
+    content: Content = Content(),
+    readData: Boolean = false,
+    notCompletedLine: Option[String] = None,
+    lastMessageTimestamp: ZonedDateTime = now) {
   def addLine(line: String): MailAccumulator = {
     this.copy(content = Content(content.content :+ line, content.size + line.length))
   }

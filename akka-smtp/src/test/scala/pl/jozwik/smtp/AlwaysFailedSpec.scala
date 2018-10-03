@@ -26,8 +26,6 @@ import java.util.concurrent.TimeoutException
 import akka.pattern._
 import org.scalatest.compatible.Assertion
 
-import scala.language.postfixOps
-
 class AlwaysFailedSpec extends AbstractActorSpec {
 
   private val failedRef = actorSystem.actorOf(AlwaysFailActor.props)

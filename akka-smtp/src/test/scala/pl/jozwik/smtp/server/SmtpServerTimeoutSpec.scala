@@ -31,13 +31,11 @@ import scala.concurrent.duration._
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
 
-  import scala.language.postfixOps
+  val port: Int = configuration.port
 
-  val port = configuration.port
+  override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(1.second)
 
-  override protected def readTimeout = (timeLimit / 2).min(1.second)
-
-  override protected def afterAll() = {
+  override protected def afterAll(): Unit = {
     close()
     super.afterAll()
   }

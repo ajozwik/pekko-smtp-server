@@ -25,7 +25,7 @@ package util
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.Response._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object Parameters {
 

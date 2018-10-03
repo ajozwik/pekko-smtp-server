@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl._
-import akka.util.{ByteString, Timeout}
-import akka.{NotUsed, stream}
+import akka.util.{ ByteString, Timeout }
+import akka.{ NotUsed, stream }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.SERVICE_READY
 import pl.jozwik.smtp.util.Utils.now
@@ -53,11 +53,11 @@ object StreamServer extends StrictLogging {
 }
 
 class StreamServer private (
-  consumer: Mail => Future[ConsumedResult],
-  configuration: Configuration,
-  addressHandler: AddressHandler)(implicit
-  system: ActorSystem,
-  materializer: Materializer)
+    consumer: Mail => Future[ConsumedResult],
+    configuration: Configuration,
+    addressHandler: AddressHandler)(implicit
+    system: ActorSystem,
+    materializer: Materializer)
   extends AutoCloseable with StrictLogging {
   import IOUtils._
   import StreamServer._

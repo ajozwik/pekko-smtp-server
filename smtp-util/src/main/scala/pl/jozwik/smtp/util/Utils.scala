@@ -23,12 +23,12 @@ package pl.jozwik.smtp
 package util
 
 import java.net.InetAddress
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{ ZoneOffset, ZonedDateTime }
 import java.util.regex.Pattern
 
 import com.typesafe.scalalogging.StrictLogging
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object Utils {
 

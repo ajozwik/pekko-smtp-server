@@ -35,7 +35,7 @@ import pl.jozwik.smtp.server._
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 object ActorSpec {
   private val number = Iterator from 1

@@ -21,8 +21,8 @@
  */
 package pl.jozwik.smtp.util
 
-import java.io.{BufferedReader, PrintWriter}
-import java.net.{InetAddress, ServerSocket, Socket}
+import java.io.{ BufferedReader, PrintWriter }
+import java.net.{ InetAddress, ServerSocket, Socket }
 import java.util.Objects
 import java.util.concurrent.TimeUnit
 

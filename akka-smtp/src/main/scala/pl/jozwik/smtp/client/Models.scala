@@ -23,7 +23,7 @@ package pl.jozwik.smtp
 package client
 
 import akka.actor.ActorRef
-import pl.jozwik.smtp.util.{Mail, SocketAddress}
+import pl.jozwik.smtp.util.{ Mail, SocketAddress }
 
 case class MailWithAddress(mail: Mail, address: SocketAddress)
 

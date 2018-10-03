@@ -29,7 +29,7 @@ import pl.jozwik.smtp.server.Errors._
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.Response._
 import pl.jozwik.smtp.util.Utils._
-import pl.jozwik.smtp.util.{Mail, SizeParameterHandler}
+import pl.jozwik.smtp.util.{ Mail, SizeParameterHandler }
 
 object MessageHandler {
   private def handleVrfy(accumulator: MailAccumulator) =
@@ -54,7 +54,7 @@ object MessageHandler {
 }
 
 case class MessageHandler(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
-  remote: InetSocketAddress, consumer: (Mail => Unit)) {
+    remote: InetSocketAddress, consumer: (Mail => Unit)) {
 
   import MessageHandler._
 

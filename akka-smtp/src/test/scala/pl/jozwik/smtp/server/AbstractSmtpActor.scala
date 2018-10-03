@@ -24,8 +24,8 @@ package pl.jozwik.smtp.server
 import java.net.InetSocketAddress
 
 import akka.actor.PoisonPill
-import akka.io.Tcp.{Bind, Bound, CommandFailed, Unbind}
-import akka.io.{IO, Tcp}
+import akka.io.Tcp.{ Bind, Bound, CommandFailed, Unbind }
+import akka.io.{ IO, Tcp }
 import pl.jozwik.smtp.AbstractActor
 
 abstract class AbstractSmtpActor(bindAddress: InetSocketAddress) extends AbstractActor {

@@ -22,10 +22,10 @@
 package pl.jozwik.smtp.util
 
 import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.concurrent.{AsyncTimeLimitedTests, TimeLimitedTests}
+import org.scalatest.concurrent.{ AsyncTimeLimitedTests, TimeLimitedTests }
 import org.scalatest.prop.Checkers
-import org.scalatest.time.{Seconds, Span}
-import org.scalatest.{AsyncWordSpecLike, Matchers, WordSpecLike}
+import org.scalatest.time.{ Seconds, Span }
+import org.scalatest.{ AsyncWordSpecLike, Matchers, WordSpecLike }
 
 trait AbstractSpecScalaCheck extends AbstractSpec with Checkers
 

@@ -21,8 +21,8 @@
  */
 package pl.jozwik.smtp
 
-import pl.jozwik.smtp.client.{FailedResult, SuccessResult}
-import pl.jozwik.smtp.util.{EmailContent, Mail, Utils}
+import pl.jozwik.smtp.client.{ FailedResult, SuccessResult }
+import pl.jozwik.smtp.util.{ EmailContent, Mail, Utils }
 
 class SmtpIntegrationSpec extends AbstractSmtpSpec {
 

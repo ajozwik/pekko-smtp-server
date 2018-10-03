@@ -23,7 +23,7 @@ package pl.jozwik.smtp
 package client
 
 import java.io.OutputStreamWriter
-import java.net.{InetSocketAddress, Socket}
+import java.net.{ InetSocketAddress, Socket }
 
 import pl.jozwik.smtp.server.FakeSmtpActor
 import pl.jozwik.smtp.util.Constants._

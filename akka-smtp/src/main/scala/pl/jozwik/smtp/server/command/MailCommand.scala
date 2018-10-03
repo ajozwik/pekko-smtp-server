@@ -26,7 +26,7 @@ package command
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.Response._
 import pl.jozwik.smtp.util.Utils._
-import pl.jozwik.smtp.util.{MailAddress, ParameterHandler, Parameters, SizeParameterHandler}
+import pl.jozwik.smtp.util.{ MailAddress, ParameterHandler, Parameters, SizeParameterHandler }
 
 object MailCommand {
 

@@ -23,11 +23,11 @@ package pl.jozwik.smtp.client
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Framing, Source, Tcp}
+import akka.stream.scaladsl.{ Flow, Framing, Source, Tcp }
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.AkkaUtils
-import pl.jozwik.smtp.util.{Constants, Mail, Utils}
+import pl.jozwik.smtp.util.{ Constants, Mail, Utils }
 
 import scala.concurrent.Future
 

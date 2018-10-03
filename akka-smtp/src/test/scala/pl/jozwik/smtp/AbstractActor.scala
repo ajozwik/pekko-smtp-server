@@ -21,7 +21,7 @@
  */
 package pl.jozwik.smtp
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import com.typesafe.scalalogging.StrictLogging
 
 trait AbstractActor extends Actor with StrictLogging with ActorLogging {

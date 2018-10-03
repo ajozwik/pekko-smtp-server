@@ -1,16 +1,13 @@
 //import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
-import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import com.typesafe.sbt.SbtScalariform.autoImport._
-
-import scalariform.formatter.preferences.{AlignSingleLineCaseStatements, SpacesAroundMultiImports}
+import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
+import scalariform.formatter.preferences._
 
 
 val scalaVersion2_11 = "2.11.12"
 
-val scalaVersion2_12 = "2.12.4"
+val scalaVersion2_12 = "2.12.7"
 
-//scapegoatVersion in ThisBuild := "1.3.0"
+scapegoatVersion in ThisBuild := "1.3.8"
 
 crossScalaVersions := Seq(scalaVersion2_11, scalaVersion2_12)
 
@@ -35,21 +32,21 @@ scalacOptions in ThisBuild ++= Seq(
   "-Ydelambdafy:method"
 )
 
-val akkaVersion = "2.4.17"
+val akkaVersion = "2.5.17"
 
-val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
+val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 
-val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.2.1"
+val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val `com.typesafe.akka_akka-slf4j` = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 
 val `com.typesafe.akka_stream` = "com.typesafe.akka" %% "akka-stream" % akkaVersion
 
-val `org.scalatest_scalatest` = "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+val `org.scalatest_scalatest` = "org.scalatest" %% "scalatest" % "3.0.5" % Test
 
-val `org.scalacheck_scalacheck` = "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+val `org.scalacheck_scalacheck` = "org.scalacheck" %% "scalacheck" % "1.14.0" % Test
 
-val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.0"
+val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.2"
 
 lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   libraryDependencies ++= Seq(
@@ -64,22 +61,24 @@ lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp")).settings(
     `com.typesafe.akka_akka-slf4j`,
     `com.typesafe.akka_stream`
   )
-).dependsOn(`smtp-util`, `smtp-util` % "test->test")
+)
+  .dependsOn(`smtp-util`, `smtp-util` % "test->test")
+  .enablePlugins(PackPlugin)
+
 
 def projectName(name: String, file: File): Project = Project(name, file).settings(
   libraryDependencies ++= Seq(
     `org.scalatest_scalatest`,
     `org.scalacheck_scalacheck`
   ),
-  licenseReportTitle := "Copyright (c) 2017 Andrzej Jozwik",
+  licenseReportTitle := "Copyright (c) 2018 Andrzej Jozwik",
   licenseSelection := Seq(LicenseCategory.MIT),
-  SbtScalariform.scalariformSettings,
   publishArtifact in(Compile, packageDoc) := false,
   sources in(Compile, doc) := Seq.empty,
-  //  scapegoatIgnoredFiles := Seq(".*/target/.*"),
-  ScalariformKeys.preferences := ScalariformKeys.preferences.value.
-    setPreference(AlignSingleLineCaseStatements, true).
-    setPreference(SpacesAroundMultiImports, false)
+  scalariformPreferences := scalariformPreferences.value
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(DoubleIndentConstructorArguments, true)
+    .setPreference(DanglingCloseParenthesis, Preserve)
 )
 
 

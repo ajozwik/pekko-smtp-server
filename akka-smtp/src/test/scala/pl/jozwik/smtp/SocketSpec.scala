@@ -21,7 +21,7 @@
  */
 package pl.jozwik.smtp
 
-import java.io.{BufferedReader, InputStreamReader, PrintWriter}
+import java.io.{ BufferedReader, InputStreamReader, PrintWriter }
 
 import pl.jozwik.smtp.util.TestUtils._
 
