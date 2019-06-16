@@ -19,11 +19,12 @@ env:
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean coverage test
   - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
-  - sbt ++$TRAVIS_SCALA_VERSION codacyCoverage
-
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" | xargs rm -f
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm -f
 
 after_success:
   - sbt ++$TRAVIS_SCALA_VERSION coveralls
+  - sbt ++$TRAVIS_SCALA_VERSION codacyCoverage
+   # Tricks to avoid unnecessary cache updates
+  - find $HOME/.sbt -name "*.lock" | xargs rm -f
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm -f
+
+
