@@ -11,7 +11,7 @@ scala:
   - 2.13.0
 
 jdk:
-  - oraclejdk8
+  - openjdk11
 
 env:
   - CODACY_PROJECT_TOKEN=e0672985af4742b38ee4143d00ca8253
