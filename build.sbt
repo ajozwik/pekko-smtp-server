@@ -1,17 +1,16 @@
 //import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
-import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 import scalariform.formatter.preferences._
 
 
 val `scalaVersion_2.13` = "2.13.0"
 
-val `scalaVersion2.12` = "2.12.8"
+val `scalaVersion_2.12` = "2.12.8"
 
-scapegoatVersion in ThisBuild := "1.3.8"
+// scapegoatVersion in ThisBuild := "1.3.8"
 
-crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion2.12`)
+crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
-scalaVersion in ThisBuild := `scalaVersion2.12`
+scalaVersion in ThisBuild := `scalaVersion_2.13`
 
 organization in ThisBuild := "com.github.ajozwik"
 
@@ -24,9 +23,9 @@ scalacOptions in ThisBuild ++= Seq(
   "-feature", // warning and location for usages of features that should be imported explicitly
   "-unchecked", // additional warnings where generated code depends on assumptions
   "-Xlint", // recommended additional warnings
-  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
+//  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
   "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
-  "-Ywarn-inaccessible",
+//  "-Ywarn-inaccessible",
   "-Ywarn-dead-code",
   "-language:reflectiveCalls",
   "-Ydelambdafy:method"

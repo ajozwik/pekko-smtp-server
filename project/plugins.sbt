@@ -14,7 +14,7 @@ addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.11")
 
 addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.3.11")
 
-addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.9")
+//addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.9")
 
 libraryDependencies += "org.scalariform" %% "scalariform" % "0.2.10"
 
