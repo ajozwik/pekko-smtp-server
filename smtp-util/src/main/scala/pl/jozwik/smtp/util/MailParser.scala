@@ -74,7 +74,7 @@ object MailParser {
 
   private def addMultipart(part: BodyPart, accWithPart: AccEmailContent): AccEmailContent =
     if (part.isMultipart) {
-      parseBodyParts(part.getBody.asInstanceOf[Multipart].getBodyParts.asScala, accWithPart)
+      parseBodyParts(part.getBody.asInstanceOf[Multipart].getBodyParts.asScala.toSeq, accWithPart)
     } else {
       accWithPart
     }
@@ -124,7 +124,7 @@ class MailParser extends StrictLogging {
     logger.debug(s"Subject: $subject")
     if (mimeMsg.isMultipart) {
       val multipart = mimeMsg.getBody.asInstanceOf[Multipart]
-      val acc = parseBodyParts(multipart.getBodyParts.asScala, AccEmailContent.empty)
+      val acc = parseBodyParts(multipart.getBodyParts.asScala.toSeq, AccEmailContent.empty)
       val htmlBody = toOption(acc.htmlBody)
       val txtBody = toOption(acc.txtBody)
       EmailContent(subject, txtBody, htmlBody, acc.attachments)
