@@ -26,7 +26,6 @@ import java.net.InetSocketAddress
 import akka.actor.ActorSystem
 import akka.stream
 import akka.stream.stage._
-import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.command.MessageHandler
 import pl.jozwik.smtp.util.Constants._
@@ -49,9 +48,7 @@ class SmtpTimerGraphStageLogic(
     localHostName: String,
     remote: InetSocketAddress,
     consumer: Mail => Future[ConsumedResult],
-    readTimeout: FiniteDuration)(implicit
-    system: ActorSystem,
-    timeout: Timeout)
+    readTimeout: FiniteDuration)(implicit system: ActorSystem)
   extends TimerGraphStageLogic(shape) with StrictLogging {
 
   import SmtpTimerGraphStageLogic._
@@ -122,9 +119,7 @@ class SmtpTimerGraphStageLogic(
 
 class SmtpGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
     remote: InetSocketAddress, consumer: Mail => Future[ConsumedResult],
-    readTimeout: FiniteDuration)(implicit
-    system: ActorSystem,
-    timeout: Timeout) extends GraphStage[stream.FlowShape[String, String]]
+    readTimeout: FiniteDuration)(implicit system: ActorSystem) extends GraphStage[stream.FlowShape[String, String]]
   with StrictLogging {
 
   private val in = stream.Inlet[String]("smtp.in")

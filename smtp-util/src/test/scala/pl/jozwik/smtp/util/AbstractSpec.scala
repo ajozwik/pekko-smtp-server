@@ -23,7 +23,7 @@ package pl.jozwik.smtp.util
 
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{ AsyncTimeLimitedTests, TimeLimitedTests }
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.time.{ Seconds, Span }
 import org.scalatest.{ AsyncWordSpecLike, Matchers, WordSpecLike }
 

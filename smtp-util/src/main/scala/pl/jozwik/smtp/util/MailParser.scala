@@ -30,7 +30,7 @@ import org.apache.james.mime4j.message._
 import org.apache.james.mime4j.message
 import java.nio.charset.StandardCharsets
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object AccEmailContent {
   val empty = AccEmailContent(IndexedSeq.empty, IndexedSeq.empty, Seq.empty)

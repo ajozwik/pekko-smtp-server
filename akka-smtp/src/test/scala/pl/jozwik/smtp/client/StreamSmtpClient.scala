@@ -32,9 +32,9 @@ import scala.concurrent.Future
 
 object StreamSmtpClient extends App with StrictLogging {
 
-  implicit val system = ActorSystem("Client")
+  private implicit val system = ActorSystem("Client")
 
-  implicit val materializer = ActorMaterializer()
+  private implicit val materializer = ActorMaterializer()
 
   private val port = 1587
 
@@ -43,9 +43,11 @@ object StreamSmtpClient extends App with StrictLogging {
   private val address = "localhost"
 
   val serverAddress = SocketAddress(address, port)
-  val mailAddress = MailAddress("ajozwik", "tuxedo-wifi")
+  val mailAddress = MailAddress("user", "domain.org")
   val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", "Content"))
+
   import system.dispatcher
+
   val client = new StreamClient(address, port)
   val futures = (1 to 1).map {
     _ =>
@@ -53,7 +55,7 @@ object StreamSmtpClient extends App with StrictLogging {
       client.sendMail(mail).recover {
         case e =>
           logger.error("", e)
-          e
+          FailedResult(e.getMessage)
       }
   }
 

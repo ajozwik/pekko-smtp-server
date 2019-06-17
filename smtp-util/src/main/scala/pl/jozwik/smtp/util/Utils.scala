@@ -28,7 +28,8 @@ import java.util.regex.Pattern
 
 import com.typesafe.scalalogging.StrictLogging
 
-import scala.util.{ Failure, Success, Try }
+import scala.collection.immutable.ArraySeq
+import scala.util.Try
 
 object Utils {
 
@@ -51,8 +52,8 @@ object Utils {
     (head.trim, argument.trim)
   }
 
-  def splitOnWhiteSpaces(txt: String, limit: Int = 0): Seq[String] =
-    WHITE_SPACES_PATTERN.split(txt, limit)
+  def splitOnWhiteSpaces(txt: String, limit: Int = 0): IndexedSeq[String] =
+    ArraySeq.unsafeWrapArray(WHITE_SPACES_PATTERN.split(txt, limit))
 
   def extractAddressAndParameters(txt: String): Either[String, (String, Map[String, String])] =
     extractMailAddress(txt.trim) match {
@@ -81,6 +82,7 @@ object Utils {
             Left(Response.parameterUnrecognized(h))
         }
     }
+
     parametersToMap(seq, Map.empty)
 
   }
@@ -212,8 +214,11 @@ object Response {
 }
 
 object IOUtils extends StrictLogging {
+
   import sys.env
+
   val defaultHostName = "127.0.0.1"
+
   def hostnameFromEnvVariable(name: String): String = env.getOrElse(name, defaultHostName)
 
   def localHostName: String = Try(InetAddress.getLocalHost.getHostName).getOrElse(hostnameFromEnvVariable("HOSTNAME"))

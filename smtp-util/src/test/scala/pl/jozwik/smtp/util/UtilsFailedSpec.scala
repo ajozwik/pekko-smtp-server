@@ -29,61 +29,61 @@ class UtilsFailedSpec extends AbstractSpecScalaCheck {
   "UtilsFailedSpec " should {
 
     "Unbalanced brackets <<" in {
-      toMailAddress("<aa<a@pl>") should be('left)
+      toMailAddress("<aa<a@pl>") shouldBe Symbol("left")
     }
 
     "Unbalanced brackets >>" in {
-      toMailAddress("<aa>a@pl>") should be('left)
+      toMailAddress("<aa>a@pl>") shouldBe Symbol("left")
 
     }
 
     "Unbalanced bracket >" in {
-      toMailAddress("aa>a@pl") should be('left)
+      toMailAddress("aa>a@pl") shouldBe Symbol("left")
     }
 
     "Non domain address" in {
       val user = "ajozwik"
-      Utils.toMailAddress(s"<$user >") should be('left)
+      Utils.toMailAddress(s"<$user >") shouldBe Symbol("left")
     }
 
     "Unbalanced bracket <" in {
-      toMailAddress("aa<a@pl") should be('left)
+      toMailAddress("aa<a@pl") shouldBe Symbol("left")
     }
 
     "Unbalanced brackets <" in {
-      toMailAddress("<aaa@pl") should be('left)
+      toMailAddress("<aaa@pl") shouldBe Symbol("left")
     }
     "Unbalanced brackets >" in {
-      toMailAddress("aaa@pl>") should be('left)
+      toMailAddress("aaa@pl>") shouldBe Symbol("left")
     }
 
     "Empty mail address " in {
-      toMailAddress("") should be('left)
+      toMailAddress("") shouldBe Symbol("left")
     }
 
     "Empty mail address in brackets" in {
-      toMailAddress("<>") should be('left)
+      toMailAddress("<>") shouldBe Symbol("left")
     }
 
     "Unbalanced brackets << without parameter" in {
-      extractAddressAndParameters("<ajozw<ik@ok.pl>") should be('left)
+      extractAddressAndParameters("<ajozw<ik@ok.pl>") shouldBe Symbol("left")
     }
 
     "Unbalanced brackets >> without parameter" in {
-      extractAddressAndParameters("<ajozw>ik@ok.pl>") should be('left)
+      extractAddressAndParameters("<ajozw>ik@ok.pl>") shouldBe Symbol("left")
     }
 
     "Unbalanced bracket < without parameter" in {
-      extractAddressAndParameters("<ajozwik@ok.pl") should be('left)
+      extractAddressAndParameters("<ajozwik@ok.pl") shouldBe Symbol("left")
     }
 
     "Unbalanced bracket > without parameter" in {
-      extractAddressAndParameters("ajozwik@ok.pl>") should be('left)
+      extractAddressAndParameters("ajozwik@ok.pl>") shouldBe Symbol("left")
     }
 
     "No space" in {
       val either = extractAddressAndParameters("<ajozwik@ok.pl>SIZE=3")
-      either should be('left)
+      either shouldBe Symbol("left")
       either match {
         case Left(error) =>
           error should startWith(s"$SYNTAX_ERROR")

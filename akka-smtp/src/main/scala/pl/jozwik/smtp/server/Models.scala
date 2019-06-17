@@ -30,7 +30,6 @@ import pl.jozwik.smtp.util.Utils._
 import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 case class PropsWithName(props: Props, name: String)
 

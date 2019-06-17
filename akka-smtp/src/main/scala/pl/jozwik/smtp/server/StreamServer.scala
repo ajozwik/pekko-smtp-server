@@ -23,12 +23,11 @@ package pl.jozwik.smtp.server
 
 import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl._
-import akka.util.{ ByteString, Timeout }
+import akka.util.ByteString
 import akka.{ NotUsed, stream }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.SERVICE_READY
@@ -48,8 +47,6 @@ object StreamServer extends StrictLogging {
 
   private val address = "0.0.0.0"
 
-  implicit private final val timeout = Timeout(1, TimeUnit.SECONDS)
-
 }
 
 class StreamServer private (
@@ -59,6 +56,7 @@ class StreamServer private (
     system: ActorSystem,
     materializer: Materializer)
   extends AutoCloseable with StrictLogging {
+
   import IOUtils._
   import StreamServer._
 
