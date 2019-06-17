@@ -71,9 +71,9 @@ class UtilsSpec extends AbstractSpecScalaCheck {
             val address = s"$user@$domain"
             val mailAddress = Utils.toMailAddress(address)
             mailAddress match {
-              case Right(x) =>
+              case Right(_) =>
                 user.nonEmpty && domain.nonEmpty
-              case Left(x) =>
+              case Left(_) =>
                 !(user.nonEmpty && domain.nonEmpty)
               case _ =>
                 false

@@ -21,7 +21,7 @@
  */
 package pl.jozwik.smtp.util
 
-class UtilsFailedSpec extends AbstractSpecScalaCheck {
+class UtilsFailedSpec extends AbstractSpec {
 
   import Utils._
   import Constants._
