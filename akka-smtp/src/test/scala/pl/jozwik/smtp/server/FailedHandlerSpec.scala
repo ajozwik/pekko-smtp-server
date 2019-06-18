@@ -48,7 +48,7 @@ abstract class FailedHandlerSpec extends AbstractSmtpSpec {
     f.map(_ shouldBe a[FailedResult])
   }
 
-  private val emptyContent = EmailContent.txtOnlyWithoutSubject("")
+  private val emptyContent = EmailWithContent.txtOnlyWithoutSubject(Seq.empty, Seq.empty, "")
 
   "FailedHandler " should {
     "Always failed " in {

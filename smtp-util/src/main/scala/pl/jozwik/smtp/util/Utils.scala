@@ -28,7 +28,6 @@ import java.util.regex.Pattern
 
 import com.typesafe.scalalogging.StrictLogging
 
-import scala.collection.immutable.ArraySeq
 import scala.util.Try
 
 object Utils {
@@ -53,7 +52,7 @@ object Utils {
   }
 
   def splitOnWhiteSpaces(txt: String, limit: Int = 0): IndexedSeq[String] =
-    ArraySeq.unsafeWrapArray(WHITE_SPACES_PATTERN.split(txt, limit))
+    WHITE_SPACES_PATTERN.split(txt, limit)
 
   def extractAddressAndParameters(txt: String): Either[String, (String, Map[String, String])] =
     extractMailAddress(txt.trim) match {
@@ -140,7 +139,7 @@ object Utils {
 
   private def validateBrackets[T](
     withoutBrackets: String,
-    f: (String => Either[String, T])): Either[String, T] =
+    f: String => Either[String, T]): Either[String, T] =
     (withoutBrackets.contains(CLOSE_BRACKET), withoutBrackets.contains(OPEN_BRACKET)) match {
       case (true, _) =>
         Left(unbalanced(withoutBrackets, CLOSE_BRACKET))
@@ -174,7 +173,7 @@ object Utils {
         Right(addressWithBrackets)
     }
 
-  def extractMessage(lines: IndexedSeq[String]): EmailContent =
+  def extractMessage(lines: IndexedSeq[String]): EmailWithContent =
     MailParser.parse(lines.mkString)
 
 }

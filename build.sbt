@@ -10,7 +10,7 @@ val `scalaVersion_2.12` = "2.12.8"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
-scalaVersion in ThisBuild := `scalaVersion_2.13`
+scalaVersion in ThisBuild := `scalaVersion_2.12`
 
 organization in ThisBuild := "com.github.ajozwik"
 
@@ -70,7 +70,7 @@ def projectName(name: String, file: File): Project = Project(name, file).setting
     `org.scalatest_scalatest`,
     `org.scalacheck_scalacheck`
   ),
-  licenseReportTitle := "Copyright (c) 2018 Andrzej Jozwik",
+  licenseReportTitle := "Copyright (c) 2019 Andrzej Jozwik",
   licenseSelection := Seq(LicenseCategory.MIT),
   publishArtifact in(Compile, packageDoc) := false,
   sources in(Compile, doc) := Seq.empty,

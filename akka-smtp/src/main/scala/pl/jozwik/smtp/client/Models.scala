@@ -25,12 +25,12 @@ package client
 import akka.actor.ActorRef
 import pl.jozwik.smtp.util.{ Mail, SocketAddress }
 
-case class MailWithAddress(mail: Mail, address: SocketAddress)
+final case class MailWithAddress(mail: Mail, address: SocketAddress)
 
-case class Counter(senderRef: ActorRef, result: Result)
+final case class Counter(senderRef: ActorRef, result: Result)
 
 sealed trait Result
 
 case object SuccessResult extends Result
 
-case class FailedResult(error: String) extends Result
+final case class FailedResult(error: String) extends Result

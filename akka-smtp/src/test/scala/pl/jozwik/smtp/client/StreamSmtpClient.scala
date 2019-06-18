@@ -44,7 +44,7 @@ object StreamSmtpClient extends App with StrictLogging {
 
   val serverAddress = SocketAddress(address, port)
   val mailAddress = MailAddress("user", "domain.org")
-  val mail = Mail(mailAddress, Seq(mailAddress), EmailContent.txtOnly("My Subject", "Content"))
+  val mail = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
 
   import system.dispatcher
 

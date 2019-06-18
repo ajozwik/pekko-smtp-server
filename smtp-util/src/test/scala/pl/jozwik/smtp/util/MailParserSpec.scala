@@ -57,9 +57,10 @@ class MailParserSpec extends AbstractSpec {
     }
 
     "Create email " in {
-      val emailContent = EmailContent.txtOnly("--Subject--", "--Text--")
+      val emailContent = EmailWithContent.txtOnly(Seq.empty, Seq.empty, "--Subject--", "--Text--")
       val mail = MailParser.createTextMessage(Mail(mailAddress, Seq(mailAddress), emailContent))
       logger.debug(s"$mail")
     }
+
   }
 }

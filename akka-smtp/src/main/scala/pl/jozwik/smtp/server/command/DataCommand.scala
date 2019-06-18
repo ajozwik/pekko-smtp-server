@@ -37,7 +37,7 @@ object DataCommand extends StrictLogging {
 
   def readContent(line: String, stripped: String, accumulator: MailAccumulator,
     sizeHandler: SizeParameterHandler,
-    consumer: (Mail => Unit)): (MailAccumulator, ResponseMessage) =
+    consumer: Mail => Unit): (MailAccumulator, ResponseMessage) =
     if (isFinished(stripped)) {
       sendToHandler(accumulator, consumer)
     } else {
@@ -58,7 +58,7 @@ object DataCommand extends StrictLogging {
         (accumulator.copy(readData = READ_DATA), START_INPUT)
     }
 
-  private def sendToHandler(accumulator: MailAccumulator, consumer: (Mail => Unit)) = {
+  private def sendToHandler(accumulator: MailAccumulator, consumer: Mail => Unit) = {
     val emailContent = extractMessage(accumulator.content.content)
     val mail = Mail(accumulator.from, accumulator.to, emailContent)
     logger.debug(s"Send to handler $mail")

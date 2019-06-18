@@ -36,7 +36,7 @@ import scala.concurrent.Future
 class SmtpClientFailSpec extends AbstractSmtpSpec {
 
   private val from = MailAddress("ajozwik", "aa")
-  private val mail = Mail(from, Seq(from), EmailContent.txtOnlyWithoutSubject(""))
+  private val mail = Mail(from, Seq(from), EmailWithContent.txtOnlyWithoutSubject(Seq.empty, Seq.empty, ""))
   private val fakePort = notOccupiedPortNumber
   private val serverAddress = new InetSocketAddress(fakePort)
   private val fakeServerActor = actorSystem.actorOf(FakeSmtpActor.props(serverAddress))

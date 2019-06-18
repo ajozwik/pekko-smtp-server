@@ -1,18 +1,18 @@
                                                                                                                                                                                                                                                                
-Delivered-To: andrzej.jozwik@gmail.com
+Delivered-To: akka.mail@gmail.com
 Received: by 10.27.186.65 with SMTP id k62csp63019wlf;
         Fri, 19 Feb 2016 14:27:56 -0800 (PST)
 X-Received: by 10.60.227.74 with SMTP id ry10mr13681337oec.48.1455920875968;
         Fri, 19 Feb 2016 14:27:55 -0800 (PST)
-Return-Path: <bounces+778210-c28c-andrzej.jozwik=gmail.com@sendgrid.net>
+Return-Path: <bounces+778210-c28c-akka.mail=gmail.com@sendgrid.net>
 Received: from o1678910x181.outbound-mail.sendgrid.net (o1678910x181.outbound-mail.sendgrid.net. [167.89.10.181])
         by mx.google.com with ESMTPS id m3si18776528oib.141.2016.02.19.14.27.55
-        for <andrzej.jozwik@gmail.com>
+        for <akka.mail@gmail.com>
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
         Fri, 19 Feb 2016 14:27:55 -0800 (PST)
-Received-SPF: pass (google.com: domain of bounces+778210-c28c-andrzej.jozwik=gmail.com@sendgrid.net designates 167.89.10.181 as permitted sender) client-ip=167.89.10.181;
+Received-SPF: pass (google.com: domain of bounces+778210-c28c-akka.mail=gmail.com@sendgrid.net designates 167.89.10.181 as permitted sender) client-ip=167.89.10.181;
 Authentication-Results: mx.google.com;
-       spf=pass (google.com: domain of bounces+778210-c28c-andrzej.jozwik=gmail.com@sendgrid.net designates 167.89.10.181 as permitted sender) smtp.mailfrom=bounces+778210-c28c-andrzej.jozwik=gmail.com@sendgrid.net;
+       spf=pass (google.com: domain of bounces+778210-c28c-akka.mail=gmail.com@sendgrid.net designates 167.89.10.181 as permitted sender) smtp.mailfrom=bounces+778210-c28c-akka.mail=gmail.com@sendgrid.net;
        dkim=pass header.i=@sendgrid.me
 DKIM-Signature: v=1; a=rsa-sha1; c=relaxed; d=sendgrid.me; 
 	h=from:sender:reply-to:to:subject:mime-version:content-type:x-feedback-id; 
@@ -24,12 +24,12 @@ Received: by filter0691p1mdw1.sendgrid.net with SMTP id filter0691p1mdw1.19512.5
         2016-02-19 22:27:53.574869342 +0000 UTC
 Received: from 04fa7fe20920 (ec2-52-49-236-219.eu-west-1.compute.amazonaws.com [52.49.236.219])
 	by ismtpd0003p1lon1.sendgrid.net (SG) with ESMTP id B0fYgONXTI2lv89_Qmr3mQ
-	for <andrzej.jozwik@gmail.com>; Fri, 19 Feb 2016 22:27:53.542 +0000 (UTC)
+	for <akka.mail@gmail.com>; Fri, 19 Feb 2016 22:27:53.542 +0000 (UTC)
 Date: Fri, 19 Feb 2016 22:27:53 +0000 (UTC)
 From: Codacy <notification@codacy.com>
 Sender: Codacy <notification@codacy.com>
 Reply-To: Codacy <notification@codacy.com>
-To: andrzej.jozwik@gmail.com
+To: akka.mail@gmail.com
 Message-ID: <1509874797.1691.1455920873566.JavaMail.root@04fa7fe20920>
 Subject: akka-smtp-server/master has new results
 MIME-Version: 1.0
@@ -99,7 +99,7 @@ table { font-size:1px; line-height:0; mso-margin-top-alt:1px;mso-line-height-rul
     <img src="https://secure.gravatar.com/avatar/bb1c10e76b3b540abcc2bf4889a0e52f?s=256&d=retro" alt="Avatar" width="40" height="40" style="border-radius:50%">
 </td>
                    <td style="font-family:Arial;line-height:18px;" align="left">
-                       <strong style="font-weight: bold; color=#000;">andrzej.jozwik@gmail.com</strong> commited <a href=https://u778210.ct.sendgrid.net/wf/click?upn=liTJw24Vxo6SjoUA-2B0mVU5OGzs7RT5rrhwfKHv8TQUACI-2F-2BkUJF2TFPORKe70uYdPCDxXe80x-2B47dhWM-2Bpd1f4vm7wXOYnwg7TE5zPqfVocN8AWxRggPSbCEu-2Bvw1I3oGpvLLuTHGWkc3WnpmY9HjTrdRhxSF1LMN5n0FAfCn3EN7ZD8ZUhasvXgFb5ajBx8VRkmsm6F6cspi3Ptky-2Fx5NzpzrDgA5czymAnkbe2uJU-3D_iTnD3tMTJykwZ0il63yEWHZqEKi7h6H-2FPtiXMTFSL6TgONwWYHCWKL-2BgleWqrx2gW-2F8tSq8BojTjTohf3i90UYTLVShYq0wbDNm53I-2F-2F7meiYq4jNnENp9qGy8ZWB0V64-2F17w4xea5b-2BsNx9zaKmOXbL-2Fme-2B9StwOcw-2BWuFEFLh-2FiOMOkAHLbSzHf6bm3esrKKrW0jaoW1UcY25w0dpqdRSVnxQb0FdL7QYwRHVizPo-3D"link" style="color:#00a1cc; font-family:Arial; text-decoration:none">9649510</a>
+                       <strong style="font-weight: bold; color=#000;">akka.mail@gmail.com</strong> commited <a href=https://u778210.ct.sendgrid.net/wf/click?upn=liTJw24Vxo6SjoUA-2B0mVU5OGzs7RT5rrhwfKHv8TQUACI-2F-2BkUJF2TFPORKe70uYdPCDxXe80x-2B47dhWM-2Bpd1f4vm7wXOYnwg7TE5zPqfVocN8AWxRggPSbCEu-2Bvw1I3oGpvLLuTHGWkc3WnpmY9HjTrdRhxSF1LMN5n0FAfCn3EN7ZD8ZUhasvXgFb5ajBx8VRkmsm6F6cspi3Ptky-2Fx5NzpzrDgA5czymAnkbe2uJU-3D_iTnD3tMTJykwZ0il63yEWHZqEKi7h6H-2FPtiXMTFSL6TgONwWYHCWKL-2BgleWqrx2gW-2F8tSq8BojTjTohf3i90UYTLVShYq0wbDNm53I-2F-2F7meiYq4jNnENp9qGy8ZWB0V64-2F17w4xea5b-2BsNx9zaKmOXbL-2Fme-2B9StwOcw-2BWuFEFLh-2FiOMOkAHLbSzHf6bm3esrKKrW0jaoW1UcY25w0dpqdRSVnxQb0FdL7QYwRHVizPo-3D"link" style="color:#00a1cc; font-family:Arial; text-decoration:none">9649510</a>
                        <br>
                        <span style="color:#666; font-size:12px;">19 Feb 2016 - 10:26:39PM</span>
                    </td>

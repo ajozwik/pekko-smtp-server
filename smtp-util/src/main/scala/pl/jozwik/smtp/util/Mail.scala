@@ -25,30 +25,42 @@ object MailAddress {
   val empty = MailAddress("", "")
 }
 
-case class MailAddress(user: String, domain: String) {
+final case class MailAddress(user: String, domain: String) {
   def isEmpty: Boolean = user.isEmpty
 
   override def toString: String = s"$user@$domain"
 }
 
-case class Attachment(fileName: String, content: Array[Byte])
+final case class Attachment(fileName: String, content: Array[Byte])
 
-object EmailContent {
-  def txtOnlyWithoutSubject(txtBody: String): EmailContent =
-    EmailContent(None, Option(txtBody), None, Seq.empty)
+object EmailWithContent {
+  def txtOnlyWithoutSubject(
+    from: Seq[MailAddress],
+    to: Seq[MailAddress],
+    txtBody: String): EmailWithContent =
+    EmailWithContent(from, to, None, Option(txtBody), None, Seq.empty)
 
-  def txtOnly(subject: String, txtBody: String): EmailContent =
-    EmailContent(Option(subject), Option(txtBody), None, Seq.empty)
+  def txtOnly(
+    from: Seq[MailAddress],
+    to: Seq[MailAddress],
+    subject: String, txtBody: String): EmailWithContent =
+    EmailWithContent(from, to, Option(subject), Option(txtBody), None, Seq.empty)
 }
 
-case class EmailContent(subject: Option[String], txtBody: Option[String], htmlBody: Option[String], attachments: Seq[Attachment])
+final case class EmailWithContent(
+    from: Seq[MailAddress],
+    to: Seq[MailAddress],
+    subject: Option[String],
+    txtBody: Option[String],
+    htmlBody: Option[String],
+    attachments: Seq[Attachment])
 
-case class Mail(from: MailAddress, to: Seq[MailAddress], emailContent: EmailContent)
+final case class Mail(from: MailAddress, to: Seq[MailAddress], emailContent: EmailWithContent)
 
-case class SocketAddress(host: String, port: Int)
+final case class SocketAddress(host: String, port: Int)
 
 sealed trait ConsumedResult
 
 case object SuccessfulConsumed extends ConsumedResult
 
-case class FailedConsumed(error: String) extends ConsumedResult
+final case class FailedConsumed(error: String) extends ConsumedResult

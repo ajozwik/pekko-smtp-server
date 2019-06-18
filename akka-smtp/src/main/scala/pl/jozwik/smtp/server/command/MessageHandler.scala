@@ -53,8 +53,8 @@ object MessageHandler {
 
 }
 
-case class MessageHandler(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
-    remote: InetSocketAddress, consumer: (Mail => Unit)) {
+final case class MessageHandler(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
+    remote: InetSocketAddress, consumer: Mail => Unit) {
 
   import MessageHandler._
 

@@ -31,32 +31,32 @@ import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
 
 import scala.concurrent.duration._
 
-case class PropsWithName(props: Props, name: String)
+final case class PropsWithName(props: Props, name: String)
 
-case class Configuration(port: Int, size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE, readTimeout: FiniteDuration = 1 hour)
+final case class Configuration(port: Int, size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE, readTimeout: FiniteDuration = 1 hour)
 
 private[server] case object TickTimeout
 
-case class Content(content: IndexedSeq[String] = IndexedSeq.empty[String], size: Int = 0)
+final case class Content(content: IndexedSeq[String] = IndexedSeq.empty[String], size: Int = 0)
 
 sealed trait ResponseMessage
 
-case class MultiLineResponse(message: Seq[String]) extends ResponseMessage
+final case class MultiLineResponse(message: Seq[String]) extends ResponseMessage
 
-case class TextResponse(message: String) extends ResponseMessage
+final case class TextResponse(message: String) extends ResponseMessage
 
 case object NoResponse extends ResponseMessage
 
 case object NoDataResponse extends ResponseMessage
 
-case class QuitResponse(message: String) extends ResponseMessage
+final case class QuitResponse(message: String) extends ResponseMessage
 
 object MailAccumulator {
   val empty = MailAccumulator(NEED_HELLO)
   val withHello = MailAccumulator(!NEED_HELLO)
 }
 
-case class MailAccumulator(
+final case class MailAccumulator(
     needHello: Boolean = false,
     from: MailAddress = MailAddress.empty,
     to: Seq[MailAddress] = Seq.empty[MailAddress],

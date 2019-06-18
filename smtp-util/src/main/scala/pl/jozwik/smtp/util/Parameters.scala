@@ -66,7 +66,7 @@ object SizeParameterHandler {
   val DEFAULT_MAIL_SIZE = 1024L * 1024
 }
 
-case class SizeParameterHandler(size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE) extends ParameterHandler {
+final case class SizeParameterHandler(size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE) extends ParameterHandler {
   val key = "SIZE"
 
   def validate(t: String): Either[String, Unit] =
