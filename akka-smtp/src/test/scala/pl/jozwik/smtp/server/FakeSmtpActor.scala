@@ -30,7 +30,7 @@ import pl.jozwik.smtp.AkkaUtils._
 import pl.jozwik.smtp.util.Constants._
 
 object FakeSmtpActor {
-  def props(bindAddress: InetSocketAddress): Props = Props(classOf[FakeSmtpActor], bindAddress)
+  def props(bindAddress: InetSocketAddress): Props = Props(new FakeSmtpActor(bindAddress))
 }
 
 class FakeSmtpActor(bindAddress: InetSocketAddress) extends AbstractSmtpActor(bindAddress) {

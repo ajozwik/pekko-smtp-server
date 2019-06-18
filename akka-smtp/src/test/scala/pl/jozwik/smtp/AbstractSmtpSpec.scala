@@ -45,12 +45,12 @@ trait ActorSpec extends StrictLogging {
 
   import ActorSpec._
 
-  protected implicit val actorSystem = ActorSystem(
+  protected implicit val actorSystem: ActorSystem = ActorSystem(
     s"test-${number.next()}",
     ConfigFactory.parseResources("application-test.conf"))
 
   private val TIMEOUT = 3000
-  protected implicit val timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
+  protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
 
 }
 
@@ -89,9 +89,9 @@ trait SmtpSpec extends ActorSpec {
 
   protected def addressHandler: AddressHandler = NopAddressHandler
 
-  protected implicit val materializer = ActorMaterializer()
+  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
   protected final val clientStream: StreamClient = new StreamClient(host, configuration.port)
-  protected implicit val address = SocketAddress(host, configuration.port)
+  protected implicit val address: SocketAddress = SocketAddress(host, configuration.port)
   protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
 }
 

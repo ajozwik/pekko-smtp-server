@@ -23,13 +23,15 @@ package pl.jozwik.smtp
 package client
 
 import java.io.OutputStreamWriter
-import java.net.{ InetSocketAddress, Socket }
+import java.net.{ InetSocketAddress, ServerSocket, Socket }
 
 import pl.jozwik.smtp.server.FakeSmtpActor
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
 import pl.jozwik.smtp.util.Utils._
 import pl.jozwik.smtp.util._
+
+import scala.concurrent.Future
 
 class SmtpClientFailSpec extends AbstractSmtpSpec {
 
@@ -38,6 +40,7 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
   private val fakePort = notOccupiedPortNumber
   private val serverAddress = new InetSocketAddress(fakePort)
   private val fakeServerActor = actorSystem.actorOf(FakeSmtpActor.props(serverAddress))
+  private val bufferSize = 4096
 
   "Client " should {
     "Restart " in {
@@ -62,6 +65,33 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
       writer.flush()
       socket.close()
       socket.isClosed shouldBe true
+    }
+
+    "Expected codes not in response " in {
+      val serverSocket = new ServerSocket(0)
+      serverSocket.setReuseAddress(true)
+      Future {
+        val socket = serverSocket.accept()
+        val writer = new OutputStreamWriter(socket.getOutputStream)
+        val reader = socket.getInputStream
+        val array = new Array[Byte](bufferSize)
+        reader.read(array)
+        logger.debug(s"${new String(array)}")
+        writer.write(withEndOfLine(s"$SMTP_OK"))
+        writer.flush()
+        socket.close()
+        socket.isClosed shouldBe true
+
+      }
+      val client = new StreamClient(serverAddress.getHostName, serverSocket.getLocalPort)
+      val future = client.sendMail(mail)
+      future.map { r =>
+
+        r shouldBe a[FailedResult]
+      }.recover {
+        case e =>
+          fail(e)
+      }
     }
 
     "Unhandled " in {

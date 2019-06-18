@@ -77,7 +77,10 @@ class StreamServer private (
       val logic = b.add(Flow[ByteString]
         .via(Framing.delimiter(ByteString(Constants.delimiter), Constants.maximumFrameLength, allowTruncation = true))
         .map(_.utf8String)
-        .map { msg => logger.debug(s"Server received: $msg"); msg + Constants.delimiter }
+        .map { msg =>
+          logger.debug(s"Server received: $msg")
+          msg + Constants.delimiter
+        }
         .via(handler(conn.remoteAddress, configuration.readTimeout))
         .map(ByteString.apply))
 
