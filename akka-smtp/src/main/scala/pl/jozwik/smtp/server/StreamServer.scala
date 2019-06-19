@@ -70,10 +70,10 @@ class StreamServer private (
   private def serverLogic(conn: Tcp.IncomingConnection): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
+      val date = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
       val welcome = Source.single(ByteString(
-        Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER ${
-          DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
-        }")))
+        Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $date")))
+
       val logic = b.add(Flow[ByteString]
         .via(Framing.delimiter(ByteString(Constants.delimiter), Constants.maximumFrameLength, allowTruncation = true))
         .map(_.utf8String)

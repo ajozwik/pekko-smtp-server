@@ -22,9 +22,11 @@
 package pl.jozwik.smtp.server
 
 import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
 import akka.stream
+import akka.stream.FlowShape
 import akka.stream.stage._
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.command.MessageHandler
@@ -40,9 +42,7 @@ object SmtpTimerGraphStageLogic {
 }
 
 class SmtpTimerGraphStageLogic(
-    shape: stream.Shape,
-    in: stream.Inlet[String],
-    out: stream.Outlet[String],
+    shape: stream.FlowShape[String, String],
     addressHandler: AddressHandler,
     sizeHandler: SizeParameterHandler,
     localHostName: String,
@@ -53,13 +53,41 @@ class SmtpTimerGraphStageLogic(
 
   import SmtpTimerGraphStageLogic._
 
-  private def pushWithEndOfLine(message: String) = {
-    push(out, Utils.withEndOfLine(message))
+  private val in = shape.in
+  private val out = shape.out
+
+  private val accumulator = new AtomicReference(MailAccumulator.empty)
+
+  private val messageHandler = MessageHandler(addressHandler, sizeHandler, localHostName, remote, mail => {
+    import system.dispatcher
+    consumer(mail).foreach {
+      response => scheduleOnce(response, IMMEDIATELY)
+    }
+  })
+
+  private val inHandler = new InHandler {
+
+    override def onPush(): Unit = {
+      val line = grab[String](in)
+      val stripped = line.stripLineEnd
+      val (acc, response) = messageHandler.handleMessage(line, stripped, accumulator.get())
+
+      handleResponse(response)
+      accumulator.set(acc)
+    }
   }
 
-  private def pullAndResetTimer(): Unit = {
-    pull(in)
-    scheduleOnce(TickTimeout, readTimeout)
+  private val outHandler = new OutHandler {
+    override def onPull(): Unit = {
+      pullAndResetTimer()
+    }
+  }
+  setHandler(in, inHandler)
+  setHandler(out, outHandler)
+
+  override def postStop(): Unit = {
+    cancelTimer(TickTimeout)
+    super.postStop()
   }
 
   override protected def onTimer(tk: Any): Unit = tk match {
@@ -74,47 +102,30 @@ class SmtpTimerGraphStageLogic(
 
   }
 
-  private var accumulator = MailAccumulator.empty
-
-  private val messageHandler = MessageHandler(addressHandler, sizeHandler, localHostName, remote, mail => {
-    import system.dispatcher
-    consumer(mail).foreach {
-      response => scheduleOnce(response, IMMEDIATELY)
+  private def handleResponse(response: ResponseMessage): Unit = {
+    response match {
+      case TextResponse(command) =>
+        pushWithEndOfLine(command)
+      case NoDataResponse =>
+        pullAndResetTimer()
+      case QuitResponse(command) =>
+        pushWithEndOfLine(command)
+        completeStage()
+      case MultiLineResponse(lines) =>
+        push(out, lines.map(Utils.withEndOfLine).mkString)
+      case NoResponse =>
     }
-  })
-
-  setHandler(in, new InHandler {
-
-    override def onPush(): Unit = {
-      val line = grab[String](in)
-      val stripped = line.stripLineEnd
-      val (acc, response) = messageHandler.handleMessage(line, stripped, accumulator)
-
-      response match {
-        case TextResponse(command) =>
-          pushWithEndOfLine(command)
-        case NoDataResponse =>
-          pullAndResetTimer()
-        case QuitResponse(command) =>
-          pushWithEndOfLine(command)
-          completeStage()
-        case MultiLineResponse(lines) =>
-          push(out, lines.map(Utils.withEndOfLine).mkString)
-        case NoResponse =>
-      }
-      accumulator = acc
-    }
-  })
-  setHandler(out, new OutHandler {
-    override def onPull(): Unit = {
-      pullAndResetTimer()
-    }
-  })
-
-  override def postStop(): Unit = {
-    cancelTimer(TickTimeout)
-    super.postStop()
   }
+
+  private def pushWithEndOfLine(message: String): Unit = {
+    push(out, Utils.withEndOfLine(message))
+  }
+
+  private def pullAndResetTimer(): Unit = {
+    pull(in)
+    scheduleOnce(TickTimeout, readTimeout)
+  }
+
 }
 
 class SmtpGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
@@ -122,12 +133,13 @@ class SmtpGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterH
     readTimeout: FiniteDuration)(implicit system: ActorSystem) extends GraphStage[stream.FlowShape[String, String]]
   with StrictLogging {
 
-  private val in = stream.Inlet[String]("smtp.in")
-  private val out = stream.Outlet[String]("smtp.out")
-
-  override val shape = stream.FlowShape(in, out)
+  override val shape: FlowShape[String, String] = {
+    val in = stream.Inlet[String]("smtp.in")
+    val out = stream.Outlet[String]("smtp.out")
+    stream.FlowShape(in, out)
+  }
 
   override def createLogic(inheritedAttributes: stream.Attributes): GraphStageLogic =
-    new SmtpTimerGraphStageLogic(shape, in, out, addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
+    new SmtpTimerGraphStageLogic(shape, addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
 
 }
