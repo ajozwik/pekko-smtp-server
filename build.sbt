@@ -1,4 +1,4 @@
-//import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
+import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 import scalariform.formatter.preferences._
 
 
@@ -6,7 +6,7 @@ val `scalaVersion_2.13` = "2.13.0"
 
 val `scalaVersion_2.12` = "2.12.8"
 
-// scapegoatVersion in ThisBuild := "1.3.8"
+scapegoatVersion in ThisBuild := "1.3.9"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
