@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
 import akka.stream
-import akka.stream.FlowShape
 import akka.stream.stage._
+import akka.stream.{ FlowShape, Inlet, Outlet }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.command.MessageHandler
 import pl.jozwik.smtp.util.Constants._
@@ -53,9 +53,6 @@ class SmtpTimerGraphStageLogic(
 
   import SmtpTimerGraphStageLogic._
 
-  private val in = shape.in
-  private val out = shape.out
-
   private val accumulator = new AtomicReference(MailAccumulator.empty)
 
   private val messageHandler = MessageHandler(addressHandler, sizeHandler, localHostName, remote, mail => {
@@ -65,49 +62,53 @@ class SmtpTimerGraphStageLogic(
     }
   })
 
-  private val inHandler = new InHandler {
-
-    override def onPush(): Unit = {
-      val line = grab[String](in)
-      val stripped = line.stripLineEnd
-      val (acc, response) = messageHandler.handleMessage(line, stripped, accumulator.get())
-
-      handleResponse(response)
-      accumulator.set(acc)
-    }
-  }
-
-  private val outHandler = new OutHandler {
-    override def onPull(): Unit = {
-      pullAndResetTimer()
-    }
-  }
-  setHandler(in, inHandler)
-  setHandler(out, outHandler)
+  setHandler(shape.in, inHandler(shape.in, shape.out))
+  setHandler(shape.out, outHandler(shape.in))
 
   override def postStop(): Unit = {
     cancelTimer(TickTimeout)
     super.postStop()
   }
 
-  override protected def onTimer(tk: Any): Unit = tk match {
-    case SuccessfulConsumed =>
-      pushWithEndOfLine(Constants.SMTP_OK)
-    case FailedConsumed(error) =>
-      logger.error(s"$error")
-      pushWithEndOfLine(s"$TRANSACTION_FAILED $error")
-    case `TickTimeout` =>
-      pushWithEndOfLine(Errors.serviceNotAvailable(localHostName, readTimeout.toSeconds))
-      failStage(new RuntimeException("Service timeout"))
+  override protected def onTimer(tk: Any): Unit =
+    handleTimeout(tk)(shape.out)
 
+  private def inHandler(implicit in: Inlet[String], out: Outlet[String]) =
+    new InHandler {
+      override def onPush(): Unit = {
+        val line = grab[String](in)
+        val stripped = line.stripLineEnd
+        val (acc, response) = messageHandler.handleMessage(line, stripped, accumulator.get())
+
+        handleResponse(response)
+        accumulator.set(acc)
+      }
+    }
+
+  private def outHandler(in: Inlet[String]) = new OutHandler {
+    override def onPull(): Unit = {
+      pullAndResetTimer(in)
+    }
   }
 
-  private def handleResponse(response: ResponseMessage): Unit = {
+  private def handleTimeout(tk: Any)(implicit out: Outlet[String]): Unit =
+    tk match {
+      case SuccessfulConsumed =>
+        pushWithEndOfLine(Constants.SMTP_OK)
+      case FailedConsumed(error) =>
+        logger.error(s"$error")
+        pushWithEndOfLine(s"$TRANSACTION_FAILED $error")
+      case `TickTimeout` =>
+        pushWithEndOfLine(Errors.serviceNotAvailable(localHostName, readTimeout.toSeconds))
+        failStage(new RuntimeException("Service timeout"))
+    }
+
+  private def handleResponse(response: ResponseMessage)(implicit in: Inlet[String], out: Outlet[String]): Unit = {
     response match {
       case TextResponse(command) =>
         pushWithEndOfLine(command)
       case NoDataResponse =>
-        pullAndResetTimer()
+        pullAndResetTimer
       case QuitResponse(command) =>
         pushWithEndOfLine(command)
         completeStage()
@@ -117,11 +118,11 @@ class SmtpTimerGraphStageLogic(
     }
   }
 
-  private def pushWithEndOfLine(message: String): Unit = {
+  private def pushWithEndOfLine(message: String)(implicit out: Outlet[String]): Unit = {
     push(out, Utils.withEndOfLine(message))
   }
 
-  private def pullAndResetTimer(): Unit = {
+  private def pullAndResetTimer(implicit in: Inlet[String]): Unit = {
     pull(in)
     scheduleOnce(TickTimeout, readTimeout)
   }
