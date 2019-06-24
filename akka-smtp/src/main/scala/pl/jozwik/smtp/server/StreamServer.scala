@@ -67,7 +67,7 @@ class StreamServer private (
   private def handler(remote: InetSocketAddress, readTimeout: FiniteDuration) =
     new SmtpGraphStage(addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
 
-  private def serverLogic(conn: Tcp.IncomingConnection): Flow[ByteString, ByteString, NotUsed] =
+  private def serverLogic(remoteAddress: InetSocketAddress): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
       val date = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
@@ -79,9 +79,9 @@ class StreamServer private (
         .map(_.utf8String)
         .map { msg =>
           logger.debug(s"Server received: $msg")
-          msg + Constants.delimiter
+          s"$msg${Constants.delimiter}"
         }
-        .via(handler(conn.remoteAddress, configuration.readTimeout))
+        .via(handler(remoteAddress, configuration.readTimeout))
         .map(ByteString.apply))
 
       val concat = b.add(Concat[ByteString]())
@@ -93,8 +93,9 @@ class StreamServer private (
 
   private val connectionHandler = Sink.foreach[Tcp.IncomingConnection] {
     conn =>
-      logger.debug(s"Incoming connection from: ${conn.remoteAddress}")
-      conn.handleWith(serverLogic(conn))
+      val remoteAddress = conn.remoteAddress
+      logger.debug(s"Incoming connection from: $remoteAddress")
+      conn.handleWith(serverLogic(remoteAddress))
       ()
   }
   private val incomingConnections = Tcp().bind(address, port)
