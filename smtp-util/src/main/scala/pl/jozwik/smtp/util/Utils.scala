@@ -181,6 +181,7 @@ object Utils {
 object RuntimeConstants {
   val portKey = "smtp.port"
   val sizeKey = "smtp.size"
+  val consumerClass = "consumer.class"
 }
 
 object Response {

@@ -23,25 +23,19 @@ package pl.jozwik.smtp
 package server
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import com.typesafe.scalalogging.StrictLogging
+import akka.stream.{ ActorMaterializer, Materializer }
+import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Try
 
 object NopAddressHandler extends AddressHandler {
 
   def acceptFrom(from: MailAddress): Boolean = true
 
   def acceptTo(from: MailAddress): Boolean = true
-}
-
-object LogConsumer extends StrictLogging {
-  def consumer(mail: Mail): Future[ConsumedResult] = {
-    logger.debug(s"$mail")
-    Future.successful(SuccessfulConsumed)
-  }
 }
 
 object Main extends App {
@@ -52,12 +46,19 @@ object Main extends App {
 
   private val size = java.lang.Long.getLong(RuntimeConstants.sizeKey, SizeParameterHandler.DEFAULT_MAIL_SIZE) // max mail size
 
-  private implicit val system = ActorSystem(s"SMTP$port") // Actor system
+  private val consumer = Try {
+    val className = System.getProperty(RuntimeConstants.consumerClass, LogConsumer.getClass.getName)
+    Class.forName(className).getConstructors
+  }
 
-  private implicit val m = ActorMaterializer()
+  private val logConsumer: Mail => Future[ConsumedResult] = LogConsumer.consumer
+
+  private implicit val system: ActorSystem = ActorSystem(s"SMTP$port") // Actor system
+
+  private implicit val m: Materializer = ActorMaterializer()
 
   private val configuration = Configuration(port, size, 2.minutes)
 
-  val server = StreamServer(LogConsumer.consumer, configuration, NopAddressHandler) // NopAddressHandler - accepts all mail addresses
+  val server = StreamServer(logConsumer, configuration, NopAddressHandler) // NopAddressHandler - accepts all mail addresses
 
 }

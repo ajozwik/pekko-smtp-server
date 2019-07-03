@@ -11,4 +11,11 @@ For minimal usage you need to provide `consumer` method with signature (Mail=>Fu
 
 [AddressHandler.scala](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is optional implementation for fail fast address resolution (blacklist).
 
-Example of usage (with dummy consumer - just send to log mail object) in [Main.scala](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/Main.scala)
+Usage:
+Implement trait [Consumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala)
+
+Example implementation:
+[LogConsumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/LogConsumer.scala)
+
+Pack project:
+> sbt pack

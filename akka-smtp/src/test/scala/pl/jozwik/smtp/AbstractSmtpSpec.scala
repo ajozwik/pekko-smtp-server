@@ -32,6 +32,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
 import pl.jozwik.smtp.client.StreamClient
 import pl.jozwik.smtp.server._
+import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.duration._
