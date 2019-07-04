@@ -17,5 +17,11 @@ Implement trait [Consumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consu
 Example implementation:
 [LogConsumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/LogConsumer.scala)
 
-Pack project:
+Example usage:
+
+ - Pack project
 > sbt pack
+ - Provide [Consumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala) implementation ([FileLogConsumer](/akka-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/FileLogConsumer.scala) in example)
+> akka-smtp/target/pack/bin/main -Dconsumer.class=pl.jozwik.smtp.server.consumer.FileLogConsumer
+
+ - or use project as dependency and provide own Main class 

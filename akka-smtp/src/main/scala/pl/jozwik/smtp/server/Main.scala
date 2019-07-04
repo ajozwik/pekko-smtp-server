@@ -24,12 +24,13 @@ package server
 
 import akka.actor.ActorSystem
 import akka.stream.{ ActorMaterializer, Materializer }
-import pl.jozwik.smtp.server.consumer.LogConsumer
+import com.typesafe.scalalogging.StrictLogging
+import pl.jozwik.smtp.server.consumer.{ Consumer, LogConsumer }
 import pl.jozwik.smtp.util._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 
 object NopAddressHandler extends AddressHandler {
 
@@ -38,7 +39,7 @@ object NopAddressHandler extends AddressHandler {
   def acceptTo(from: MailAddress): Boolean = true
 }
 
-object Main extends App {
+object Main extends App with StrictLogging {
 
   private val defaultPort = 1587
 
@@ -48,10 +49,17 @@ object Main extends App {
 
   private val consumer = Try {
     val className = System.getProperty(RuntimeConstants.consumerClass, LogConsumer.getClass.getName)
-    Class.forName(className).getConstructors
+    Class.forName(className).getConstructor().newInstance().asInstanceOf[Consumer]
   }
 
-  private val logConsumer: Mail => Future[ConsumedResult] = LogConsumer.consumer
+  private val logConsumer: Mail => Future[ConsumedResult] = consumer match {
+    case Success(c) =>
+      logger.debug(s"$c")
+      c.consumer
+    case Failure(th) =>
+      logger.error(s"$LogConsumer", th)
+      LogConsumer.consumer
+  }
 
   private implicit val system: ActorSystem = ActorSystem(s"SMTP$port") // Actor system
 

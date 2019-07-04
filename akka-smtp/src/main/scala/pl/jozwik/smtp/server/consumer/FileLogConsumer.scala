@@ -7,7 +7,9 @@ import pl.jozwik.smtp.util.{ ConsumedResult, Mail, SuccessfulConsumed }
 
 import scala.concurrent.Future
 
-object FileLogConsumer extends AbstractConsumer {
+object FileLogConsumer extends FileLogConsumer
+
+class FileLogConsumer extends AbstractConsumer {
 
   private val tmpDir = new File(System.getProperty("java.io.tmpdir"))
   private val counter = new AtomicInteger(0)
