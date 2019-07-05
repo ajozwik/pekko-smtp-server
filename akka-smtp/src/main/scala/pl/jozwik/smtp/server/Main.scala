@@ -48,7 +48,8 @@ object Main extends App with StrictLogging {
   private val size = java.lang.Long.getLong(RuntimeConstants.sizeKey, SizeParameterHandler.DEFAULT_MAIL_SIZE) // max mail size
 
   private val consumer = Try {
-    val className = System.getProperty(RuntimeConstants.consumerClass, LogConsumer.getClass.getName)
+    val className = System.getProperty(RuntimeConstants.consumerClass, classOf[LogConsumer].getName)
+    logger.debug(s"$className")
     Class.forName(className).getConstructor().newInstance().asInstanceOf[Consumer]
   }
 

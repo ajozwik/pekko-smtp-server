@@ -23,9 +23,16 @@ package pl.jozwik.smtp
 package server
 
 import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
+import pl.jozwik.smtp.server.consumer.FileLogConsumer
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
 import pl.jozwik.smtp.util._
+
+class SmtpServerFailFileSpec extends AbstractSmtpServerSpec {
+  System.setProperty(RuntimeConstants.consumerClass, classOf[FileLogConsumer].getName)
+}
+
+class SmtpServerFailSpec extends AbstractSmtpServerSpec
 
 abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAfter with BeforeAndAfterAll with SocketSpec {
   val port: Int = TestUtils.notOccupiedPortNumber
@@ -33,10 +40,10 @@ abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAf
   protected val sizeOfMailBody: Int = 10 * 1000
   System.setProperty(RuntimeConstants.portKey, port.toString)
   System.setProperty(RuntimeConstants.sizeKey, sizeOfMailBody.toString)
-  Main.main(Array())
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    Main.main(Array())
     logger.debug(s"${readAnswer(reader)}")
   }
 
@@ -68,10 +75,6 @@ abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAf
     writeLineAndValidateAnswer(s"$EHLO localhost", REQUEST_COMPLETE)
   }
 
-}
-
-class SmtpServerFailSpec extends AbstractSmtpServerSpec {
-
   "SmtpServer " should {
 
     s"$EHLO needed" in {
@@ -88,6 +91,10 @@ class SmtpServerFailSpec extends AbstractSmtpServerSpec {
       writeLineAndValidateAnswer(s"$DATA", BAD_SEQUENCE_OF_COMMANDS)
       writeLineAndValidateAnswer(s"$MAIL_FROM:<a@a.pl>", REQUEST_COMPLETE)
       writeLineAndValidateAnswer(s"$DATA:<a@a>", BAD_SEQUENCE_OF_COMMANDS)
+    }
+
+    s"Reject $STARTTLS" in {
+      writeLineAndValidateAnswer(s"$STARTTLS", TLS_NOT_SUPPORTED)
     }
 
     s"Handle $MAIL_FROM with space" in {

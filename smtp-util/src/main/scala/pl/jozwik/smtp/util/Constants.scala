@@ -38,6 +38,7 @@ object Constants {
   val SERVICE_NOT_AVAILABLE = 421
   val REQUEST_ACTION_ABORTED = 451
   val INSUFFICIENT_SYSTEM_STORAGE = 452
+  val TLS_NOT_SUPPORTED = 454
   val COMMAND_NOT_IMPLEMENTED = 500
   val SYNTAX_ERROR = 501
   val BAD_SEQUENCE_OF_COMMANDS = 503
@@ -54,6 +55,7 @@ object Constants {
   val FROM = "FROM"
   val QUIT = "QUIT"
   val RCPT = "RCPT"
+  val STARTTLS = "STARTTLS"
   val TO = "TO"
   val RSET = "RSET"
   val NOOP = "NOOP"

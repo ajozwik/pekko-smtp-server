@@ -86,6 +86,8 @@ final case class MessageHandler(addressHandler: AddressHandler, sizeHandler: Siz
         MailCommand.handleMail(command, commandIterator, argument, accumulator, sizeHandler, addressHandler)
       case RCPT =>
         RcptCommand.handleRcpt(commandIterator, argument, accumulator, addressHandler)
+      case STARTTLS =>
+        StarttlsCommand.handleStarttls
       case other: String =>
         handleOtherMessages(other, line, accumulator)
     }
