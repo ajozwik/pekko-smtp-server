@@ -22,8 +22,8 @@
 package pl.jozwik.smtp
 package server
 
-import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
-import pl.jozwik.smtp.server.consumer.FileLogConsumer
+import org.scalatest.{Assertion, BeforeAndAfter, BeforeAndAfterAll}
+import pl.jozwik.smtp.server.consumer.{FileLogConsumer, LogConsumer}
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
 import pl.jozwik.smtp.util._
@@ -32,7 +32,9 @@ class SmtpServerFailFileSpec extends AbstractSmtpServerSpec {
   System.setProperty(RuntimeConstants.consumerClass, classOf[FileLogConsumer].getName)
 }
 
-class SmtpServerFailSpec extends AbstractSmtpServerSpec
+class SmtpServerFailSpec extends AbstractSmtpServerSpec {
+  System.setProperty(RuntimeConstants.consumerClass, LogConsumer.getClass.getName)
+}
 
 abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAfter with BeforeAndAfterAll with SocketSpec {
   val port: Int = TestUtils.notOccupiedPortNumber

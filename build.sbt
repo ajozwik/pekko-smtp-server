@@ -6,26 +6,26 @@ val `scalaVersion_2.13` = "2.13.0"
 
 val `scalaVersion_2.12` = "2.12.8"
 
-scapegoatVersion in ThisBuild := "1.3.9"
+ThisBuild / scapegoatVersion := "1.3.9"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
-scalaVersion in ThisBuild := `scalaVersion_2.12`
+ThisBuild / scalaVersion := `scalaVersion_2.12`
 
-organization in ThisBuild := "com.github.ajozwik"
+ThisBuild / organization := "com.github.ajozwik"
 
 name := "akka-smtp-server"
 
-scalacOptions in ThisBuild ++= Seq(
+ThisBuild / scalacOptions ++= Seq(
   "-target:jvm-1.8",
   "-encoding", "UTF-8",
   "-deprecation", // warning and location for usages of deprecated APIs
   "-feature", // warning and location for usages of features that should be imported explicitly
   "-unchecked", // additional warnings where generated code depends on assumptions
   "-Xlint", // recommended additional warnings
-//  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
+  //  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
   "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
-//  "-Ywarn-inaccessible",
+  //  "-Ywarn-inaccessible",
   "-Ywarn-dead-code",
   "-language:reflectiveCalls",
   "-Ydelambdafy:method"
@@ -81,25 +81,25 @@ def projectName(name: String, file: File): Project = Project(name, file).setting
 )
 
 
-publishTo in ThisBuild := {
+ThisBuild / publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value) {
-    Some("snapshots" at nexus + "content/repositories/snapshots")
+    Option("snapshots" at nexus + "content/repositories/snapshots")
   }
   else {
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    Option("releases" at nexus + "service/local/staging/deploy/maven2")
   }
 }
 
-publishMavenStyle in ThisBuild := true
+ThisBuild / publishMavenStyle := true
 
-publishArtifact in Test := false
+Test / publishArtifact := false
 
-pomIncludeRepository in ThisBuild := { _ => false }
+ThisBuild / pomIncludeRepository := { _ => false }
 
-licenses in ThisBuild := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php"))
+ThisBuild / licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php"))
 
-pomExtra in ThisBuild :=
+ThisBuild / pomExtra :=
   <url>https://github.com/ajozwik/akka-smtp-server</url>
     <licenses>
       <license>
