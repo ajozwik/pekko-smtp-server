@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants._
 
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 
 object TestUtils extends StrictLogging {
   def notOccupiedPortNumber: Int = {
@@ -62,13 +62,20 @@ object TestUtils extends StrictLogging {
 
   private val TIMEOUT = 10
 
-  def init(port: Int): Socket = {
+  private val maxRepeat = 1000
+
+  def init(port: Int, repeat: Int = maxRepeat): Socket = {
     Try {
       new Socket(InetAddress.getLocalHost, port)
-    }.getOrElse {
-      TimeUnit.MILLISECONDS.sleep(TIMEOUT)
-      logger.debug(s"Try again, port number $port")
-      init((port + 1) % Character.MAX_VALUE)
+    } match {
+      case Success(s) =>
+        s
+      case Failure(th) if repeat > 0 =>
+        TimeUnit.MILLISECONDS.sleep(TIMEOUT)
+        logger.debug(s"Try again, port number $port", th)
+        init(port, repeat - 1)
+      case Failure(th) =>
+        throw th
     }
 
   }
