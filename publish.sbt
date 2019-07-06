@@ -39,5 +39,3 @@ ThisBuild / scmInfo := Option(
 ThisBuild / organizationHomepage := Option(url(organizationUrl))
 
 ThisBuild / homepage := Option(url(projectUrl))
-
-useGpg := true
