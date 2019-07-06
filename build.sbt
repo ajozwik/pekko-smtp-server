@@ -72,7 +72,6 @@ def projectName(name: String, file: File): Project = Project(name, file).setting
   ),
   licenseReportTitle := "Copyright (c) 2019 Andrzej Jozwik",
   licenseSelection := Seq(LicenseCategory.MIT),
-  publishArtifact in(Compile, packageDoc) := false,
   sources in(Compile, doc) := Seq.empty,
   scalariformPreferences := scalariformPreferences.value
     .setPreference(AlignSingleLineCaseStatements, true)
