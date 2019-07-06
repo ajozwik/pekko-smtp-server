@@ -22,8 +22,8 @@
 package pl.jozwik.smtp
 package server
 
-import org.scalatest.{Assertion, BeforeAndAfter, BeforeAndAfterAll}
-import pl.jozwik.smtp.server.consumer.{FileLogConsumer, LogConsumer}
+import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
+import pl.jozwik.smtp.server.consumer.{ FileLogConsumer, LogConsumer }
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
 import pl.jozwik.smtp.util._

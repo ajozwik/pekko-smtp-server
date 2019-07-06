@@ -68,7 +68,7 @@ object TestUtils extends StrictLogging {
     }.getOrElse {
       TimeUnit.MILLISECONDS.sleep(TIMEOUT)
       logger.debug(s"Try again, port number $port")
-      init(port)
+      init((port + 1) % Character.MAX_VALUE)
     }
 
   }
