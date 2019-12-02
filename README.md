@@ -4,9 +4,17 @@
 [![Coverage Status](https://coveralls.io/repos/github/ajozwik/akka-smtp-server/badge.svg?branch=master)](https://coveralls.io/github/ajozwik/akka-smtp-server?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ajozwik/akka-smtp-server&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&utm_medium=referral&utm_content=ajozwik/akka-smtp-server&utm_campaign=Badge_Coverage)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.ajozwik/akka-smtp-server_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.ajozwik/akka-smtp-server_2.12)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.ajozwik/akka-smtp_2.12.svg?label=latest%20release%20for%202.12)](http://search.maven.org/#search|ga|1|g%3A%22com.github.ajozwik%22%20AND%20a%3A%22akka-smtp_2.12%22)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.ajozwik/akka-smtp_2.13.svg?label=latest%20release%20for%202.13)](http://search.maven.org/#search|ga|1|g%3A%22com.github.ajozwik%22%20AND%20a%3A%22akka-smtp_2.13%22)
 
 Smtp server based on akka stream.
+
+Add to your project:
+
+```
+ libraryDependencies += "com.github.ajozwik" %% "akka-smtp" % <version>
+```
+
 
 For minimal usage you need to provide `consumer` method with signature (Mail=>Future[ConsumedResult]).
 `consumer` method receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
