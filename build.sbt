@@ -78,5 +78,6 @@ def projectName(name: String, file: File): Project =
         ),
     licenseReportTitle := s"Copyright (c) ${LocalDate.now.getYear} Andrzej Jozwik",
     licenseSelection := Seq(LicenseCategory.MIT),
-    sources in (Compile, doc) := Seq.empty
+    sources in (Compile, doc) := Seq.empty,
+    Test / parallelExecution := false
   )
