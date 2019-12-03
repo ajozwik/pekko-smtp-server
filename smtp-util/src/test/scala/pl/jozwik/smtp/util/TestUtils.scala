@@ -32,6 +32,7 @@ import pl.jozwik.smtp.util.Constants._
 import scala.util.{ Failure, Success, Try }
 
 object TestUtils extends StrictLogging {
+
   def notOccupiedPortNumber: Int = {
     val server = new ServerSocket(0)
     server.setReuseAddress(true)
@@ -62,9 +63,9 @@ object TestUtils extends StrictLogging {
 
   private val TIMEOUT = 10
 
-  private val maxRepeat = 1000
+  private val maxRepeat = 100
 
-  def init(port: Int, repeat: Int = maxRepeat): Socket = {
+  def init(port: Int, repeat: Int = maxRepeat): Socket =
     Try {
       new Socket(InetAddress.getLocalHost, port)
     } match {
@@ -78,5 +79,4 @@ object TestUtils extends StrictLogging {
         throw th
     }
 
-  }
 }

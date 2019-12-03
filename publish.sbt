@@ -1,27 +1,21 @@
 ThisBuild / developers := List(
   Developer(
-    id    = "ajozwik",
-    name  = "Andrzej Jozwik",
+    id = "ajozwik",
+    name = "Andrzej Jozwik",
     email = "andrzej.jozwik@gmail.com",
-    url   = url("https://github.com/ajozwik")
+    url = url("https://github.com/ajozwik")
   )
 )
 
-ThisBuild / publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value) {
-    Option("snapshots" at nexus + "content/repositories/snapshots")
-  }
-  else {
-    Option("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
-}
+ThisBuild / publishTo := sonatypePublishTo.value
 
 ThisBuild / publishMavenStyle := true
 
 Test / publishArtifact := false
 
-ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / pomIncludeRepository := { _ =>
+  false
+}
 
 ThisBuild / licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php"))
 
@@ -39,5 +33,3 @@ ThisBuild / scmInfo := Option(
 ThisBuild / organizationHomepage := Option(url(organizationUrl))
 
 ThisBuild / homepage := Option(url(projectUrl))
-
-//useGpg := true
