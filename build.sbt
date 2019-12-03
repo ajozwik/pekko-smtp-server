@@ -2,7 +2,7 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
-val `scalaVersion_2.13` = "2.13.0"
+val `scalaVersion_2.13` = "2.13.1"
 
 val `scalaVersion_2.12` = "2.12.10"
 
