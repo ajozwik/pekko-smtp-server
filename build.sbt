@@ -10,7 +10,7 @@ ThisBuild / scapegoatVersion := "1.3.11"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
-ThisBuild / scalaVersion := `scalaVersion_2.12`
+ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.12`)
 
 ThisBuild / organization := "com.github.ajozwik"
 
