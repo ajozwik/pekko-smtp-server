@@ -2,22 +2,29 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
-val `scalaVersion_2.13` = "2.13.1"
+val `scalaVersion_2.13` = "2.13.3"
 
-val `scalaVersion_2.12` = "2.12.10"
+val `scalaVersion_2.12` = "2.12.12"
 
-ThisBuild / scapegoatVersion := "1.3.11"
+ThisBuild / scapegoatVersion := {
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, n)) if n >= 13 => "1.4.5"
+    case _                       => "1.3.11"
+  }
+}
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_2.12`)
 
-ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.12`)
+ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
 
 ThisBuild / organization := "com.github.ajozwik"
 
 name := "akka-smtp-server"
 
+val targetJdk = "1.8"
+
 ThisBuild / scalacOptions ++= Seq(
-  "-target:jvm-1.8",
+  s"-target:jvm-$targetJdk",
   "-encoding",
   "UTF-8",
   "-deprecation", // warning and location for usages of deprecated APIs
@@ -34,9 +41,9 @@ ThisBuild / scalacOptions ++= Seq(
 
 publish / skip := true
 
-val akkaVersion = "2.6.0"
+val akkaVersion = "2.6.8"
 
-val scalatestVersion = "3.1.0"
+val scalatestVersion = "3.2.0"
 
 val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
