@@ -44,18 +44,15 @@ object ActorSpec {
 
 trait ActorSpec extends StrictLogging {
 
-  import ActorSpec._
+  protected implicit val actorSystem: ActorSystem = ActorSystem(s"test-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
 
-  protected implicit val actorSystem: ActorSystem = ActorSystem(
-    s"test-${number.next()}",
-    ConfigFactory.parseResources("application-test.conf"))
-
-  private val TIMEOUT = 3000
+  private val TIMEOUT                     = 3000
   protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
 
 }
 
 trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
+
   override protected def afterAll(): Unit = {
     val terminated = Await.result(actorSystem.terminate(), timeout.duration)
     logger.debug(s"$terminated")
@@ -91,16 +88,14 @@ trait SmtpSpec extends ActorSpec {
   protected def addressHandler: AddressHandler = NopAddressHandler
 
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-  protected final val clientStream: StreamClient = new StreamClient(host, configuration.port)
-  protected implicit val address: SocketAddress = SocketAddress(host, configuration.port)
-  protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
+  protected final val clientStream: StreamClient         = new StreamClient(host, configuration.port)
+  protected implicit val address: SocketAddress          = SocketAddress(host, configuration.port)
+  protected final val server: StreamServer               = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
 }
 
 trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {
 
-  override protected def beforeAll(): Unit = {
-
-  }
+  override protected def beforeAll(): Unit = {}
 
   override protected def afterAll(): Unit = {
     server.close()
@@ -109,4 +104,3 @@ trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {
   }
 
 }
-

@@ -48,19 +48,25 @@ class SmtpTimerGraphStageLogic(
     localHostName: String,
     remote: InetSocketAddress,
     consumer: Mail => Future[ConsumedResult],
-    readTimeout: FiniteDuration)(implicit system: ActorSystem)
-  extends TimerGraphStageLogic(shape) with StrictLogging {
-
-  import SmtpTimerGraphStageLogic._
+    readTimeout: FiniteDuration
+)(implicit system: ActorSystem)
+  extends TimerGraphStageLogic(shape)
+  with StrictLogging {
 
   private val accumulator = new AtomicReference(MailAccumulator.empty)
 
-  private val messageHandler = MessageHandler(addressHandler, sizeHandler, localHostName, remote, mail => {
-    import system.dispatcher
-    consumer(mail).foreach {
-      response => scheduleOnce(response, IMMEDIATELY)
+  private val messageHandler = MessageHandler(
+    addressHandler,
+    sizeHandler,
+    localHostName,
+    remote,
+    mail => {
+      import system.dispatcher
+      consumer(mail).foreach { response =>
+        scheduleOnce(response, SmtpTimerGraphStageLogic.IMMEDIATELY)
+      }
     }
-  })
+  )
 
   setHandler(shape.in, inHandler(shape.in, shape.out))
   setHandler(shape.out, outHandler(shape.in))
@@ -75,9 +81,10 @@ class SmtpTimerGraphStageLogic(
 
   private def inHandler(implicit in: Inlet[String], out: Outlet[String]) =
     new InHandler {
+
       override def onPush(): Unit = {
-        val line = grab[String](in)
-        val stripped = line.stripLineEnd
+        val line            = grab[String](in)
+        val stripped        = line.stripLineEnd
         val (acc, response) = messageHandler.handleMessage(line, stripped, accumulator.get())
 
         handleResponse(response)
@@ -85,11 +92,13 @@ class SmtpTimerGraphStageLogic(
       }
     }
 
-  private def outHandler(in: Inlet[String]) = new OutHandler {
-    override def onPull(): Unit = {
-      pullAndResetTimer(in)
+  private def outHandler(in: Inlet[String]) =
+    new OutHandler {
+
+      override def onPull(): Unit = {
+        pullAndResetTimer(in)
+      }
     }
-  }
 
   private def handleTimeout(tk: Any)(implicit out: Outlet[String]): Unit =
     tk match {
@@ -129,13 +138,19 @@ class SmtpTimerGraphStageLogic(
 
 }
 
-class SmtpGraphStage(addressHandler: AddressHandler, sizeHandler: SizeParameterHandler, localHostName: String,
-    remote: InetSocketAddress, consumer: Mail => Future[ConsumedResult],
-    readTimeout: FiniteDuration)(implicit system: ActorSystem) extends GraphStage[stream.FlowShape[String, String]]
+class SmtpGraphStage(
+    addressHandler: AddressHandler,
+    sizeHandler: SizeParameterHandler,
+    localHostName: String,
+    remote: InetSocketAddress,
+    consumer: Mail => Future[ConsumedResult],
+    readTimeout: FiniteDuration
+)(implicit system: ActorSystem)
+  extends GraphStage[stream.FlowShape[String, String]]
   with StrictLogging {
 
   override val shape: FlowShape[String, String] = {
-    val in = stream.Inlet[String]("smtp.in")
+    val in  = stream.Inlet[String]("smtp.in")
     val out = stream.Outlet[String]("smtp.out")
     stream.FlowShape(in, out)
   }
