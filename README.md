@@ -1,6 +1,6 @@
 # akka-smtp-server
 
-[![Build Status](https://travis-ci.com/ajozwik/akka-smtp-server.svg?branch=master)](https://travis-ci.org/ajozwik/akka-smtp-server)
+[![Build Status](https://travis-ci.com/ajozwik/akka-smtp-server.svg?branch=master)](https://travis-ci.com/ajozwik/akka-smtp-server)
 [![Coverage Status](https://coveralls.io/repos/github/ajozwik/akka-smtp-server/badge.svg?branch=master)](https://coveralls.io/github/ajozwik/akka-smtp-server?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ajozwik/akka-smtp-server&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/akka-smtp-server?utm_source=github.com&utm_medium=referral&utm_content=ajozwik/akka-smtp-server&utm_campaign=Badge_Coverage)
