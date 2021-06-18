@@ -25,7 +25,6 @@ import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
@@ -87,10 +86,9 @@ trait SmtpSpec extends ActorSpec {
 
   protected def addressHandler: AddressHandler = NopAddressHandler
 
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-  protected final val clientStream: StreamClient         = new StreamClient(host, configuration.port)
-  protected implicit val address: SocketAddress          = SocketAddress(host, configuration.port)
-  protected final val server: StreamServer               = StreamServer(consumer, configuration, addressHandler)(actorSystem, materializer)
+  protected final val clientStream: StreamClient = new StreamClient(host, configuration.port)
+  protected implicit val address: SocketAddress  = SocketAddress(host, configuration.port)
+  protected final val server: StreamServer       = StreamServer(consumer, configuration, addressHandler)(actorSystem)
 }
 
 trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {

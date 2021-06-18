@@ -24,7 +24,6 @@ package pl.jozwik.smtp.client
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import akka.stream._
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util._
 
@@ -32,42 +31,37 @@ import scala.concurrent.Future
 
 object StreamSmtpClient extends App with StrictLogging {
 
-  private implicit val system = ActorSystem("Client")
+  private implicit val system: ActorSystem = ActorSystem("Client")
 
-  private implicit val materializer = ActorMaterializer()
-
-  private val port = 1587
+  private val port = 25
 
   private val WAIT_MILLIS = 1000
 
-  private val address = "localhost"
+  private val address = "mail2.dotsystems.pl"
 
-  val serverAddress = SocketAddress(address, port)
-  val mailAddress = MailAddress("user", "domain.org")
-  val mail = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
+  private val serverAddress = SocketAddress(address, port)
+  private val fromAddress   = MailAddress("ajozwik", "dotsystems.pl")
+  private val mailAddress   = MailAddress("andrzej.jozwik", "gmail.com")
+  private val mail          = Mail(fromAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
 
   import system.dispatcher
 
-  val client = new StreamClient(address, port)
-  val futures = (1 to 1).map {
-    _ =>
-      TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS)
-      client.sendMail(mail).recover {
-        case e =>
-          logger.error("", e)
-          FailedResult(e.getMessage)
-      }
+  val client = new StreamClient(serverAddress)
+
+  val futures = (1 to 1).map { _ =>
+    TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS)
+    client.sendMail(mail).recover { case e =>
+      logger.error("", e)
+      FailedResult(e.getMessage)
+    }
   }
 
-  Future.sequence(futures).foreach {
-    seq =>
-      logger.debug(s"${seq.size} $seq")
-      seq.foreach {
-        result =>
-          logger.debug(s"Result:$result")
-      }
-      //TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS * 9)
-      system.terminate()
+  Future.sequence(futures).foreach { seq =>
+    logger.debug(s"${seq.size} $seq")
+    seq.foreach { result =>
+      logger.debug(s"Result:$result")
+    }
+    system.terminate()
   }
 
 }

@@ -22,69 +22,65 @@
 package pl.jozwik.smtp.client
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import akka.stream.scaladsl.{ Flow, Framing, Source, Tcp }
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.AkkaUtils
-import pl.jozwik.smtp.util.{ Constants, Mail, Utils }
+import pl.jozwik.smtp.util.{ Constants, Mail, SocketAddress, Utils }
 
 import scala.concurrent.Future
 
-class StreamClient(address: String, port: Int)(implicit system: ActorSystem, m: Materializer) extends StrictLogging {
+class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extends StrictLogging {
+
+  def this(serverAddress: SocketAddress)(implicit system: ActorSystem) =
+    this(serverAddress.host, serverAddress.port)
 
   private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =
-    Tcp().outgoingConnection(address, port)
+    Tcp().outgoingConnection(host, port)
 
   def sendMail(mail: Mail): Future[Result] = {
     import Constants._
-    val future = Source.single(mail).map { mail =>
-      Seq(
-        EHLO,
-        s"$MAIL_FROM: ${mail.from}") ++
-        mail.to.map(to => s"$RCPT_TO:$to") ++
-        Seq(
-          s"$DATA",
-          s"$Subject:${mail.emailContent.subject}",
-          "",
-          mail.emailContent.txtBody.getOrElse(""),
-          END_DATA,
-          QUIT)
-    }.map(seq => ByteString(seq.map(Utils.withEndOfLine).mkString))
-      .via(connection).via(Framing.delimiter(
-        ByteString("\n"),
-        Constants.maximumFrameLength,
-        allowTruncation = true)).runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) {
-        case ((acc, codes), message) =>
-          val response = AkkaUtils.toInt(message.take(3).utf8String)
-          logger.debug(s"${message.utf8String}")
-          val newAcc = acc match {
-            case f: FailedResult =>
-              f
-            case _ if isResponseSuccess(response) =>
-              acc
-            case _ =>
-              FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
-          }
+    val future = Source
+      .single(mail)
+      .map { mail =>
+        Seq(s"$EHLO client", s"$MAIL_FROM: ${mail.from}") ++
+          mail.to.map(to => s"$RCPT_TO:$to") ++
+          Seq(s"$DATA", s"$Subject:${mail.emailContent.subject}", "", mail.emailContent.txtBody.getOrElse(""), END_DATA, QUIT)
+      }
+      .map(seq => ByteString(seq.map(Utils.withEndOfLine).mkString))
+      .via(connection)
+      .via(Framing.delimiter(ByteString("\n"), Constants.maximumFrameLength, allowTruncation = true))
+      .runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) { case ((acc, codes), message) =>
+        val response = AkkaUtils.toInt(message.take(3).utf8String)
+        logger.debug(s"${message.utf8String}")
+        val newAcc = acc match {
+          case f: FailedResult =>
+            f
+          case _ if isResponseSuccess(response) =>
+            acc
+          case _ =>
+            FailedResult((message.utf8String + Constants.delimiter).stripLineEnd)
+        }
 
-          (newAcc, response.map(c => c +: codes).getOrElse(codes))
+        (newAcc, response.map(c => c +: codes).getOrElse(codes))
       }
     mapToResult(future)
   }
 
   private def mapToResult(future: Future[(Result, Seq[Int])]) = {
     import system.dispatcher
-    future.map {
-      case (SuccessResult, codes) if !codes.containsSlice(Seq(Constants.REQUEST_COMPLETE, Constants.START_MAIL_INPUT)) =>
-        FailedResult("")
-      case (result, _) =>
-        result
+    future
+      .map {
+        case (SuccessResult, codes) if !codes.containsSlice(Seq(Constants.REQUEST_COMPLETE, Constants.START_MAIL_INPUT)) =>
+          FailedResult("")
+        case (result, _) =>
+          result
 
-    }.recover {
-      case e =>
+      }
+      .recover { case e =>
         logger.error("", e)
         FailedResult(e.getMessage)
-    }
+      }
   }
 
   private def isResponseSuccess(response: Option[Int]) = {

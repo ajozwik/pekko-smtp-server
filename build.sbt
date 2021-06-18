@@ -2,13 +2,13 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
-val `scalaVersion_2.13` = "2.13.3"
+val `scalaVersion_2.13` = "2.13.6"
 
 val `scalaVersion_2.12` = "2.12.12"
 
 ThisBuild / scapegoatVersion := {
   CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, n)) if n >= 13 => "1.4.5"
+    case Some((2, n)) if n >= 13 => "1.4.9"
     case _                       => "1.3.11"
   }
 }
@@ -41,11 +41,11 @@ ThisBuild / scalacOptions ++= Seq(
 
 publish / skip := true
 
-val akkaVersion = "2.6.8"
+val akkaVersion = "2.6.15"
 
-val scalatestVersion = "3.2.0"
+val scalatestVersion = "3.2.9"
 
-val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 
 val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -55,24 +55,24 @@ val `com.typesafe.akka_stream` = "com.typesafe.akka" %% "akka-stream" % akkaVers
 
 val `org.scalatest_scalatest` = "org.scalatest" %% "scalatest" % scalatestVersion % Test
 
-val `org.scalatestplus_scalacheck-1-14` = "org.scalatestplus" %% "scalacheck-1-14" % s"$scalatestVersion.0" % Test
+val `org.scalatestplus_scalacheck-1-15` = "org.scalatestplus" %% "scalacheck-1-15" % s"$scalatestVersion.0" % Test
 
-val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.3"
+val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.4"
 
 lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   libraryDependencies ++= Seq(
-        `ch.qos.logback_logback-classic`,
-        `com.typesafe.scala-logging_scala-logging`,
-        `org.apache.james_apache-mime4j`
-      )
+    `ch.qos.logback_logback-classic`,
+    `com.typesafe.scala-logging_scala-logging`,
+    `org.apache.james_apache-mime4j`
+  )
 )
 
 lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp"))
   .settings(
     libraryDependencies ++= Seq(
-          `com.typesafe.akka_akka-slf4j`,
-          `com.typesafe.akka_stream`
-        )
+      `com.typesafe.akka_akka-slf4j`,
+      `com.typesafe.akka_stream`
+    )
   )
   .dependsOn(`smtp-util`, `smtp-util` % "test->test")
   .enablePlugins(PackPlugin)
@@ -80,11 +80,11 @@ lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp"))
 def projectName(name: String, file: File): Project =
   Project(name, file).settings(
     libraryDependencies ++= Seq(
-          `org.scalatest_scalatest`,
-          `org.scalatestplus_scalacheck-1-14`
-        ),
+      `org.scalatest_scalatest`,
+      `org.scalatestplus_scalacheck-1-15`
+    ),
     licenseReportTitle := s"Copyright (c) ${LocalDate.now.getYear} Andrzej Jozwik",
     licenseSelection := Seq(LicenseCategory.MIT),
-    sources in (Compile, doc) := Seq.empty,
+    Compile / doc / sources := Seq.empty,
     Test / parallelExecution := false
   )
