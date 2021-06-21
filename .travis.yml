@@ -6,9 +6,6 @@ cache:
     - $HOME/.sbt/boot
 
 language: scala
-scala:
-  - 2.12.12
-  - 2.13.3
 
 jdk:
   - openjdk8
@@ -17,8 +14,8 @@ env:
   - CODACY_PROJECT_TOKEN=e0672985af4742b38ee4143d00ca8253
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION clean coverage test scalastyle
-  - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
+  - sbt clean coverage test scalastyle
+  - sbt coverageAggregate
 
 after_success:
   - sbt ++$TRAVIS_SCALA_VERSION coveralls
