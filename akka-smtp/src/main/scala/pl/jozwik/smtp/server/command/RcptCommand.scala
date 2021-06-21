@@ -29,8 +29,13 @@ import pl.jozwik.smtp.util.Response._
 import pl.jozwik.smtp.util.Utils._
 
 object RcptCommand {
-  def handleRcpt(iterator: Iterator[String], argument: String, accumulator: MailAccumulator,
-    addressHandler: AddressHandler): (MailAccumulator, ResponseMessage) = {
+
+  def handleRcpt(
+      iterator: Iterator[String],
+      argument: String,
+      accumulator: MailAccumulator,
+      addressHandler: AddressHandler
+  ): (MailAccumulator, ResponseMessage) = {
     val (acc, message) = if (iterator.hasNext && iterator.next() == TO && !iterator.hasNext) {
       responseForRcptAndValidation(accumulator, argument, addressHandler)
     } else {
@@ -39,8 +44,7 @@ object RcptCommand {
     response(acc, message)
   }
 
-  private def responseForRcptAndValidation(accumulator: MailAccumulator, argument: String,
-    addressHandler: AddressHandler): (MailAccumulator, String) =
+  private def responseForRcptAndValidation(accumulator: MailAccumulator, argument: String, addressHandler: AddressHandler): (MailAccumulator, String) =
     (accumulator.from.isEmpty, argument.isEmpty) match {
       case (EMPTY, _) =>
         (accumulator, MAIL_MISSING)
@@ -51,13 +55,12 @@ object RcptCommand {
 
     }
 
-  private def responseForRcptTo(accumulator: MailAccumulator, argument: String,
-    addressHandler: AddressHandler): (MailAccumulator, String) =
+  private def responseForRcptTo(accumulator: MailAccumulator, argument: String, addressHandler: AddressHandler): (MailAccumulator, String) =
     toMailAddress(argument) match {
       case Right(mailAddress) if addressHandler.acceptTo(mailAddress) =>
         val acc = accumulator.copy(to = mailAddress +: accumulator.to)
         (acc, recipientOk(mailAddress))
-      case Right(mailAddress) if !addressHandler.acceptTo(mailAddress) =>
+      case Right(mailAddress) =>
         (accumulator, userUnknown(mailAddress))
       case Left(error) =>
         (accumulator, error)

@@ -110,6 +110,8 @@ class SmtpTimerGraphStageLogic(
       case `TickTimeout` =>
         pushWithEndOfLine(Errors.serviceNotAvailable(localHostName, readTimeout.toSeconds))
         failStage(new RuntimeException("Service timeout"))
+      case x =>
+        throw new UnsupportedOperationException(s"$x")
     }
 
   private def handleResponse(response: ResponseMessage)(implicit in: Inlet[String], out: Outlet[String]): Unit = {

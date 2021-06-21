@@ -31,20 +31,17 @@ import org.apache.james.mime4j.dom._
 import org.apache.james.mime4j.dom.address.MailboxList
 import org.apache.james.mime4j.message._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object TmpEmailContent {
-  val empty = TmpEmailContent(IndexedSeq.empty, IndexedSeq.empty, Seq.empty)
+  val empty: TmpEmailContent = TmpEmailContent(IndexedSeq.empty, IndexedSeq.empty, Seq.empty)
 }
 
-private[util] final case class TmpEmailContent(
-    txtBody: IndexedSeq[String],
-    htmlBody: IndexedSeq[String],
-    attachments: Seq[Attachment])
+private[util] final case class TmpEmailContent(txtBody: IndexedSeq[String], htmlBody: IndexedSeq[String], attachments: Seq[Attachment])
 
 object MailParser extends StrictLogging {
   private[util] val messageBuilder = new DefaultMessageBuilder
-  private val writer = new DefaultMessageWriter
+  private val writer               = new DefaultMessageWriter
 
   def parse(mailAsTxt: String): EmailWithContent = {
     val mimeMsg = toMessage(mailAsTxt)
@@ -56,40 +53,43 @@ object MailParser extends StrictLogging {
 
   private[util] def parseMessage(mimeMsg: Message): EmailWithContent = {
     val subject = Option(mimeMsg.getSubject)
-    val from = toList(Option(mimeMsg.getFrom))
-    val to = toList(Option(mimeMsg.getTo).map(_.flatten()))
+    val from    = toList(Option(mimeMsg.getFrom))
+    val to      = toList(Option(mimeMsg.getTo).map(_.flatten()))
     logger.debug(s"To: ${mimeMsg.getTo}")
     logger.debug(s"From: ${mimeMsg.getFrom}")
     logger.debug(s"Subject: $subject")
     mimeMsg.getBody match {
       case multipart: Multipart =>
-        val acc = parseBodyParts(multipart.getBodyParts.asScala.toSeq, TmpEmailContent.empty)
+        val acc      = parseBodyParts(multipart.getBodyParts.asScala.toSeq, TmpEmailContent.empty)
         val htmlBody = toOption(acc.htmlBody)
-        val txtBody = toOption(acc.txtBody)
+        val txtBody  = toOption(acc.txtBody)
         EmailWithContent(from, to, subject, txtBody, htmlBody, acc.attachments)
       case body: SingleBody =>
         val text = getTxtPart(body)
         EmailWithContent(from, to, subject, Option(text), None, Seq.empty)
+      case x =>
+        throw new UnsupportedOperationException(s"$x")
     }
   }
 
   private def toList(mailboxList: Option[MailboxList]): Seq[MailAddress] =
-    mailboxList.map { list =>
-      (0 until list.size()).map {
-        i =>
-          val el = list.get(i)
-          val name = el.getLocalPart
+    mailboxList
+      .map { list =>
+        (0 until list.size()).map { i =>
+          val el     = list.get(i)
+          val name   = el.getLocalPart
           val domain = el.getDomain
           logger.debug(s"${el.getAddress} ${el.getName}")
           MailAddress(name, domain)
+        }
       }
-    }.getOrElse(Seq.empty)
+      .getOrElse(Seq.empty)
 
   private[smtp] def createTextMessage(mail: Mail): String = {
     val emailContent = mail.emailContent
-    val body = new BasicBodyFactory().textBody(emailContent.txtBody.getOrElse(""), StandardCharsets.UTF_8)
-    val builder = Builder.of().setSubject(emailContent.subject.orNull).setBody(body)
-    val out = new ByteArrayOutputStream()
+    val body         = new BasicBodyFactory().textBody(emailContent.bodyAsString, StandardCharsets.UTF_8)
+    val builder      = Builder.of().setSubject(emailContent.subject.orNull).setBody(body)
+    val out          = new ByteArrayOutputStream()
     writer.writeMessage(builder.build, out)
     out.toString
   }
@@ -126,8 +126,6 @@ object MailParser extends StrictLogging {
     }
 
   private def parseBodyParts(entities: Seq[Entity], acc: TmpEmailContent): TmpEmailContent = entities match {
-    case Seq() =>
-      acc
     case part +: tail =>
       val accWithPart =
         part.getBody match {
@@ -135,9 +133,13 @@ object MailParser extends StrictLogging {
             addSingleBody(acc, part.getMimeType.toLowerCase, singleBody, part)
           case m: Multipart =>
             addMultipart(m, acc)
+          case b =>
+            throw new UnsupportedOperationException(s"${b.getClass}")
 
         }
       parseBodyParts(tail, accWithPart)
+    case _ =>
+      acc
   }
 
   private def toByteArray(singleBody: SingleBody) = {

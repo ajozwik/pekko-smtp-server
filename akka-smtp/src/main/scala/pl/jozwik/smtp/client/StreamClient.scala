@@ -43,9 +43,9 @@ class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extend
     val future = Source
       .single(mail)
       .map { mail =>
-        Seq(s"$EHLO client", s"$MAIL_FROM: ${mail.from}") ++
+        Seq(s"$EHLO ${mail.from.domain}", s"$MAIL_FROM: ${mail.from}") ++
           mail.to.map(to => s"$RCPT_TO:$to") ++
-          Seq(s"$DATA", s"$Subject:${mail.emailContent.subject}", "", mail.emailContent.txtBody.getOrElse(""), END_DATA, QUIT)
+          Seq(s"$DATA", s"$Subject:${mail.emailContent.subject}", "", mail.emailContent.bodyAsString, END_DATA, QUIT)
       }
       .map(seq => ByteString(seq.map(Utils.withEndOfLine).mkString))
       .via(connection)

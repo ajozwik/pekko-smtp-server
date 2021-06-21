@@ -25,7 +25,6 @@ import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import akka.{ NotUsed, stream }

@@ -23,7 +23,6 @@ package pl.jozwik.smtp
 package server
 
 import akka.actor.ActorSystem
-import akka.stream.{ ActorMaterializer, Materializer }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.consumer.{ Consumer, LogConsumer }
 import pl.jozwik.smtp.util._
@@ -63,8 +62,6 @@ object Main extends App with StrictLogging {
   }
 
   private implicit val system: ActorSystem = ActorSystem(s"SMTP$port") // Actor system
-
-  private implicit val m: Materializer = ActorMaterializer()
 
   private val configuration = Configuration(port, size, 2.minutes)
 

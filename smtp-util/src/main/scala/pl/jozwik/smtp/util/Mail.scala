@@ -34,16 +34,11 @@ final case class MailAddress(user: String, domain: String) {
 final case class Attachment(fileName: String, content: Array[Byte])
 
 object EmailWithContent {
-  def txtOnlyWithoutSubject(
-    from: Seq[MailAddress],
-    to: Seq[MailAddress],
-    txtBody: String): EmailWithContent =
+
+  def txtOnlyWithoutSubject(from: Seq[MailAddress], to: Seq[MailAddress], txtBody: String): EmailWithContent =
     EmailWithContent(from, to, None, Option(txtBody), None, Seq.empty)
 
-  def txtOnly(
-    from: Seq[MailAddress],
-    to: Seq[MailAddress],
-    subject: String, txtBody: String): EmailWithContent =
+  def txtOnly(from: Seq[MailAddress], to: Seq[MailAddress], subject: String, txtBody: String): EmailWithContent =
     EmailWithContent(from, to, Option(subject), Option(txtBody), None, Seq.empty)
 }
 
@@ -53,7 +48,11 @@ final case class EmailWithContent(
     subject: Option[String],
     txtBody: Option[String],
     htmlBody: Option[String],
-    attachments: Seq[Attachment])
+    attachments: Seq[Attachment]
+) {
+
+  def bodyAsString: String = txtBody.getOrElse("")
+}
 
 final case class Mail(from: MailAddress, to: Seq[MailAddress], emailContent: EmailWithContent)
 

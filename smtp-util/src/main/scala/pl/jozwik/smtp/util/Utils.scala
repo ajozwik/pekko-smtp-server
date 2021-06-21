@@ -25,9 +25,9 @@ package util
 import java.net.InetAddress
 import java.time.{ ZoneOffset, ZonedDateTime }
 import java.util.regex.Pattern
-
 import com.typesafe.scalalogging.StrictLogging
 
+import scala.collection.immutable.ArraySeq
 import scala.util.Try
 
 object Utils {
@@ -52,18 +52,21 @@ object Utils {
   }
 
   def splitOnWhiteSpaces(txt: String, limit: Int = 0): IndexedSeq[String] =
-    WHITE_SPACES_PATTERN.split(txt, limit)
+    ArraySeq.unsafeWrapArray(WHITE_SPACES_PATTERN.split(txt, limit))
 
   def extractAddressAndParameters(txt: String): Either[String, (String, Map[String, String])] =
     extractMailAddress(txt.trim) match {
       case Right((addressWithoutBrackets, parameters)) =>
-        validateBrackets(addressWithoutBrackets, address =>
-          parametersToMap(parameters) match {
-            case Right(map) =>
-              Right((address, map))
-            case Left(error) =>
-              Left(error)
-          })
+        validateBrackets(
+          addressWithoutBrackets,
+          address =>
+            parametersToMap(parameters) match {
+              case Right(map) =>
+                Right((address, map))
+              case Left(error) =>
+                Left(error)
+            }
+        )
 
       case Left(error) =>
         Left(error)
@@ -71,8 +74,6 @@ object Utils {
 
   def parametersToMap(seq: Seq[String]): Either[String, Map[String, String]] = {
     def parametersToMap(seq: Seq[String], map: Map[String, String]): Either[String, Map[String, String]] = seq match {
-      case Seq() =>
-        Right(map)
       case h +: t =>
         h.split('=') match {
           case Array(k, v) =>
@@ -80,6 +81,8 @@ object Utils {
           case _ =>
             Left(Response.parameterUnrecognized(h))
         }
+      case _ =>
+        Right(map)
     }
 
     parametersToMap(seq, Map.empty)
@@ -100,15 +103,15 @@ object Utils {
     splitOnWhiteSpaces(notInBrackets, 2) match {
       case Seq(address, parameters) =>
         (address, splitOrEmpty(parameters))
-      case Seq(address) =>
-        (address, Seq.empty)
+      case seq =>
+        (unsafeHead(seq), Seq.empty)
     }
 
   private def extractMailAddressCloseBracket(inBrackets: String, end: Int): Either[String, (String, Seq[String])] = {
     if (end == -1) {
       Left(unbalanced(inBrackets, OPEN_BRACKET))
     } else {
-      val address = removeDoubleBrackets(inBrackets.substring(1, end))
+      val address    = removeDoubleBrackets(inBrackets.substring(1, end))
       val parameters = inBrackets.substring(end + 1)
       if (parameters.headOption.getOrElse(SPACE) == SPACE) {
         Right((address, splitOrEmpty(parameters.trim)))
@@ -137,9 +140,7 @@ object Utils {
         validateBrackets(withoutBrackets, notEmptyStringToMailAddress)
     }
 
-  private def validateBrackets[T](
-    withoutBrackets: String,
-    f: String => Either[String, T]): Either[String, T] =
+  private def validateBrackets[T](withoutBrackets: String, f: String => Either[String, T]): Either[String, T] =
     (withoutBrackets.contains(CLOSE_BRACKET), withoutBrackets.contains(OPEN_BRACKET)) match {
       case (true, _) =>
         Left(unbalanced(withoutBrackets, CLOSE_BRACKET))
@@ -154,7 +155,7 @@ object Utils {
       case -1 =>
         Left(domainNameRequired(addressWithoutBrackets))
       case index: Int if index != 0 && index != addressWithoutBrackets.length - 1 =>
-        val user = addressWithoutBrackets.substring(0, index)
+        val user   = addressWithoutBrackets.substring(0, index)
         val domain = addressWithoutBrackets.substring(index + 1, addressWithoutBrackets.length)
         Right(MailAddress(user, domain.toLowerCase))
       case _ =>
@@ -176,11 +177,14 @@ object Utils {
   def extractMessage(lines: IndexedSeq[String]): EmailWithContent =
     MailParser.parse(lines.mkString)
 
+  def unsafeHead[S](seq: Iterable[S]): S =
+    seq.headOption.getOrElse(throw new NoSuchElementException())
+
 }
 
 object RuntimeConstants {
-  val portKey = "smtp.port"
-  val sizeKey = "smtp.size"
+  val portKey       = "smtp.port"
+  val sizeKey       = "smtp.size"
   val consumerClass = "consumer.class"
 }
 
