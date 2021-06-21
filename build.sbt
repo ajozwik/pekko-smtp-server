@@ -60,6 +60,11 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   )
 )
 
+lazy val `runtime` = projectName("runtime", file("runtime"))
+  .settings(publish / skip := true)
+  .dependsOn(`akka-smtp`)
+  .dependsOn(Seq(`smtp-util`, `akka-smtp`).map(_ % "test->test"): _*)
+
 lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp"))
   .settings(
     libraryDependencies ++= Seq(

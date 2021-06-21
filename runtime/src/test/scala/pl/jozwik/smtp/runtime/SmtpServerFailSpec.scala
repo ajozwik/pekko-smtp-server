@@ -19,10 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package pl.jozwik.smtp
-package server
+package pl.jozwik.smtp.runtime
 
 import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
+import pl.jozwik.smtp.SocketSpec
 import pl.jozwik.smtp.server.consumer.{ FileLogConsumer, LogConsumer }
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.TestUtils._
