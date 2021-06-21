@@ -21,17 +21,27 @@
  */
 package pl.jozwik.smtp
 
-import pl.jozwik.smtp.client.{ FailedResult, SuccessResult }
+import pl.jozwik.smtp.client.{ FailedResult, SenderClient, SuccessResult }
 import pl.jozwik.smtp.util.{ EmailWithContent, Mail, Utils }
 
-class SmtpIntegrationSpec extends AbstractSmtpSpec {
+class SmtpStreamIntegrationSpec extends AbstractSmtpIntegrationSpec {
+  protected val client: SenderClient = clientStream
+}
+
+class SmtpActorIntegrationSpec extends AbstractSmtpIntegrationSpec {
+  protected val client: SenderClient = clientWithActor
+}
+
+abstract class AbstractSmtpIntegrationSpec extends AbstractSmtpSpec {
+
+  protected val client: SenderClient
 
   "Smtp integration test" should {
 
     "finished without error" in {
 
-      val mail = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
-      val future = clientStream.sendMail(mail)
+      val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
+      val future = client.sendMail(mail)
       future.map { _ shouldBe SuccessResult }
 
     }
@@ -42,8 +52,8 @@ class SmtpIntegrationSpec extends AbstractSmtpSpec {
       logger.debug(s"$size $maxSize ${line.length}")
       val largeContent = Seq.fill(size)(line).mkString
       logger.debug(s"$size $maxSize ${line.length} ${largeContent.length}")
-      val mail = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", largeContent))
-      val future = clientStream.sendMail(mail)
+      val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", largeContent))
+      val future = client.sendMail(mail)
       future.map { result =>
         result shouldBe a[FailedResult]
       }

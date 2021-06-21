@@ -5,16 +5,16 @@ import pl.jozwik.smtp.actor.AbstractActor
 
 import scala.concurrent.duration._
 
-object ClientActor {
+object SenderActor {
   import scala.language.postfixOps
-  def props(timeout: FiniteDuration = 2 minutes): Props = Props(new ClientActor(timeout))
+  def props(timeout: FiniteDuration = 2 minutes): Props = Props(new SenderActor(timeout))
 }
 
-class ClientActor(timeout: FiniteDuration) extends AbstractActor {
+class SenderActor(timeout: FiniteDuration) extends AbstractActor {
 
   def handleMessage(success: Int, failed: Int): Receive = {
     case MailWithAddress(mail, address) =>
-      context.actorOf(ClientActorHandler.props(sender(), address, mail, timeout))
+      context.actorOf(SenderActorHandler.props(sender(), address, mail, timeout))
       ()
 
     case Counter(senderRef, result) =>
@@ -25,6 +25,8 @@ class ClientActor(timeout: FiniteDuration) extends AbstractActor {
           logAndBecome(success, failed + 1)
       }
       senderRef ! result
+    case ValidateError(senderRef, message) =>
+      senderRef ! FailedResult(message)
   }
 
   override def receive: Receive = handleMessage(0, 0)

@@ -30,7 +30,7 @@ import pl.jozwik.smtp.util.{ Constants, Mail, SocketAddress, Utils }
 
 import scala.concurrent.Future
 
-class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extends StrictLogging {
+class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extends SenderClient with StrictLogging {
 
   def this(serverAddress: SocketAddress)(implicit system: ActorSystem) =
     this(serverAddress.host, serverAddress.port)

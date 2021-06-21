@@ -23,13 +23,12 @@ package pl.jozwik.smtp
 
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
-import pl.jozwik.smtp.client.StreamClient
+import pl.jozwik.smtp.client.{ ClientWithActor, StreamClient }
 import pl.jozwik.smtp.server._
 import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.util._
@@ -84,11 +83,12 @@ trait SmtpSpec extends ActorSpec {
 
   protected def consumer(mail: Mail): Future[ConsumedResult] = LogConsumer.consumer(mail)
 
-  protected def addressHandler: AddressHandler = NopAddressHandler
+  protected def addressHandler: AddressHandler              = NopAddressHandler
+  protected lazy val address: SocketAddress                 = SocketAddress(host, configuration.port)
+  protected final lazy val clientStream: StreamClient       = new StreamClient(address)
+  protected final lazy val clientWithActor: ClientWithActor = new ClientWithActor(address)(actorSystem, readTimeout)
 
-  protected final val clientStream: StreamClient = new StreamClient(host, configuration.port)
-  protected implicit val address: SocketAddress  = SocketAddress(host, configuration.port)
-  protected final val server: StreamServer       = StreamServer(consumer, configuration, addressHandler)(actorSystem)
+  protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem)
 }
 
 trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {

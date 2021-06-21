@@ -13,17 +13,17 @@ import pl.jozwik.smtp.util.{ Mail, SocketAddress }
 
 import scala.concurrent.duration._
 
-object ClientActorHandler {
+object SenderActorHandler {
 
   def props(senderRef: ActorRef, address: SocketAddress, mail: Mail, timeout: FiniteDuration): Props =
-    Props(new ClientActorHandler(senderRef, address, mail, timeout))
+    Props(new SenderActorHandler(senderRef, address, mail, timeout))
 
   val FAIL_ON_ERROR = false
 }
 
-class ClientActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail, val timeout: FiniteDuration) extends ActorWithTimeout {
+class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail, val timeout: FiniteDuration) extends ActorWithTimeout {
 
-  import ClientActorHandler._
+  import SenderActorHandler._
   import pl.jozwik.smtp.util.Constants._
 
   private val manager = IO(Tcp)(context.system)
@@ -53,6 +53,7 @@ class ClientActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
       None
     } else {
       if (failOnError) {
+        context.parent ! ValidateError(senderRef, m)
         sender() ! Close
         context.self ! PoisonPill
         sys.error(s"$self Expected:$expectedCode received: $m")
