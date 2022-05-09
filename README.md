@@ -34,3 +34,6 @@ Example usage:
 > akka-smtp/target/pack/bin/main -Dconsumer.class=pl.jozwik.smtp.server.consumer.FileLogConsumer
 
  - or use project as dependency and provide own Main class 
+ 
+ 
+ If you know, how to handle STARTTLS with akka-stream (akka tcp) feel free to create a issue.
