@@ -2,9 +2,9 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
-val `scalaVersion_2.13` = "2.13.6"
+val `scalaVersion_2.13` = "2.13.10"
 
-ThisBuild / scapegoatVersion := "1.4.9"
+ThisBuild / scapegoatVersion := "2.0.0"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`)
 
@@ -14,10 +14,25 @@ ThisBuild / organization := "com.github.ajozwik"
 
 name := "akka-smtp-server"
 
-val targetJdk = "1.8"
+val targetJdk = "11"
+
+ThisBuild / wartremoverWarnings ++= Warts.allBut(
+  Wart.Any,
+  Wart.DefaultArguments,
+  Wart.Enumeration,
+  Wart.Equals,
+  Wart.ImplicitConversion,
+  Wart.ImplicitParameter,
+  Wart.JavaSerializable,
+  Wart.NonUnitStatements,
+  Wart.Nothing,
+  Wart.Overloading,
+  Wart.StringPlusAny,
+  Wart.ToString,
+  Wart.Throw
+)
 
 ThisBuild / scalacOptions ++= Seq(
-  s"-target:jvm-$targetJdk",
   "-encoding",
   "UTF-8",
   "-deprecation", // warning and location for usages of deprecated APIs
@@ -29,18 +44,20 @@ ThisBuild / scalacOptions ++= Seq(
   //  "-Ywarn-inaccessible",
   "-Ywarn-dead-code",
   "-language:reflectiveCalls",
-  "-Ydelambdafy:method"
+  "-Ydelambdafy:method",
+  s"-release:$targetJdk",
+  "-Xsource:3"
 )
 
 publish / skip := true
 
-val akkaVersion = "2.6.15"
+val akkaVersion = "2.7.0"
 
-val scalatestVersion = "3.2.9"
+val scalatestVersion = "3.2.15"
 
-val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
+val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
 
-val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.2.3"
+val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.3.5"
 
 val `com.typesafe.akka_akka-slf4j` = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 
@@ -48,9 +65,9 @@ val `com.typesafe.akka_stream` = "com.typesafe.akka" %% "akka-stream" % akkaVers
 
 val `org.scalatest_scalatest` = "org.scalatest" %% "scalatest" % scalatestVersion % Test
 
-val `org.scalatestplus_scalacheck-1-15` = "org.scalatestplus" %% "scalacheck-1-15" % s"$scalatestVersion.0" % Test
+val `org.scalatestplus_scalacheck-1-15` = "org.scalatestplus" %% "scalacheck-1-17" % s"$scalatestVersion.0" % Test
 
-val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.4"
+val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.7"
 
 lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   libraryDependencies ++= Seq(
@@ -86,3 +103,7 @@ def projectName(name: String, file: File): Project =
     Compile / doc / sources := Seq.empty,
     Test / parallelExecution := false
   )
+
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+)
