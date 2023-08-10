@@ -26,7 +26,7 @@ import java.net.InetSocketAddress
 
 import org.apache.pekko.actor.Props
 import org.apache.pekko.io.Tcp._
-import pl.jozwik.smtp.AkkaUtils._
+import pl.jozwik.smtp.SmtpUtils._
 import pl.jozwik.smtp.util.Constants._
 
 object FakeSmtpActor {

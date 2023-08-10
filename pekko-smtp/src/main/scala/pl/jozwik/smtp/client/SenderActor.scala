@@ -6,7 +6,6 @@ import pl.jozwik.smtp.actor.AbstractActor
 import scala.concurrent.duration._
 
 object SenderActor {
-  import scala.language.postfixOps
   def props(timeout: FiniteDuration = 2 minutes): Props = Props(new SenderActor(timeout))
 }
 
@@ -35,4 +34,5 @@ class SenderActor(timeout: FiniteDuration) extends AbstractActor {
     logger.debug(s"END: success:$success failed:$failed")
     become(handleMessage(success, failed))
   }
+
 }

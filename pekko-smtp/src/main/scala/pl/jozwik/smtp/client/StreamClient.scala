@@ -25,7 +25,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{ Flow, Framing, Source, Tcp }
 import org.apache.pekko.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.AkkaUtils
+import pl.jozwik.smtp.SmtpUtils
 import pl.jozwik.smtp.util.{ Constants, Mail, SocketAddress, Utils }
 
 import scala.concurrent.Future
@@ -51,7 +51,7 @@ class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extend
       .via(connection)
       .via(Framing.delimiter(ByteString("\n"), Constants.maximumFrameLength, allowTruncation = true))
       .runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) { case ((acc, codes), message) =>
-        val response = AkkaUtils.toInt(message.take(3).utf8String)
+        val response = SmtpUtils.toInt(message.take(3).utf8String)
         logger.debug(s"${message.utf8String}")
         val newAcc = acc match {
           case f: FailedResult =>

@@ -2,19 +2,20 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
+val `scalaVersion_3`    = "3.3.0"
 val `scalaVersion_2.13` = "2.13.11"
 
 ThisBuild / scapegoatVersion := "2.1.2"
 
-crossScalaVersions := Seq(`scalaVersion_2.13`)
+crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)
 
 ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
 
 ThisBuild / organization := "com.github.ajozwik"
 
-name := "akka-smtp-server"
+name := "pekko-smtp-server"
 
-val targetJdk = "1.8"
+val targetJdk = "8"
 
 ThisBuild / scalafixDependencies += "com.github.vovapolu" %% "scaluzzi" % "0.1.23"
 
@@ -23,21 +24,37 @@ ThisBuild / libraryDependencySchemes ++= Seq(
 )
 
 ThisBuild / scalacOptions ++= Seq(
-  s"-target:jvm-$targetJdk",
-  "-encoding",
-  "UTF-8",
   "-deprecation",
-  "-feature",
   "-unchecked",
-  "-Xlint",
-  //  "-Ywarn-adapted-args",
-  "-Ywarn-value-discard",
-  //  "-Ywarn-inaccessible",
-  "-Ywarn-dead-code",
-  "-language:reflectiveCalls",
-  "-Ydelambdafy:method",
-  "-language:postfixOps"
-)
+  "-feature",
+  "-language:_",
+  s"-release:$targetJdk"
+) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+  case Some((2, _)) =>
+    Seq(
+      "-Ycache-plugin-class-loader:last-modified",
+      "-Ycache-macro-class-loader:last-modified",
+      "-Ywarn-dead-code",
+      "-Xlint",
+      "-Yrangepos",
+      "-Xsource:3",
+      "-Xmaxwarns",
+      200.toString,
+      "-Wconf:cat=lint-multiarg-infix:silent",
+      "-Xlint:-byname-implicit",
+      "-Ymacro-annotations"
+    )
+  case _ =>
+    Seq(
+      "-Wunused:imports",
+      "-Wunused:linted",
+      "-Wunused:locals",
+      "-Wunused:params",
+      "-Wunused:privates",
+      "-language:implicitConversions",
+      "-Yno-decode-stacktraces"
+    )
+})
 
 publish / skip := true
 
@@ -63,10 +80,10 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
 
 lazy val `runtime` = projectName("runtime", file("runtime"))
   .settings(publish / skip := true)
-  .dependsOn(`akka-smtp`)
-  .dependsOn(Seq(`smtp-util`, `akka-smtp`).map(_ % "test->test"): _*)
+  .dependsOn(`pekko-smtp`)
+  .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test"): _*)
 
-lazy val `akka-smtp` = projectName("akka-smtp", file("akka-smtp"))
+lazy val `pekko-smtp` = projectName("pekko-smtp", file("pekko-smtp"))
   .settings(
     libraryDependencies ++= Seq(
       `com.typesafe.akka_akka-slf4j`,

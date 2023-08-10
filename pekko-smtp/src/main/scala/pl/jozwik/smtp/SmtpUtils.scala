@@ -28,7 +28,7 @@ import pl.jozwik.smtp.util.Utils
 
 import scala.util.Try
 
-object AkkaUtils extends StrictLogging {
+object SmtpUtils extends StrictLogging {
   import Utils.withEndOfLine
   def toWrite(line: String): Write = Write(ByteString(withEndOfLine(line)))
 
