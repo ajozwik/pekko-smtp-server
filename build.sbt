@@ -2,9 +2,9 @@ import java.time.LocalDate
 
 import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
-val `scalaVersion_2.13` = "2.13.6"
+val `scalaVersion_2.13` = "2.13.11"
 
-ThisBuild / scapegoatVersion := "1.4.9"
+ThisBuild / scapegoatVersion := "2.1.2"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`)
 
@@ -16,41 +16,42 @@ name := "akka-smtp-server"
 
 val targetJdk = "1.8"
 
+ThisBuild / scalafixDependencies += "com.github.vovapolu" %% "scaluzzi" % "0.1.23"
+
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+)
+
 ThisBuild / scalacOptions ++= Seq(
   s"-target:jvm-$targetJdk",
   "-encoding",
   "UTF-8",
-  "-deprecation", // warning and location for usages of deprecated APIs
-  "-feature",     // warning and location for usages of features that should be imported explicitly
-  "-unchecked",   // additional warnings where generated code depends on assumptions
-  "-Xlint",       // recommended additional warnings
-  //  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
-  "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  "-Xlint",
+  //  "-Ywarn-adapted-args",
+  "-Ywarn-value-discard",
   //  "-Ywarn-inaccessible",
   "-Ywarn-dead-code",
   "-language:reflectiveCalls",
-  "-Ydelambdafy:method"
+  "-Ydelambdafy:method",
+  "-language:postfixOps"
 )
 
 publish / skip := true
 
-val akkaVersion = "2.6.15"
+val akkaVersion = "2.6.20"
 
-val scalatestVersion = "3.2.9"
+val scalatestVersion = "3.2.16"
 
-val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
-
-val `ch.qos.logback_logback-classic` = "ch.qos.logback" % "logback-classic" % "1.2.3"
-
-val `com.typesafe.akka_akka-slf4j` = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
-
-val `com.typesafe.akka_stream` = "com.typesafe.akka" %% "akka-stream" % akkaVersion
-
-val `org.scalatest_scalatest` = "org.scalatest" %% "scalatest" % scalatestVersion % Test
-
-val `org.scalatestplus_scalacheck-1-15` = "org.scalatestplus" %% "scalacheck-1-15" % s"$scalatestVersion.0" % Test
-
-val `org.apache.james_apache-mime4j` = "org.apache.james" % "apache-mime4j" % "0.8.4"
+val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.2.12"
+val `com.typesafe.akka_akka-slf4j`             = "com.typesafe.akka"          %% "akka-slf4j"      % akkaVersion
+val `com.typesafe.akka_stream`                 = "com.typesafe.akka"          %% "akka-stream"     % akkaVersion
+val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
+val `org.apache.james_apache-mime4j`           = "org.apache.james"            % "apache-mime4j"   % "0.8.9"
+val `org.scalatest_scalatest`                  = "org.scalatest"              %% "scalatest"       % scalatestVersion       % Test
+val `org.scalatestplus_scalacheck-1-15`        = "org.scalatestplus"          %% "scalacheck-1-17" % s"$scalatestVersion.0" % Test
 
 lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   libraryDependencies ++= Seq(
@@ -81,8 +82,8 @@ def projectName(name: String, file: File): Project =
       `org.scalatest_scalatest`,
       `org.scalatestplus_scalacheck-1-15`
     ),
-    licenseReportTitle := s"Copyright (c) ${LocalDate.now.getYear} Andrzej Jozwik",
-    licenseSelection := Seq(LicenseCategory.MIT),
-    Compile / doc / sources := Seq.empty,
+    licenseReportTitle       := s"Copyright (c) ${LocalDate.now.getYear} Andrzej Jozwik",
+    licenseSelection         := Seq(LicenseCategory.MIT),
+    Compile / doc / sources  := Seq.empty,
     Test / parallelExecution := false
   )
