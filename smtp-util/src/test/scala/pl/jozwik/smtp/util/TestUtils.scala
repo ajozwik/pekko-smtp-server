@@ -41,6 +41,9 @@ object TestUtils extends StrictLogging {
     number
   }
 
+  def readAnswerOrError(reader: BufferedReader): Try[String] =
+    Try(readAnswer(reader))
+
   def readAnswer(reader: BufferedReader): String = {
     val line = reader.readLine()
     logger.debug(s"$line")

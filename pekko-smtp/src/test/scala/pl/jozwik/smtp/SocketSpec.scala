@@ -22,15 +22,16 @@
 package pl.jozwik.smtp
 
 import java.io.{ BufferedReader, InputStreamReader, PrintWriter }
+import pl.jozwik.smtp.util.TestUtils.*
 
-import pl.jozwik.smtp.util.TestUtils._
+import java.net.Socket
 
 trait SocketSpec extends AutoCloseable {
 
-  val port: Int
-  protected lazy val socket = init(port)
-  protected lazy val writer = new PrintWriter(socket.getOutputStream)
-  protected lazy val reader = new BufferedReader(new InputStreamReader(socket.getInputStream))
+  def port: Int
+  protected lazy val socket: Socket         = init(port)
+  protected lazy val writer: PrintWriter    = new PrintWriter(socket.getOutputStream)
+  protected lazy val reader: BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream))
 
   override def close(): Unit = socket.close()
 

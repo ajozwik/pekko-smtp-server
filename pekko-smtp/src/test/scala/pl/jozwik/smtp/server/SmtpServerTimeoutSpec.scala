@@ -23,15 +23,16 @@ package pl.jozwik.smtp
 package server
 
 import java.util.concurrent.TimeUnit
+import pl.jozwik.smtp.util.Constants.*
+import pl.jozwik.smtp.util.TestUtils.*
 
-import pl.jozwik.smtp.util.Constants._
-import pl.jozwik.smtp.util.TestUtils._
-
-import scala.concurrent.duration._
+import java.net.SocketException
+import scala.concurrent.duration.*
+import scala.util.{ Failure, Success }
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
 
-  val port: Int = configuration.port
+  lazy val port: Int = configuration.port
 
   override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(1.second)
 
@@ -43,17 +44,17 @@ class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
   "SmtpServer " should {
 
     s"Handle $DATA ERROR" in {
-      readAnswer(reader)
+      val a = readAnswer(reader)
       writeLine(writer, s"$HELO")
       val probablyTimeout = readAnswer(reader)
       TimeUnit.MILLISECONDS.sleep(readTimeout.toMillis)
-      val timeoutAnswer = readAnswer(reader)
-      val notEmptyAnswer = if (timeoutAnswer.isEmpty) {
-        probablyTimeout
-      } else {
-        timeoutAnswer
+      readAnswerOrError(reader) match {
+        case Success(v) =>
+          fail(v)
+        case Failure(th) =>
+          logger.error("", th)
       }
-      notEmptyAnswer should startWith(s"$SERVICE_NOT_AVAILABLE")
+      probablyTimeout should startWith(s"$REQUEST_COMPLETE")
     }
 
   }
