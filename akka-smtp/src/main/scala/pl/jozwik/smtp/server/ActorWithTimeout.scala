@@ -2,7 +2,7 @@ package pl.jozwik.smtp.server
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import akka.actor.Cancellable
+import org.apache.pekko.actor.Cancellable
 import pl.jozwik.smtp.actor.AbstractActor
 import pl.jozwik.smtp.server.ActorWithTimeout.TimeoutTick
 

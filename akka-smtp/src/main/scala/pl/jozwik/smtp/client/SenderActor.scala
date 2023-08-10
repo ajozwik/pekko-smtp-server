@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.client
 
-import akka.actor.Props
+import org.apache.pekko.actor.Props
 import pl.jozwik.smtp.actor.AbstractActor
 
 import scala.concurrent.duration._

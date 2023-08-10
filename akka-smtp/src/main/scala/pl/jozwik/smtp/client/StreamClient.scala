@@ -21,9 +21,9 @@
  */
 package pl.jozwik.smtp.client
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{ Flow, Framing, Source, Tcp }
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.{ Flow, Framing, Source, Tcp }
+import org.apache.pekko.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.AkkaUtils
 import pl.jozwik.smtp.util.{ Constants, Mail, SocketAddress, Utils }

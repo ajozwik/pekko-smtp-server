@@ -24,8 +24,8 @@ package server
 
 import java.net.InetSocketAddress
 
-import akka.actor.Props
-import akka.io.Tcp._
+import org.apache.pekko.actor.Props
+import org.apache.pekko.io.Tcp._
 import pl.jozwik.smtp.AkkaUtils._
 import pl.jozwik.smtp.util.Constants._
 

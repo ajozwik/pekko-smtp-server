@@ -24,10 +24,10 @@ package pl.jozwik.smtp.server
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.ActorSystem
-import akka.stream
-import akka.stream.stage._
-import akka.stream.{ FlowShape, Inlet, Outlet }
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream
+import org.apache.pekko.stream.stage._
+import org.apache.pekko.stream.{ FlowShape, Inlet, Outlet }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.command.MessageHandler
 import pl.jozwik.smtp.util.Constants._

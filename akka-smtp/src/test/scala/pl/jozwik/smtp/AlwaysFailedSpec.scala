@@ -23,7 +23,7 @@ package pl.jozwik.smtp
 
 import java.util.concurrent.TimeoutException
 
-import akka.pattern._
+import org.apache.pekko.pattern._
 import org.scalatest.compatible.Assertion
 
 class AlwaysFailedSpec extends AbstractActorSpec {

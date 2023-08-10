@@ -1,8 +1,8 @@
 package pl.jozwik.smtp.client
 
-import akka.actor.ActorSystem
-import akka.pattern._
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.pattern._
+import org.apache.pekko.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.{ Mail, SocketAddress }
 

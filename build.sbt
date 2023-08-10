@@ -41,13 +41,13 @@ ThisBuild / scalacOptions ++= Seq(
 
 publish / skip := true
 
-val akkaVersion = "2.6.20"
+val pekkoVersion = "1.0.1"
 
 val scalatestVersion = "3.2.16"
 
 val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.2.12"
-val `com.typesafe.akka_akka-slf4j`             = "com.typesafe.akka"          %% "akka-slf4j"      % akkaVersion
-val `com.typesafe.akka_stream`                 = "com.typesafe.akka"          %% "akka-stream"     % akkaVersion
+val `com.typesafe.akka_akka-slf4j`             = "org.apache.pekko"           %% "pekko-slf4j"     % pekkoVersion
+val `com.typesafe.akka_stream`                 = "org.apache.pekko"           %% "pekko-stream"    % pekkoVersion
 val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
 val `org.apache.james_apache-mime4j`           = "org.apache.james"            % "apache-mime4j"   % "0.8.9"
 val `org.scalatest_scalatest`                  = "org.scalatest"              %% "scalatest"       % scalatestVersion       % Test

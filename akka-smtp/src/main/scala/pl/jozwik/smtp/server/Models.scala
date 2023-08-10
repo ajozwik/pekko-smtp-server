@@ -24,7 +24,7 @@ package server
 
 import java.time.ZonedDateTime
 
-import akka.actor.Props
+import org.apache.pekko.actor.Props
 import pl.jozwik.smtp.util.Constants._
 import pl.jozwik.smtp.util.Utils._
 import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }

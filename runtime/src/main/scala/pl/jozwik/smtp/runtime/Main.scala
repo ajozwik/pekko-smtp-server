@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.runtime
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.{ Configuration, NopAddressHandler, StreamServer }
 import pl.jozwik.smtp.server.consumer.{ Consumer, LogConsumer }

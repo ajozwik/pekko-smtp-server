@@ -23,7 +23,7 @@ package pl.jozwik.smtp.client
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util._
 

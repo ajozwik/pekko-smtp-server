@@ -24,10 +24,10 @@ package pl.jozwik.smtp.server
 import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import akka.{ NotUsed, stream }
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{ NotUsed, stream }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.SERVICE_READY
 import pl.jozwik.smtp.util.Utils.now

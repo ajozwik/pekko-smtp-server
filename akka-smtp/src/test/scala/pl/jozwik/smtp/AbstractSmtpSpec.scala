@@ -23,8 +23,8 @@ package pl.jozwik.smtp
 
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
-import akka.actor.ActorSystem
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
@@ -63,6 +63,7 @@ trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with Ac
     logger.error(s"$t")
     t
   }
+
 }
 
 trait SmtpSpec extends ActorSpec {
@@ -70,8 +71,6 @@ trait SmtpSpec extends ActorSpec {
   import TestUtils._
 
   protected val host: String = InetAddress.getLocalHost.getHostAddress
-
-  import scala.language.postfixOps
 
   private val defaultMaxSize = 1024
 

@@ -21,7 +21,7 @@
  */
 package pl.jozwik.smtp
 
-import akka.actor.Props
+import org.apache.pekko.actor.Props
 
 object AlwaysFailActor {
   def props: Props = Props[AlwaysFailActor]()

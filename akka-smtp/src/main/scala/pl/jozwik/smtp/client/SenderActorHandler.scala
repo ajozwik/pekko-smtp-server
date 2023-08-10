@@ -2,11 +2,11 @@ package pl.jozwik.smtp.client
 
 import java.net.InetSocketAddress
 import java.time.LocalDateTime
-import akka.actor.Status.Failure
-import akka.actor.{ ActorRef, PoisonPill, Props }
-import akka.io.Tcp._
-import akka.io.{ IO, Tcp }
-import akka.util.ByteString
+import org.apache.pekko.actor.Status.Failure
+import org.apache.pekko.actor.{ ActorRef, PoisonPill, Props }
+import org.apache.pekko.io.Tcp._
+import org.apache.pekko.io.{ IO, Tcp }
+import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.AkkaUtils.toWrite
 import pl.jozwik.smtp.server.ActorWithTimeout
 import pl.jozwik.smtp.util.{ Mail, SocketAddress }

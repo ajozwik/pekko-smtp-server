@@ -21,8 +21,8 @@
  */
 package pl.jozwik.smtp
 
-import akka.io.Tcp.Write
-import akka.util.ByteString
+import org.apache.pekko.io.Tcp.Write
+import org.apache.pekko.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Utils
 
