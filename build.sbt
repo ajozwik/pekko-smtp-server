@@ -1,9 +1,7 @@
 import java.time.LocalDate
 
-
 val `scalaVersion_3`    = "3.3.0"
 val `scalaVersion_2.13` = "2.13.11"
-
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)
 
@@ -49,8 +47,7 @@ ThisBuild / scalacOptions ++= Seq(
       "-Wunused:locals",
       "-Wunused:params",
       "-Wunused:privates",
-      "-language:implicitConversions",
-      "-Yno-decode-stacktraces"
+      "-language:implicitConversions"
     )
 })
 
@@ -79,7 +76,7 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
 lazy val `runtime` = projectName("runtime", file("runtime"))
   .settings(publish / skip := true)
   .dependsOn(`pekko-smtp`)
-  .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test"): _*)
+  .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test")*)
 
 lazy val `pekko-smtp` = projectName("pekko-smtp", file("pekko-smtp"))
   .settings(

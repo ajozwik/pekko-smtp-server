@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.TestUtils.*
 
-import java.net.SocketException
 import scala.concurrent.duration.*
 import scala.util.{ Failure, Success }
 
