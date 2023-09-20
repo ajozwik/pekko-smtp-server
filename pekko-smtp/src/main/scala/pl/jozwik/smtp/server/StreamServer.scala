@@ -25,17 +25,17 @@ import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{ NotUsed, stream }
+import org.apache.pekko.{ stream, NotUsed }
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.SERVICE_READY
 import pl.jozwik.smtp.util.Utils.now
-import pl.jozwik.smtp.util._
+import pl.jozwik.smtp.util.*
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util._
+import scala.util.*
 
 object StreamServer extends StrictLogging {
 
@@ -53,19 +53,31 @@ class StreamServer private (consumer: Mail => Future[ConsumedResult], configurat
 ) extends AutoCloseable
   with StrictLogging {
 
-  import IOUtils._
-  import StreamServer._
+  import IOUtils.*
+  import StreamServer.*
 
   private val sizeHandler = SizeParameterHandler(configuration.size)
 
   private val port = configuration.port
+  logger.debug(s"PORT=$port")
+  private val incomingConnections = Tcp().bind(address, port)
+  private val binding             = incomingConnections.to(connectionHandler).run()
+
+  import system.dispatcher
+
+  binding onComplete {
+    case Success(b) =>
+      logger.debug(s"Server started, listening on: ${b.localAddress}")
+    case Failure(e) =>
+      logger.error(s"Server could not be bound to $address:$port: ${e.getMessage}")
+  }
 
   private def handler(remote: InetSocketAddress, readTimeout: FiniteDuration) =
     new SmtpGraphStage(addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
 
   private def serverLogic(remoteAddress: InetSocketAddress): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
-      import GraphDSL.Implicits._
+      import GraphDSL.Implicits.*
       val date    = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
       val welcome = Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $date")))
 
@@ -88,22 +100,11 @@ class StreamServer private (consumer: Mail => Future[ConsumedResult], configurat
       stream.FlowShape(logic.in, concat.out)
     })
 
-  private val connectionHandler = Sink.foreach[Tcp.IncomingConnection] { conn =>
+  private lazy val connectionHandler = Sink.foreach[Tcp.IncomingConnection] { conn =>
     val remoteAddress = conn.remoteAddress
     logger.debug(s"Incoming connection from: $remoteAddress")
     conn.handleWith(serverLogic(remoteAddress))
     ()
-  }
-  private val incomingConnections = Tcp().bind(address, port)
-  private val binding             = incomingConnections.to(connectionHandler).run()
-
-  import system.dispatcher
-
-  binding onComplete {
-    case Success(b) =>
-      logger.debug(s"Server started, listening on: ${b.localAddress}")
-    case Failure(e) =>
-      logger.error(s"Server could not be bound to $address:$port: ${e.getMessage}")
   }
 
   def close(): Unit = binding.foreach(_.unbind())

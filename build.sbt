@@ -1,6 +1,6 @@
 import java.time.LocalDate
 
-val `scalaVersion_3`    = "3.3.0"
+val `scalaVersion_3`    = "3.3.1"
 val `scalaVersion_2.13` = "2.13.11"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)

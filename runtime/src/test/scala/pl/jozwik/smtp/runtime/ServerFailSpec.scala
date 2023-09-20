@@ -24,28 +24,26 @@ package pl.jozwik.smtp.runtime
 import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
 import pl.jozwik.smtp.SocketSpec
 import pl.jozwik.smtp.server.consumer.{ FileLogConsumer, LogConsumer }
-import pl.jozwik.smtp.util.Constants._
-import pl.jozwik.smtp.util.TestUtils._
-import pl.jozwik.smtp.util._
+import pl.jozwik.smtp.util.Constants.*
+import pl.jozwik.smtp.util.TestUtils.*
+import pl.jozwik.smtp.util.*
 
-class SmtpServerFailFileSpec extends AbstractSmtpServerSpec {
-  System.setProperty(RuntimeConstants.consumerClass, classOf[FileLogConsumer].getName)
-}
+class ServerFailFileSpec extends AbstractSmtpServerSpec(classOf[FileLogConsumer])
 
-class SmtpServerFailSpec extends AbstractSmtpServerSpec {
-  System.setProperty(RuntimeConstants.consumerClass, LogConsumer.getClass.getName)
-}
+class ServerFailSpec extends AbstractSmtpServerSpec(classOf[LogConsumer])
 
-abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAfter with BeforeAndAfterAll with SocketSpec {
-  val port: Int = TestUtils.notOccupiedPortNumber
-
+abstract class AbstractSmtpServerSpec(clazz: Class[?]) extends AbstractAsyncSpec with BeforeAndAfter with BeforeAndAfterAll with SocketSpec {
+  lazy val port: Int = TestUtils.notOccupiedPortNumber
+  logger.debug(s"PORT=$port $clazz")
   protected val sizeOfMailBody: Int = 10 * 1000
+  System.setProperty(RuntimeConstants.consumerClass, clazz.getName)
   System.setProperty(RuntimeConstants.portKey, port.toString)
   System.setProperty(RuntimeConstants.sizeKey, sizeOfMailBody.toString)
+  private lazy val r = new Run
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    Main.main(Array())
+    r.server
     logger.debug(s"${readAnswer(reader)}")
   }
 
@@ -63,7 +61,8 @@ abstract class AbstractSmtpServerSpec extends AbstractAsyncSpec with BeforeAndAf
 
   override protected def afterAll(): Unit = {
     writeLineAndValidateAnswer(s"$QUIT", CLOSING_TERMINATION_CHANNEL)
-    socket.close()
+    r.close()
+    close()
     super.afterAll()
   }
 

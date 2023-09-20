@@ -25,10 +25,10 @@ import java.io.{ BufferedReader, PrintWriter }
 import java.net.{ InetAddress, ServerSocket, Socket }
 import java.util.Objects
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.util.Constants._
+import pl.jozwik.smtp.util.Constants.*
 
+import scala.annotation.tailrec
 import scala.util.{ Failure, Success, Try }
 
 object TestUtils extends StrictLogging {
@@ -44,6 +44,7 @@ object TestUtils extends StrictLogging {
   def readAnswerOrError(reader: BufferedReader): Try[String] =
     Try(readAnswer(reader))
 
+  @tailrec
   def readAnswer(reader: BufferedReader): String = {
     val line = reader.readLine()
     logger.debug(s"$line")
@@ -64,10 +65,11 @@ object TestUtils extends StrictLogging {
     writer.flush()
   }
 
-  private val TIMEOUT = 10
+  private val TIMEOUT = 30
 
-  private val maxRepeat = 100
+  private val maxRepeat = 30
 
+  @tailrec
   def init(port: Int, repeat: Int = maxRepeat): Socket =
     Try {
       new Socket(InetAddress.getLocalHost, port)
