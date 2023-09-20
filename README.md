@@ -4,7 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/ajozwik/pekko-smtp-server/badge.svg?branch=master)](https://coveralls.io/github/ajozwik/pekko-smtp-server?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/pekko-smtp-server?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ajozwik/pekko-smtp-server&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/ajozwik/pekko-smtp-server/graph/badge.svg?token=f5DwN4hYmt)](https://codecov.io/gh/ajozwik/pekko-smtp-server)
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.ajozwik/pekko-smtp_2.13.svg?label=latest%20release%20for%202.13)](http://search.maven.org/#search|ga|1|g%3A%22com.github.ajozwik%22%20AND%20a%3A%22akka-smtp_2.13%22)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.ajozwik/pekko-smtp_2.13.svg?label=latest%20release%20for%202.13)](http://search.maven.org/#search|ga|1|g%3A%22com.github.ajozwik%22%20AND%20a%3A%22pekko-smtp_2.13%22)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.ajozwik/pekko-smtp_3.svg?label=latest%20release%20for%203)](http://search.maven.org/#search|ga|1|g%3A%22com.github.ajozwik%22%20AND%20a%3A%22pekko-smtp_3%22)
 
 Smtp server based on pekko stream.
 
