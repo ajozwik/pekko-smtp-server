@@ -5,7 +5,7 @@ val `scalaVersion_2.13` = "2.13.11"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)
 
-ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
+ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_3`)
 
 ThisBuild / organization := "com.github.ajozwik"
 

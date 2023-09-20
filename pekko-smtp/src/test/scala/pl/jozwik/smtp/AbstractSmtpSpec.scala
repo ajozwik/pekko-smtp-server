@@ -29,11 +29,11 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.BeforeAndAfterAll
 import pl.jozwik.smtp.client.{ ClientWithActor, StreamClient }
-import pl.jozwik.smtp.server._
+import pl.jozwik.smtp.server.*
 import pl.jozwik.smtp.server.consumer.LogConsumer
-import pl.jozwik.smtp.util._
+import pl.jozwik.smtp.util.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ Await, Future }
 
 object ActorSpec {
@@ -68,13 +68,13 @@ trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with Ac
 
 trait SmtpSpec extends ActorSpec {
 
-  import TestUtils._
+  import TestUtils.*
 
   protected val host: String = InetAddress.getLocalHost.getHostAddress
 
   private val defaultMaxSize = 1024
 
-  protected def readTimeout: FiniteDuration = 30 seconds
+  protected def readTimeout: FiniteDuration = 30.seconds
 
   protected def maxSize: Int = defaultMaxSize
 

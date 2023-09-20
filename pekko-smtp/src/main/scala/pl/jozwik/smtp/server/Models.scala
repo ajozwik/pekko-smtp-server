@@ -25,15 +25,15 @@ package server
 import java.time.ZonedDateTime
 
 import org.apache.pekko.actor.Props
-import pl.jozwik.smtp.util.Constants._
-import pl.jozwik.smtp.util.Utils._
+import pl.jozwik.smtp.util.Constants.*
+import pl.jozwik.smtp.util.Utils.*
 import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 final case class PropsWithName(props: Props, name: String)
 
-final case class Configuration(port: Int, size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE, readTimeout: FiniteDuration = 1 hour)
+final case class Configuration(port: Int, size: Long = SizeParameterHandler.DEFAULT_MAIL_SIZE, readTimeout: FiniteDuration = 1.hour)
 
 private[server] case object TickTimeout
 
@@ -52,8 +52,8 @@ case object NoDataResponse extends ResponseMessage
 final case class QuitResponse(message: String) extends ResponseMessage
 
 object MailAccumulator {
-  val empty = MailAccumulator(NEED_HELLO)
-  val withHello = MailAccumulator(!NEED_HELLO)
+  val empty: MailAccumulator     = MailAccumulator(NEED_HELLO)
+  val withHello: MailAccumulator = MailAccumulator(!NEED_HELLO)
 }
 
 final case class MailAccumulator(
@@ -63,8 +63,11 @@ final case class MailAccumulator(
     content: Content = Content(),
     readData: Boolean = false,
     notCompletedLine: Option[String] = None,
-    lastMessageTimestamp: ZonedDateTime = now) {
+    lastMessageTimestamp: ZonedDateTime = now
+) {
+
   def addLine(line: String): MailAccumulator = {
     this.copy(content = Content(content.content :+ line, content.size + line.length))
   }
+
 }

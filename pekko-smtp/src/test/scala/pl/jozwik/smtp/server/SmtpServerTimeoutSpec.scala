@@ -43,7 +43,7 @@ class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
   "SmtpServer " should {
 
     s"Handle $DATA ERROR" in {
-      val a = readAnswer(reader)
+      readAnswer(reader)
       writeLine(writer, s"$HELO")
       val probablyTimeout = readAnswer(reader)
       TimeUnit.MILLISECONDS.sleep(readTimeout.toMillis)
