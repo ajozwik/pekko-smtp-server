@@ -1,11 +1,9 @@
 import java.time.LocalDate
 
-import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport._
 
 val `scalaVersion_3`    = "3.3.0"
 val `scalaVersion_2.13` = "2.13.11"
 
-ThisBuild / scapegoatVersion := "2.1.2"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)
 
