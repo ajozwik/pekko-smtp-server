@@ -58,7 +58,7 @@ publish / skip := true
 
 val pekkoVersion = "1.0.1"
 
-val scalatestVersion = "3.2.16"
+val scalatestVersion = "3.2.17"
 
 val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.2.12"
 val `com.typesafe.akka_akka-slf4j`             = "org.apache.pekko"           %% "pekko-slf4j"     % pekkoVersion
