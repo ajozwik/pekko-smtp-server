@@ -9,7 +9,7 @@ import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
 
 import scala.concurrent.duration.*
 
-final case class Configuration(port: Int, size: Long = SizeParameterHandler.DefaultMailSize, readTimeout: FiniteDuration = 1.hour)
+final case class Configuration(port: Int, maxSize: Long = SizeParameterHandler.DefaultMailSize, readTimeout: FiniteDuration = 1.hour)
 
 private[server] case object TickTimeout
 

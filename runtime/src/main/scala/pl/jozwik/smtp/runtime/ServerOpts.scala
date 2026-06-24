@@ -4,6 +4,7 @@ import pl.jozwik.smtp.server.consumer.{ Consumer, LogConsumer }
 import pl.jozwik.smtp.util.{ ConsumedResult, Mail, RuntimeConstants, SizeParameterHandler }
 
 import scala.concurrent.Future
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 object ServerOpts {
   private val defaultPort = 1587
@@ -19,4 +20,4 @@ object ServerOpts {
   lazy val fromSystemProps: ServerOpts[Consumer] = ServerOpts(Integer.getInteger(RuntimeConstants.portKey, defaultPort).intValue(), size, clazz.consumer)
 }
 
-final case class ServerOpts[T <: Consumer](port: Int, size: Long, consumer: Mail => Future[ConsumedResult])
+final case class ServerOpts[T <: Consumer](port: Int, maxSize: Long, consumer: Mail => Future[ConsumedResult], readTimeout: FiniteDuration = 2.minutes)

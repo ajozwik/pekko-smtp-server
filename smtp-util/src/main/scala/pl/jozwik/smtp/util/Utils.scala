@@ -4,7 +4,6 @@ package util
 import java.net.InetAddress
 import java.time.{ ZoneOffset, ZonedDateTime }
 import java.util.regex.Pattern
-import com.typesafe.scalalogging.StrictLogging
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
@@ -169,7 +168,7 @@ object RuntimeConstants {
   val consumerClass = "consumer.class"
 }
 
-object IOUtils extends StrictLogging {
+object IOUtils {
 
   import sys.env
 

@@ -25,7 +25,9 @@ ThisBuild / scalacOptions ++= Seq(
   "-unchecked",
   "-feature",
   "-language:_",
-  s"-release:$targetJdk"
+  s"-release:$targetJdk",
+  "-Xmaxwarns",
+  200.toString
 ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
   case Some((2, _)) =>
     Seq(
@@ -35,9 +37,6 @@ ThisBuild / scalacOptions ++= Seq(
       "-Xlint",
       "-Yrangepos",
       "-Xsource:3",
-      "-Xmaxwarns",
-      200.toString,
-      "-Wconf:cat=lint-multiarg-infix:silent",
       "-Xlint:-byname-implicit",
       "-Ymacro-annotations"
     )

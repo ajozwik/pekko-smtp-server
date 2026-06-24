@@ -1,7 +1,8 @@
 package pl.jozwik.smtp.runtime
 
+import org.apache.pekko.stream.scaladsl.Tcp
 import org.scalatest.{ Assertion, BeforeAndAfter, BeforeAndAfterAll }
-import pl.jozwik.smtp.SocketSpec
+import pl.jozwik.smtp.{ ActorSpec, SocketSpec }
 import pl.jozwik.smtp.server.consumer.{ FileLogConsumer, LogConsumer }
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.SmtpCodes.*
@@ -18,12 +19,13 @@ abstract class AbstractSmtpServerSpec(consumer: Mail => Future[ConsumedResult])
   extends AbstractAsyncSpec
   with BeforeAndAfter
   with BeforeAndAfterAll
-  with SocketSpec {
+  with SocketSpec
+  with ActorSpec {
   lazy val port: Int = TestUtils.notOccupiedPortNumber
   logger.debug(s"PORT=$port $consumer")
   protected val sizeOfMailBody: Int = 10 * 1000
 
-  private lazy val r = new Run(ServerOpts(port, sizeOfMailBody, consumer))
+  private lazy val r = new Run((host, port) => Tcp().bind(host, port))(ServerOpts(port, sizeOfMailBody, consumer))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

@@ -6,6 +6,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import org.apache.pekko.stream.scaladsl.Tcp
 import org.scalatest.BeforeAndAfterAll
 import pl.jozwik.smtp.client.{ ClientWithActor, StreamClient }
 import pl.jozwik.smtp.server.*
@@ -57,16 +58,16 @@ trait SmtpSpec extends ActorSpec {
 
   protected def maxSize: Int = defaultMaxSize
 
-  protected final val configuration = Configuration(notOccupiedPortNumber, maxSize, readTimeout)
+  protected val port: Int = notOccupiedPortNumber
 
   protected def consumer(mail: Mail): Future[ConsumedResult] = LogConsumer.consumer(mail)
 
   protected def addressHandler: AddressHandler              = NopAddressHandler
-  protected lazy val address: SocketAddress                 = SocketAddress(host, configuration.port)
+  protected lazy val address: SocketAddress                 = SocketAddress(host, port)
   protected final lazy val clientStream: StreamClient       = new StreamClient(address)
   protected final lazy val clientWithActor: ClientWithActor = new ClientWithActor(address)(actorSystem, readTimeout)
-
-  protected final val server: StreamServer = StreamServer(consumer, configuration, addressHandler)(actorSystem)
+  private val connectionHandler                             = ConnectionHandler.connectionHandler(addressHandler, maxSize, consumer, readTimeout)
+  protected final val server: StreamServer                  = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)
 }
 
 trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {

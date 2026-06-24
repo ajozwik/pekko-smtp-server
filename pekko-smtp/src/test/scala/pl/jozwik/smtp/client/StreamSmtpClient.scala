@@ -3,12 +3,11 @@ package pl.jozwik.smtp.client
 import java.util.concurrent.TimeUnit
 
 import org.apache.pekko.actor.ActorSystem
-import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.*
 
 import scala.concurrent.Future
 
-object StreamSmtpClient extends App with StrictLogging {
+object StreamSmtpClient extends ScalaAppWithLogger {
 
   private implicit val system: ActorSystem = ActorSystem("Client")
 

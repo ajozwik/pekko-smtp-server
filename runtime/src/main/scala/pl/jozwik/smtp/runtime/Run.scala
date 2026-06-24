@@ -2,18 +2,25 @@ package pl.jozwik.smtp.runtime
 
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.server.{ Configuration, NopAddressHandler, StreamServer }
+import org.apache.pekko.stream.scaladsl.{ Source, Tcp }
+import pl.jozwik.smtp.server.{ ConnectionHandler, NopAddressHandler, StreamServer }
 import pl.jozwik.smtp.server.consumer.Consumer
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.Future
 
-class Run[T <: Consumer](serverOpts: ServerOpts[T]) extends StrictLogging with AutoCloseable {
+class Run[T <: Consumer](listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]])(serverOpts: ServerOpts[T])(implicit
+    actorSystem: ActorSystem
+) extends StrictLogging
+  with AutoCloseable {
 
-  private implicit val system: ActorSystem = ActorSystem(s"SMTP${serverOpts.port}") // Actor system
-
-  private val configuration = Configuration(serverOpts.port, serverOpts.size, 2.minutes)
-
-  lazy val server: StreamServer = StreamServer(serverOpts.consumer, configuration, NopAddressHandler) // NopAddressHandler - accepts all mail addresses
+  private def connectionHandler =
+    ConnectionHandler.connectionHandler(
+      NopAddressHandler,
+      serverOpts.maxSize,
+      serverOpts.consumer,
+      serverOpts.readTimeout
+    ) // NopAddressHandler - accepts all mail addresses
+  lazy val server: StreamServer = StreamServer(listenSource, serverOpts.port)(connectionHandler)
 
   def close(): Unit =
     server.close()

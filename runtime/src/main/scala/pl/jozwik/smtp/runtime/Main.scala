@@ -1,9 +1,13 @@
 package pl.jozwik.smtp.runtime
 
-@SuppressWarnings(Array("org.wartremover.warts.ScalaApp"))
-object Main extends App {
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Tcp
+import pl.jozwik.smtp.util.ScalaApp
 
-  private val r = new Run(ServerOpts.fromSystemProps)
+object Main extends ScalaApp {
+  private val serverOpts                   = ServerOpts.fromSystemProps
+  private implicit val system: ActorSystem = ActorSystem(s"SMTP-${serverOpts.port}")
+  private val r                            = new Run((host, port) => Tcp().bind(host, port))(serverOpts)
   r.server
 
 }

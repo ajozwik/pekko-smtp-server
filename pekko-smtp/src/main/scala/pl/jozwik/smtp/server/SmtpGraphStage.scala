@@ -16,11 +16,10 @@ class SmtpGraphStage(
     addressHandler: AddressHandler,
     sizeHandler: SizeParameterHandler,
     localHostName: String,
-    remote: InetSocketAddress,
     consumer: Mail => Future[ConsumedResult],
     readTimeout: FiniteDuration,
     tls: AtomicBoolean
-)(implicit system: ActorSystem)
+)(remote: InetSocketAddress)(implicit system: ActorSystem)
   extends GraphStage[stream.FlowShape[String, String]]
   with StrictLogging {
 

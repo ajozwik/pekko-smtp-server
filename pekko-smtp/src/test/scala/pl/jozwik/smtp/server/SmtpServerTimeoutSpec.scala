@@ -12,8 +12,6 @@ import scala.util.{ Failure, Success }
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
 
-  lazy val port: Int = configuration.port
-
   override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(1.second)
 
   override protected def afterAll(): Unit = {
