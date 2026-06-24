@@ -1,37 +1,26 @@
 package pl.jozwik.smtp.runtime
 
-import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Tcp
-import pl.jozwik.smtp.ActorSpec
-import pl.jozwik.smtp.runtime.tls.NoOpX509TrustManager
-import pl.jozwik.smtp.server.consumer.LogConsumer
-import pl.jozwik.smtp.server.{ ConnectionHandler, NopAddressHandler, StreamServer }
+import pl.jozwik.smtp.tls.SSLContextFactory
 import pl.jozwik.smtp.util.ScalaAppWithLogger
 
-import java.security.SecureRandom
-import javax.net.ssl.SSLContext
-import scala.concurrent.duration.DurationInt
+import java.io.File
 
 object TlsTest extends ScalaAppWithLogger {
-  protected implicit val actorSystem: ActorSystem = ActorSystem(s"test-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
+  logger.debug(s"Starting TLS test ${new File("").getAbsolutePath}")
 
   private val sslEngine = () => {
-    val sslContext   = SSLContext.getInstance("TLS")
-    val trustManager = new NoOpX509TrustManager
-    sslContext.init(
-      null,
-      Array(trustManager),
-      new SecureRandom()
-    )
-    val engine = sslContext.createSSLEngine()
+    val sslContext = SSLContextFactory.createServerSSLContextFromPKCS12()()
+    val engine     = sslContext.createSSLEngine()
     engine.setUseClientMode(false)
+    engine.setNeedClientAuth(false)
     engine
   }
 
-
-  val streamServer = StreamServer((host, port) => Tcp().bindWithTls(host, port, sslEngine), 8443)(
-    ConnectionHandler.connectionHandler(NopAddressHandler, 1024, LogConsumer.consumer, 2.minutes)
-  )
+  private val serverOpts                   = ServerOpts.fromSystemProps
+  private implicit val system: ActorSystem = ActorSystem(s"SMTP-${serverOpts.port}")
+  private val r                            = new Run((host, port) => Tcp().bindWithTls(host, port, sslEngine))(serverOpts)
+  r.server
 
 }

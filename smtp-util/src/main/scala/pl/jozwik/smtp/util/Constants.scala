@@ -15,7 +15,7 @@ object Constants {
   val Subject                    = "Subject"
   val LocaleRoot: Locale         = Locale.ROOT
   val NeedHello                  = true
-  val MaximumFrameLength: Int    = 1024
+  val MaximumFrameLength: Int    = 1024 * 16
 
   val DATA              = "DATA"
   val EHLO              = "EHLO"
