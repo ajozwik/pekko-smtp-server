@@ -6,6 +6,7 @@ import org.apache.pekko.actor.Cancellable
 import pl.jozwik.smtp.actor.AbstractActor
 import pl.jozwik.smtp.server.ActorWithTimeout.TimeoutTick
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.FiniteDuration
 
 object ActorWithTimeout {
@@ -17,31 +18,33 @@ trait ActorWithTimeout extends AbstractActor {
 
   import context.dispatcher
 
-  private var cancellable: Option[Cancellable] = None
+  private val cancellable = new AtomicReference[Seq[Cancellable]](Seq.empty)
 
-  private var lastAccess: LocalDateTime = LocalDateTime.now()
+  private val lastAccess: AtomicReference[LocalDateTime] = new AtomicReference(LocalDateTime.now())
 
   val timeout: FiniteDuration
 
-  protected val tick: FiniteDuration = timeout / 2
+  private val tick: FiniteDuration = timeout / 2
 
   override def preStart(): Unit = {
     super.preStart()
-    cancellable = Option(context.system.scheduler.scheduleOnce(tick, self, TimeoutTick))
+    addCancellable()
     ()
   }
 
+
+
   override def postStop(): Unit = {
     super.postStop()
-    cancellable.foreach(_.cancel())
+    cancellable.get().foreach(_.cancel())
   }
 
   override def unhandled(message: Any): Unit = message match {
     case TimeoutTick =>
-      if (LocalDateTime.now.minus(timeout.toMillis, ChronoUnit.MILLIS).isAfter(lastAccess)) {
-        sendTimeoutMessage(lastAccess)
+      if (LocalDateTime.now.minus(timeout.toMillis, ChronoUnit.MILLIS).isAfter(lastAccess.get())) {
+        sendTimeoutMessage(lastAccess.get())
       } else {
-        cancellable = Some(context.system.scheduler.scheduleOnce(tick, self, TimeoutTick))
+        addCancellable()
       }
     case _ =>
       super.unhandled(message)
@@ -49,9 +52,13 @@ trait ActorWithTimeout extends AbstractActor {
 
   protected def sendTimeoutMessage(lastAccess: LocalDateTime): Unit
 
-  protected def resetTimeout(): Unit = {
-    lastAccess = LocalDateTime.now()
+  private def addCancellable() = {
+    val c = context.system.scheduler.scheduleOnce(tick, self, TimeoutTick)
+    cancellable.getAndAccumulate(Seq(c), (prev, next) => prev.filterNot(_.isCancelled) ++ next)
   }
+
+  private def resetTimeout(): Unit =
+    lastAccess.set(LocalDateTime.now())
 
   protected override def become(state: Receive): Unit = {
     super.become(state)

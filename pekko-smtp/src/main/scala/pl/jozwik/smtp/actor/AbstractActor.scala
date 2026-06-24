@@ -4,7 +4,7 @@ import org.apache.pekko.actor.{ Actor, ActorLogging }
 import com.typesafe.scalalogging.StrictLogging
 
 trait AbstractActor extends Actor with StrictLogging with ActorLogging {
-  protected final val DISCARD = true
+  protected val DISCARD = true
 
   override def preStart(): Unit = {
     logger.debug(s"$self Actor preStart")
@@ -34,4 +34,5 @@ trait AbstractActor extends Actor with StrictLogging with ActorLogging {
   protected def become(state: Receive): Unit = {
     context.become(state, DISCARD)
   }
+
 }

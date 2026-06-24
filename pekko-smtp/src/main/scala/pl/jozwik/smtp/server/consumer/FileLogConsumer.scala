@@ -11,7 +11,7 @@ object FileLogConsumer extends FileLogConsumer
 
 class FileLogConsumer extends AbstractConsumer {
 
-  private val tmpDir = new File(System.getProperty("java.io.tmpdir"))
+  private val tmpDir  = new File(System.getProperty("java.io.tmpdir"))
   private val counter = new AtomicInteger(0)
 
   override def consumer(mail: Mail): Future[ConsumedResult] = {
@@ -26,4 +26,5 @@ class FileLogConsumer extends AbstractConsumer {
       p.close()
     }
   }
+
 }

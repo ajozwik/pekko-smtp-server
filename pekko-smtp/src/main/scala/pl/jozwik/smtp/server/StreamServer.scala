@@ -1,38 +1,17 @@
-/*
- * Copyright (c) 2017 Andrzej Jozwik
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package pl.jozwik.smtp.server
 
 import java.net.InetSocketAddress
 import java.time.format.DateTimeFormatter
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.util.ByteString
-import org.apache.pekko.{ stream, NotUsed }
+import org.apache.pekko.{ NotUsed, stream }
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.util.Constants.SERVICE_READY
 import pl.jozwik.smtp.util.Utils.now
 import pl.jozwik.smtp.util.*
+import pl.jozwik.smtp.util.SmtpCodes.SERVICE_READY
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.*
@@ -72,24 +51,28 @@ class StreamServer private (consumer: Mail => Future[ConsumedResult], configurat
       logger.error(s"Server could not be bound to $address:$port: ${e.getMessage}")
   }
 
-  private def handler(remote: InetSocketAddress, readTimeout: FiniteDuration) =
-    new SmtpGraphStage(addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout)
+  private def handler(remote: InetSocketAddress, readTimeout: FiniteDuration, tls: AtomicBoolean): SmtpGraphStage =
+    new SmtpGraphStage(addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout, tls)
 
   private def serverLogic(remoteAddress: InetSocketAddress): Flow[ByteString, ByteString, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits.*
       val date    = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
       val welcome = Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $date")))
-
-      val logic = b.add(
+      val tls     = new AtomicBoolean(false)
+      val logic   = b.add(
         Flow[ByteString]
-          .via(Framing.delimiter(ByteString(Constants.delimiter), Constants.maximumFrameLength, allowTruncation = true))
-          .map(_.utf8String)
+          .via(Framing.delimiter(ByteString(Constants.Delimiter), Constants.MaximumFrameLength, allowTruncation = true))
           .map { msg =>
-            logger.debug(s"Server received: $msg")
-            s"$msg${Constants.delimiter}"
+            val msgStr = msg.utf8String
+            logger.debug(s"Server received: $msgStr")
+            s"$msgStr${Constants.Delimiter}"
           }
-          .via(handler(remoteAddress, configuration.readTimeout))
+          .via(handler(remoteAddress, configuration.readTimeout, tls))
+          .map { msg =>
+            logger.debug(s"Out: $msg")
+            msg
+          }
           .map(ByteString.apply)
       )
 

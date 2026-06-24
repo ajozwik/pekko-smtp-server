@@ -1,7 +1,7 @@
 package pl.jozwik.smtp.client
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.pattern._
+import org.apache.pekko.pattern.*
 import org.apache.pekko.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.{ Mail, SocketAddress }
@@ -18,4 +18,5 @@ class ClientWithActor(address: SocketAddress)(implicit actorSystem: ActorSystem,
     val future = ref ? MailWithAddress(mail, address)
     future.mapTo[Result]
   }
+
 }

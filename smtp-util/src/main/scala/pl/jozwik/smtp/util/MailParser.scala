@@ -1,37 +1,17 @@
-/*
- * Copyright (c) 2017 Andrzej Jozwik
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package pl.jozwik.smtp
 package util
 
-import java.io._
+import java.io.*
 import java.nio.charset.StandardCharsets
-
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.james.mime4j.dom.Message.Builder
-import org.apache.james.mime4j.dom._
+import org.apache.james.mime4j.dom.*
 import org.apache.james.mime4j.dom.address.MailboxList
-import org.apache.james.mime4j.message._
+import org.apache.james.mime4j.message.*
+import org.apache.pekko.util.ByteString
 
-import scala.jdk.CollectionConverters._
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.*
 
 object TmpEmailContent {
   val empty: TmpEmailContent = TmpEmailContent(IndexedSeq.empty, IndexedSeq.empty, Seq.empty)
@@ -49,7 +29,7 @@ object MailParser extends StrictLogging {
   }
 
   private[util] def toMessage(mailAsTxt: String) =
-    messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes))
+    messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes(StandardCharsets.UTF_8)))
 
   private[util] def parseMessage(mimeMsg: Message): EmailWithContent = {
     val subject = Option(mimeMsg.getSubject)
@@ -67,7 +47,7 @@ object MailParser extends StrictLogging {
       case body: SingleBody =>
         val text = getTxtPart(body)
         EmailWithContent(from, to, subject, Option(text), None, Seq.empty)
-      case x =>
+      case x: Any =>
         throw new UnsupportedOperationException(s"$x")
     }
   }
@@ -85,6 +65,7 @@ object MailParser extends StrictLogging {
       }
       .getOrElse(Seq.empty)
 
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private[smtp] def createTextMessage(mail: Mail): String = {
     val emailContent = mail.emailContent
     val body         = new BasicBodyFactory().textBody(emailContent.bodyAsString, StandardCharsets.UTF_8)
@@ -96,7 +77,7 @@ object MailParser extends StrictLogging {
 
   private def getTxtPart(singleBody: SingleBody): String = {
     val bytes = toByteArray(singleBody)
-    new String(bytes)
+    new String(bytes, StandardCharsets.UTF_8)
   }
 
   private def toOption(seq: IndexedSeq[String]): Option[String] = {
@@ -120,17 +101,18 @@ object MailParser extends StrictLogging {
         acc.copy(htmlBody = acc.htmlBody :+ html)
       case _ if Option(part.getDispositionType).exists(_ != "") =>
         val bytes = toByteArray(b)
-        acc.copy(attachments = Attachment(part.getFilename, bytes) +: acc.attachments)
+        acc.copy(attachments = Attachment(part.getFilename, ByteString(bytes)) +: acc.attachments)
       case _ =>
         acc
     }
 
+  @tailrec
   private def parseBodyParts(entities: Seq[Entity], acc: TmpEmailContent): TmpEmailContent = entities match {
     case part +: tail =>
       val accWithPart =
         part.getBody match {
           case singleBody: SingleBody =>
-            addSingleBody(acc, part.getMimeType.toLowerCase, singleBody, part)
+            addSingleBody(acc, part.getMimeType.toLowerCase(Constants.LocaleRoot), singleBody, part)
           case m: Multipart =>
             addMultipart(m, acc)
           case b =>

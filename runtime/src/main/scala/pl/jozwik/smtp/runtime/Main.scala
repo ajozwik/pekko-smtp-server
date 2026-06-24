@@ -1,8 +1,9 @@
 package pl.jozwik.smtp.runtime
 
+@SuppressWarnings(Array("org.wartremover.warts.ScalaApp"))
 object Main extends App {
 
-  val r = new Run
+  private val r = new Run(ServerOpts.fromSystemProps)
   r.server
 
 }

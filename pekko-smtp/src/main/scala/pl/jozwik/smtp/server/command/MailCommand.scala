@@ -1,40 +1,24 @@
-/*
- * Copyright (c) 2017 Andrzej Jozwik
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package pl.jozwik.smtp
 package server
 package command
 
-import pl.jozwik.smtp.util.Constants._
-import pl.jozwik.smtp.util.Response._
-import pl.jozwik.smtp.util.Utils._
+import pl.jozwik.smtp.util.Constants.*
+import pl.jozwik.smtp.util.Response.*
+import pl.jozwik.smtp.util.Utils.*
 import pl.jozwik.smtp.util.{ MailAddress, ParameterHandler, Parameters, SizeParameterHandler }
 
 object MailCommand {
 
-  import Errors._
+  import Errors.*
 
-  def handleMail(command: String, commandIterator: Iterator[String], argument: String, accumulator: MailAccumulator,
-    sizeHandler: SizeParameterHandler,
-    addressHandler: AddressHandler): (MailAccumulator, ResponseMessage) =
+  def handleMail(
+      command: String,
+      commandIterator: Iterator[String],
+      argument: String,
+      accumulator: MailAccumulator,
+      sizeHandler: SizeParameterHandler,
+      addressHandler: AddressHandler
+  ): (MailAccumulator, ResponseMessage) =
     accumulator.needHello match {
       case true =>
         response(accumulator, HELLO_FIRST)
@@ -44,8 +28,12 @@ object MailCommand {
         response(accumulator, syntaxError(command))
     }
 
-  private def addMail(argument: String, accumulator: MailAccumulator, sizeHandler: SizeParameterHandler,
-    addressHandler: AddressHandler): (MailAccumulator, ResponseMessage) =
+  private def addMail(
+      argument: String,
+      accumulator: MailAccumulator,
+      sizeHandler: SizeParameterHandler,
+      addressHandler: AddressHandler
+  ): (MailAccumulator, ResponseMessage) =
     if (accumulator.from.isEmpty) {
       val parameterHandlerMap = Map(sizeHandler.key -> sizeHandler)
       addMailFrom(argument, accumulator, parameterHandlerMap, addressHandler)
@@ -53,9 +41,12 @@ object MailCommand {
       response(accumulator, SENDER_ALREADY_SPECIFIED)
     }
 
-  private def addMailFrom(argument: String, accumulator: MailAccumulator,
-    parameterHandlerMap: Map[String, ParameterHandler],
-    addressHandler: AddressHandler) = {
+  private def addMailFrom(
+      argument: String,
+      accumulator: MailAccumulator,
+      parameterHandlerMap: Map[String, ParameterHandler],
+      addressHandler: AddressHandler
+  ) = {
     val (message, from, parameters) = responseForMail(argument, addressHandler)
     Parameters.validate(parameters, parameterHandlerMap) match {
       case Left(error) =>
@@ -74,10 +65,7 @@ object MailCommand {
         (response, MailAddress.empty, Seq.empty)
     }
 
-  private def extractSender(
-    argument: String,
-    addressHandler: AddressHandler,
-    address: String): (String, MailAddress) = toMailAddress(address) match {
+  private def extractSender(argument: String, addressHandler: AddressHandler, address: String): (String, MailAddress) = toMailAddress(address) match {
     case Right(from) =>
       val response = if (addressHandler.acceptFrom(from)) {
         senderOk(from)

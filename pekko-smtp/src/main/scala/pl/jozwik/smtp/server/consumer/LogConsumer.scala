@@ -12,4 +12,5 @@ class LogConsumer extends AbstractConsumer {
     logger.debug(s"$mail")
     Future.successful(SuccessfulConsumed)
   }
+
 }

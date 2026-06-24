@@ -1,10 +1,11 @@
 package pl.jozwik.smtp.server.command
 
 import pl.jozwik.smtp.server.{ MailAccumulator, ResponseMessage }
-import pl.jozwik.smtp.util.Constants.TLS_NOT_SUPPORTED
+import pl.jozwik.smtp.util.SmtpResponses.TLS_NOT_SUPPORTED_RESPONSE
 
 object StarttlsCommand {
+
   def handleStarttls: (MailAccumulator, ResponseMessage) =
-    response(MailAccumulator.withHello, s"$TLS_NOT_SUPPORTED TLS not available due to temporary reason")
+    response(MailAccumulator.withHello, TLS_NOT_SUPPORTED_RESPONSE)
 
 }
