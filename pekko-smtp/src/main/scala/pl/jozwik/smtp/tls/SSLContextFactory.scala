@@ -1,11 +1,14 @@
 package pl.jozwik.smtp.tls
 
+import com.typesafe.scalalogging.StrictLogging
+
 import java.io.{ FileInputStream, InputStream }
 import java.security.{ KeyStore, SecureRandom }
+import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.{ KeyManagerFactory, SSLContext, SSLEngine, TrustManagerFactory }
 import scala.util.Using
 
-object SSLContextFactory {
+object SSLContextFactory extends StrictLogging {
 
   def sslEngine(
       keyStoreInputStream: => InputStream = new FileInputStream("server.p12"),
@@ -18,6 +21,22 @@ object SSLContextFactory {
     engine.setUseClientMode(false)
     engine.setNeedClientAuth(false)
     engine
+  }
+
+  def initEngine(sslEngine: AtomicReference[SSLEngine])(createSSLEngine: () => SSLEngine): (SSLEngine, Boolean) = {
+    val (eng, inited) = Option(sslEngine.get()) match {
+      case Some(e) =>
+        (e, false)
+      case None =>
+        val engine = createSSLEngine()
+        sslEngine.set(engine)
+        engine.beginHandshake()
+        (engine, true)
+
+    }
+    val status = eng.getHandshakeStatus
+    logger.debug(s"Handshake status: $status")
+    (eng, inited)
   }
 
   private def createServerSSLContextFromPKCS12(

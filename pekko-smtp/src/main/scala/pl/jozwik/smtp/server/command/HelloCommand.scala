@@ -14,7 +14,7 @@ object HelloCommand {
       s"$REQUEST_COMPLETE-$localHostName Hello ${remote.getHostName} " +
         s"[${remote.getAddress.getHostAddress}] pleased to meet you."
 
-    response(MailAccumulator.withHello, welcomeLine, OK_8_BIT, s"$OK_SIZE $size", OK_PIPELINE)
+    response(MailAccumulator.withHello, welcomeLine, OK_8_BIT, s"$OK_SIZE $size", TLS_OK_RESPONSE, OK_PIPELINE)
 
   }
 
