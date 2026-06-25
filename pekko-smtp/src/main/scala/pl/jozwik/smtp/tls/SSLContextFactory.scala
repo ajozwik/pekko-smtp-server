@@ -1,17 +1,30 @@
 package pl.jozwik.smtp.tls
 
-import java.io.{FileInputStream, InputStream}
-import java.security.{KeyStore, SecureRandom}
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
+import java.io.{ FileInputStream, InputStream }
+import java.security.{ KeyStore, SecureRandom }
+import javax.net.ssl.{ KeyManagerFactory, SSLContext, SSLEngine, TrustManagerFactory }
 import scala.util.Using
 
 object SSLContextFactory {
 
-  def createServerSSLContextFromPKCS12(
+  def sslEngine(
       keyStoreInputStream: => InputStream = new FileInputStream("server.p12"),
       keystorePassword: String = "changeit",
       keyPassword: String = "changeit"
-  )(trustStoreInputStream: => InputStream = new FileInputStream("truststore.jks"), trustPassword: String = "changeit"): SSLContext = {
+  )(trustStoreInputStream: => InputStream = new FileInputStream("truststore.jks"), trustPassword: String = "changeit"): () => SSLEngine = () => {
+    val sslContext =
+      SSLContextFactory.createServerSSLContextFromPKCS12(keyStoreInputStream, keystorePassword, keyPassword)(trustStoreInputStream, trustPassword)
+    val engine = sslContext.createSSLEngine()
+    engine.setUseClientMode(false)
+    engine.setNeedClientAuth(false)
+    engine
+  }
+
+  private def createServerSSLContextFromPKCS12(
+      keyStoreInputStream: => InputStream,
+      keystorePassword: String,
+      keyPassword: String
+  )(trustStoreInputStream: => InputStream, trustPassword: String): SSLContext = {
     val keyStore = KeyStore.getInstance("PKCS12")
     Using.resource(keyStoreInputStream) { is =>
       keyStore.load(is, keystorePassword.toCharArray)

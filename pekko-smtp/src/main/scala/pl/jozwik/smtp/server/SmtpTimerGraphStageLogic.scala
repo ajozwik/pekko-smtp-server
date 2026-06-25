@@ -94,7 +94,7 @@ class SmtpTimerGraphStageLogic(
         failStage(new UnsupportedOperationException(s"$x"))
     }
 
-  private def handleResponse(response: ResponseMessage)(implicit in: Inlet[String], out: Outlet[String]): Unit = {
+  private def handleResponse(response: ResponseMessage)(implicit in: Inlet[String], out: Outlet[String]): Unit =
     response match {
       case TextResponse(command) =>
         pushWithEndOfLine(command)
@@ -107,7 +107,6 @@ class SmtpTimerGraphStageLogic(
         push(out, lines.map(Utils.withEndOfLine).mkString)
       case NoResponse =>
     }
-  }
 
   private def pushWithEndOfLine(message: String)(implicit out: Outlet[String]): Unit =
     push(out, Utils.withEndOfLine(message))

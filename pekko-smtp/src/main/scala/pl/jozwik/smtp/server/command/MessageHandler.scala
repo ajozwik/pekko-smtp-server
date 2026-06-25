@@ -72,22 +72,17 @@ final case class MessageHandler(
         RcptCommand.handleRcpt(commandIterator, argument, accumulator, addressHandler)
       case STARTTLS =>
         StarttlsCommand.handleStarttls
-      case other: String =>
-        handleOtherMessages(other, line, accumulator)
+      case QUIT =>
+        handleQuit(localHostName)
+      case RSET =>
+        handleReset(accumulator)
+      case NOOP =>
+        handleNoop(line, accumulator)
+      case VRFY =>
+        handleVrfy(accumulator)
+      case _ =>
+        commandNotImplemented(line, accumulator)
     }
-
-  private def handleOtherMessages(command: String, line: String, accumulator: MailAccumulator) = command match {
-    case QUIT =>
-      handleQuit(localHostName)
-    case RSET =>
-      handleReset(accumulator)
-    case NOOP =>
-      handleNoop(line, accumulator)
-    case VRFY =>
-      handleVrfy(accumulator)
-    case _ =>
-      commandNotImplemented(line, accumulator)
-  }
 
   private def commandNotImplemented(line: String, accumulator: MailAccumulator): (MailAccumulator, ResponseMessage) = {
     response(accumulator, commandNotRecognized(line))
