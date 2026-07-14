@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.*
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
 import scala.util.{ Failure, Success, Try }
 
 object TestUtils extends StrictLogging {
@@ -17,6 +18,7 @@ object TestUtils extends StrictLogging {
     server.setReuseAddress(true)
     val number = server.getLocalPort
     server.close()
+    logger.trace(s"Port number $number")
     number
   }
 
@@ -26,7 +28,7 @@ object TestUtils extends StrictLogging {
   @tailrec
   def readAnswer(reader: BufferedReader): String = {
     val line = reader.readLine()
-    logger.debug(s"$line")
+    logger.trace(s"$line")
     if (Objects.isNull(line)) {
       ""
     } else {
@@ -49,7 +51,7 @@ object TestUtils extends StrictLogging {
   private val maxRepeat = 20
 
   @tailrec
-  def init(port: Int, repeat: Int = maxRepeat): Socket =
+  def connect(port: Int, repeat: Int = maxRepeat): Socket =
     Try {
       new Socket(InetAddress.getLocalHost, port)
     } match {
@@ -57,10 +59,21 @@ object TestUtils extends StrictLogging {
         s
       case Failure(th) if repeat > 0 =>
         TimeUnit.MILLISECONDS.sleep(TIMEOUT)
-        logger.debug(s"Try again, port number $port", th)
-        init(port, repeat - 1)
+        logger.trace(s"Try again, port number $port", th)
+        connect(port, repeat - 1)
       case Failure(th) =>
         throw th
     }
+
+  @tailrec
+  def waitFor(condition: => Boolean, duration: Duration): Unit =
+    if (condition) {
+      logger.trace("Waiting for")
+      sleep(duration)
+      waitFor(condition, duration)
+    }
+
+  def sleep(duration: Duration): Unit =
+    TimeUnit.MILLISECONDS.sleep(duration.toMillis)
 
 }

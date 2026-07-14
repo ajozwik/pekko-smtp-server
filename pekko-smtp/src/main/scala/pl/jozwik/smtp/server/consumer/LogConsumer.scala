@@ -9,7 +9,7 @@ object LogConsumer extends LogConsumer
 class LogConsumer extends AbstractConsumer {
 
   override def consumer(mail: Mail): Future[ConsumedResult] = {
-    logger.debug(s"$mail")
+    logger.trace(s"$mail")
     Future.successful(SuccessfulConsumed)
   }
 

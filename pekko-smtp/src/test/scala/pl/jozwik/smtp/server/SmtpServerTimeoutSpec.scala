@@ -10,7 +10,7 @@ import pl.jozwik.smtp.util.TestUtils.*
 import scala.concurrent.duration.*
 import scala.util.{ Failure, Success }
 
-class SmtpServerTimeoutSpec extends AbstractSmtpSpec with SocketSpec {
+class SmtpServerTimeoutSpec extends AbstractSmtpSpec with WithSocket {
 
   override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(1.second)
 

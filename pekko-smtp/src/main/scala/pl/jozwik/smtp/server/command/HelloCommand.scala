@@ -9,20 +9,18 @@ import pl.jozwik.smtp.util.SmtpResponses.*
 
 object HelloCommand {
 
-  def handleEhlo(localHostName: String, remote: InetSocketAddress, size: Long): (MailAccumulator, ResponseMessage) = {
+  def handleEhlo(localHostName: String, remote: InetSocketAddress, size: Long)(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) = {
     val welcomeLine =
       s"$REQUEST_COMPLETE-$localHostName Hello ${remote.getHostName} " +
         s"[${remote.getAddress.getHostAddress}] pleased to meet you."
-
-    response(MailAccumulator.withHello, welcomeLine, OK_8_BIT, s"$OK_SIZE $size", OK_PIPELINE)
-
+    response(welcomeLine, OK_8_BIT, s"$OK_SIZE $size", TLS_OK_RESPONSE, OK_PIPELINE)(MailAccumulator.withHello(acc.tls))
   }
 
-  def handleHelo(localHostName: String, remote: InetSocketAddress): (MailAccumulator, ResponseMessage) = {
+  def handleHelo(localHostName: String, remote: InetSocketAddress)(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) = {
     val welcomeLine =
       s"$REQUEST_COMPLETE $localHostName Hello ${remote.getHostName} " +
         s"[${remote.getAddress.getHostAddress}] pleased to meet you."
-    response(MailAccumulator.withHello, welcomeLine)
+    response(welcomeLine)(MailAccumulator.withHello(acc.tls))
 
   }
 

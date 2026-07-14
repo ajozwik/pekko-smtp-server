@@ -31,7 +31,7 @@ class StreamClient(host: String, port: Int)(implicit system: ActorSystem) extend
       .via(Framing.delimiter(ByteString("\n"), Constants.MaximumFrameLength, allowTruncation = true))
       .runFold[(Result, Seq[Int])]((SuccessResult, Seq.empty[Int])) { case ((acc, codes), message) =>
         val response = SmtpUtils.toInt(message.take(3).utf8String)
-        logger.debug(s"${message.utf8String}")
+        logger.trace(s"${message.utf8String}")
         val newAcc = acc match {
           case f: FailedResult =>
             f

@@ -12,14 +12,14 @@ Smtp server based on pekko stream.
 Add to your project:
 
 ```
- libraryDependencies += "com.github.ajozwik" %% "pekko-smtp" % <version>
+ libraryDependencies += "com.github.ajozwik" %% "pekko-smtp" % "0.1.0"
 ```
 
 
 For minimal usage you need to provide `consumer` method with signature (Mail=>Future[ConsumedResult]).
-`consumer` method receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
+`consumer` method receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object, and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
 
-[AddressHandler.scala](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is optional implementation for fail fast address resolution (blacklist).
+[AddressHandler.scala](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is an optional implementation for fail fast address resolution (blacklist).
 
 Usage:
 Implement trait [Consumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala)
@@ -34,7 +34,24 @@ Example usage:
  - Provide [Consumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala) implementation ([FileLogConsumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/FileLogConsumer.scala) in example)
 > pekko-smtp/target/pack/bin/main -Dconsumer.class=pl.jozwik.smtp.server.consumer.FileLogConsumer
 
- - or use project as dependency and provide own Main class 
- 
- 
- If you know, how to handle STARTTLS with pekko-stream (pekko tcp) feel free to create a issue.
+ - or use a project as a dependency and provide own Main class 
+
+List of tls system properties (optional):
+
+* smtp.port - port to connect to
+* smtp.size - max size of message in bytes
+* consumer.class - class to consume messages
+* smtp.tls.client.keyStorePassword - password for client key store
+* smtp.tls.protocol - TLS protocol
+* smtp.tls.keyStorePassword - password for key store
+* smtp.tls.keyStoreFile - path to key store
+* smtp.tls.keyStoreResource - path to key store resource
+* smtp.tls.trustStorePassword - password for trust store
+* smtp.tls.trustStoreFile - path to trust store
+* smtp.tls.trustStoreResource - path to trust store resource
+
+
+For build docs/README.md use:
+```
+docs/mdoc --out .
+```

@@ -2,14 +2,9 @@ package pl.jozwik.smtp
 package server
 
 import java.time.ZonedDateTime
-
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.Utils.*
-import pl.jozwik.smtp.util.{ MailAddress, SizeParameterHandler }
-
-import scala.concurrent.duration.*
-
-final case class Configuration(port: Int, maxSize: Long = SizeParameterHandler.DefaultMailSize, readTimeout: FiniteDuration = 1.hour)
+import pl.jozwik.smtp.util.MailAddress
 
 private[server] case object TickTimeout
 
@@ -28,8 +23,8 @@ case object NoDataResponse extends ResponseMessage
 final case class QuitResponse(message: String) extends ResponseMessage
 
 object MailAccumulator {
-  val empty: MailAccumulator     = MailAccumulator(NeedHello)
-  val withHello: MailAccumulator = MailAccumulator(!NeedHello)
+  val empty: MailAccumulator                           = MailAccumulator(NeedHello)
+  def withHello(tls: Boolean = false): MailAccumulator = MailAccumulator(!NeedHello, tls = tls)
 }
 
 final case class MailAccumulator(
@@ -46,5 +41,7 @@ final case class MailAccumulator(
   def addLine(line: String): MailAccumulator = {
     this.copy(content = Content(content.content :+ line, content.size + line.length))
   }
+
+  def emptyLeaveTls: MailAccumulator = MailAccumulator.empty.copy(tls = tls)
 
 }

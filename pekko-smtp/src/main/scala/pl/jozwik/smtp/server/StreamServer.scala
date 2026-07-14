@@ -5,7 +5,8 @@ import org.apache.pekko.stream.scaladsl.*
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.Done
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ Await, Future }
 import scala.util.*
 
 object StreamServer {
@@ -21,24 +22,37 @@ object StreamServer {
 
 }
 
-class StreamServer private (listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]], address: String, port: Int)(
+class StreamServer private (
+    listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]],
+    address: String,
+    port: Int
+)(
     connectionHandler: => Sink[Tcp.IncomingConnection, Future[Done]]
 )(implicit
     system: ActorSystem
 ) extends AutoCloseable
   with StrictLogging {
 
-  logger.debug(s"PORT=$port")
-  private val binding = listenSource(address, port).to(connectionHandler).run()
+  logger.trace(s"PORT=$port")
+  private lazy val binding: Future[Tcp.ServerBinding] = listenSource(address, port).to(connectionHandler).run()
 
   import system.dispatcher
 
   binding onComplete {
     case Success(b) =>
-      logger.debug(s"Server started, listening on: ${b.localAddress}")
+      logger.trace(s"Server started, listening on: ${b.localAddress}")
     case Failure(e) =>
       logger.error(s"Server could not be bound to $address:$port: ${e.getMessage}")
   }
 
-  def close(): Unit = binding.foreach(_.unbind())
+  def isBound: Boolean = binding.isCompleted
+
+  def close(): Unit = binding.foreach { b =>
+    logger.trace(s"Server stopping, listening on: ${b.localAddress}")
+    val f = b.unbind().flatMap(_ => b.whenUnbound)
+    Await.result(f, 3.seconds)
+    f.onComplete(_ => system.terminate())
+    logger.trace(s"Server stopped, listening on: ${b.localAddress}")
+  }
+
 }

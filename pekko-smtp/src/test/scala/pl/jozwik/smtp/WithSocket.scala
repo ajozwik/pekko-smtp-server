@@ -1,14 +1,21 @@
 package pl.jozwik.smtp
 
+import com.typesafe.scalalogging.StrictLogging
+import pl.jozwik.smtp.util.TestUtils
+
 import java.io.{ BufferedReader, InputStreamReader, PrintWriter }
-import pl.jozwik.smtp.util.TestUtils.*
 
 import java.net.Socket
 
-trait SocketSpec extends AutoCloseable {
+trait WithPort extends StrictLogging {
 
-  protected def port: Int
-  protected lazy val socket: Socket         = init(port)
+  protected lazy val port: Int = TestUtils.notOccupiedPortNumber
+
+}
+
+trait WithSocket extends AutoCloseable with WithPort {
+
+  protected lazy val socket: Socket         = TestUtils.connect(port)
   protected lazy val writer: PrintWriter    = new PrintWriter(socket.getOutputStream)
   protected lazy val reader: BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream))
 

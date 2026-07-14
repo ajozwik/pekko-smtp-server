@@ -31,7 +31,7 @@ class SenderActor(timeout: FiniteDuration) extends AbstractActor {
   override def receive: Receive = handleMessage(0, 0)
 
   private def logAndBecome(success: Int, failed: Int): Unit = {
-    logger.debug(s"END: success:$success failed:$failed")
+    logger.trace(s"END: success:$success failed:$failed")
     become(handleMessage(success, failed))
   }
 

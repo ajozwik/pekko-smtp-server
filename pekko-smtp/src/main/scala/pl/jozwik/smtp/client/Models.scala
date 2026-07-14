@@ -14,11 +14,4 @@ sealed trait Result
 
 case object SuccessResult extends Result
 
-object FailedResult {
-
-  def empty: FailedResult =
-    FailedResult("")
-
-}
-
 final case class FailedResult(error: String) extends Result

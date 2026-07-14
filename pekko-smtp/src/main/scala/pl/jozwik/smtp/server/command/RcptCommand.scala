@@ -12,37 +12,39 @@ object RcptCommand {
   def handleRcpt(
       iterator: Iterator[String],
       argument: String,
-      accumulator: MailAccumulator,
       addressHandler: AddressHandler
-  ): (MailAccumulator, ResponseMessage) = {
-    val (acc, message) = if (iterator.hasNext && iterator.next() == TO && !iterator.hasNext) {
-      responseForRcptAndValidation(accumulator, argument, addressHandler)
+  )(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) = {
+    val (newAcc, message) = if (iterator.hasNext && iterator.next() == TO && !iterator.hasNext) {
+      responseForRcptAndValidation(argument, addressHandler)
     } else {
-      (accumulator, syntaxError(TO))
+      (acc, syntaxError(TO))
     }
-    response(acc, message)
+    response(message)(newAcc)
   }
 
-  private def responseForRcptAndValidation(accumulator: MailAccumulator, argument: String, addressHandler: AddressHandler): (MailAccumulator, String) =
-    (accumulator.from.isEmpty, argument.isEmpty) match {
+  private def responseForRcptAndValidation(
+      argument: String,
+      addressHandler: AddressHandler
+  )(implicit acc: MailAccumulator): (MailAccumulator, String) =
+    (acc.from.isEmpty, argument.isEmpty) match {
       case (EMPTY, _) =>
-        (accumulator, MAIL_MISSING)
+        (acc, MAIL_MISSING)
       case (NOT_EMPTY, EMPTY) =>
-        (accumulator, syntaxError(s"$TO"))
+        (acc, syntaxError(s"$TO"))
       case _ =>
-        responseForRcptTo(accumulator, argument, addressHandler)
+        responseForRcptTo(argument, addressHandler)
 
     }
 
-  private def responseForRcptTo(accumulator: MailAccumulator, argument: String, addressHandler: AddressHandler): (MailAccumulator, String) =
+  private def responseForRcptTo(argument: String, addressHandler: AddressHandler)(implicit acc: MailAccumulator): (MailAccumulator, String) =
     toMailAddress(argument) match {
       case Right(mailAddress) if addressHandler.acceptTo(mailAddress) =>
-        val acc = accumulator.copy(to = mailAddress +: accumulator.to)
-        (acc, recipientOk(mailAddress))
+        val newAcc = acc.copy(to = mailAddress +: acc.to)
+        (newAcc, recipientOk(mailAddress))
       case Right(mailAddress) =>
-        (accumulator, userUnknown(mailAddress))
+        (acc, userUnknown(mailAddress))
       case Left(error) =>
-        (accumulator, error)
+        (acc, error)
     }
 
 }

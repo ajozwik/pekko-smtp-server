@@ -12,7 +12,7 @@ abstract class AbstractSmtpActor(bindAddress: InetSocketAddress) extends Abstrac
 
   override def unhandled(message: Any): Unit = message match {
     case b @ Bound(_) =>
-      logger.debug(s"$b")
+      logger.trace(s"$b")
     case CommandFailed(c) =>
       logger.error(s"$c\n${c.failureMessage}")
       self ! PoisonPill

@@ -35,9 +35,9 @@ object StreamSmtpClient extends ScalaAppWithLogger {
   }
 
   Future.sequence(futures).foreach { seq =>
-    logger.debug(s"${seq.size} $seq")
+    logger.trace(s"${seq.size} $seq")
     seq.foreach { result =>
-      logger.debug(s"Result:$result")
+      logger.trace(s"Result:$result")
     }
     system.terminate()
   }

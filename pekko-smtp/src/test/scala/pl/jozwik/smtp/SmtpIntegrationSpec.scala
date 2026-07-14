@@ -18,19 +18,24 @@ abstract class AbstractSmtpIntegrationSpec extends AbstractSmtpSpec {
   "Smtp integration test" should {
 
     "finished without error" in {
-
       val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
       val future = client.sendMail(mail)
-      future.map { _ shouldBe SuccessResult }
-
+      future
+        .map { r =>
+          logger.trace(s"$r")
+          r shouldBe SuccessResult
+        }
+        .recover { th =>
+          fail(th)
+        }
     }
 
     "Too much data" in {
       val line = Utils.withEndOfLine("Content")
       val size = maxSize / line.length + 1
-      logger.debug(s"$size $maxSize ${line.length}")
+      logger.trace(s"$size $maxSize ${line.length}")
       val largeContent = Seq.fill(size)(line).mkString
-      logger.debug(s"$size $maxSize ${line.length} ${largeContent.length}")
+      logger.trace(s"$size $maxSize ${line.length} ${largeContent.length}")
       val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", largeContent))
       val future = client.sendMail(mail)
       future.map { result =>

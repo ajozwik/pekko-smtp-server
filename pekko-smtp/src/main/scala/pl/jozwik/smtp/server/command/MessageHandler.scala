@@ -12,24 +12,23 @@ import pl.jozwik.smtp.util.{ Constants, Mail, SizeParameterHandler }
 
 object MessageHandler {
 
-  private def handleVrfy(accumulator: MailAccumulator) =
-    response(accumulator, CANNOT_VERIFY)
+  private def handleVrfy(implicit acc: MailAccumulator) =
+    response(CANNOT_VERIFY)
 
-  private def handleReset(accumulator: MailAccumulator) =
-    response(MailAccumulator(accumulator.needHello), RESET_OK)
+  private def handleReset(implicit acc: MailAccumulator) =
+    response(RESET_OK)(MailAccumulator(acc.needHello))
 
-  private def handleNoop(line: String, accumulator: MailAccumulator) = {
+  private def handleNoop(line: String)(implicit acc: MailAccumulator) = {
     val message = if (line.trim == NOOP) {
       NOOP_OK
     } else {
       commandNotRecognized(line)
     }
-    response(accumulator, message)
-
+    response(message)
   }
 
-  private def handleQuit(localHostName: String): (MailAccumulator, ResponseMessage) =
-    closeResponse(MailAccumulator.empty, closingChannel(localHostName))
+  private def handleQuit(localHostName: String)(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) =
+    closeResponse(closingChannel(localHostName))(acc.emptyLeaveTls)
 
 }
 
@@ -43,13 +42,13 @@ final case class MessageHandler(
 
   import MessageHandler.*
 
-  def handleMessage(line: String, stripped: String, accumulator: MailAccumulator): (MailAccumulator, ResponseMessage) =
-    if (accumulator.readData) {
-      DataCommand.readContent(line, stripped, accumulator, sizeHandler, consumer)
+  def handleMessage(line: String, stripped: String, starttlsSupport: Boolean)(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) =
+    if (acc.readData) {
+      DataCommand.readContent(line, stripped, sizeHandler, consumer)
     } else {
       val (command, argument) = splitLineByColon(stripped)
       val commandIterator     = splitOnWhiteSpaces(command).map(_.toUpperCase(Constants.LocaleRoot))
-      handleCommandMessage(command, stripped, commandIterator.iterator, argument, accumulator)
+      handleCommandMessage(command, stripped, commandIterator.iterator, argument, starttlsSupport)
     }
 
   private def handleCommandMessage(
@@ -57,41 +56,36 @@ final case class MessageHandler(
       line: String,
       commandIterator: Iterator[String],
       argument: String,
-      accumulator: MailAccumulator
-  ): (MailAccumulator, ResponseMessage) =
+      starttlsSupport: Boolean
+  )(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) =
     commandIterator.next() match {
       case HELO =>
         HelloCommand.handleHelo(localHostName, remote)
       case EHLO =>
         HelloCommand.handleEhlo(localHostName, remote, sizeHandler.size)
       case DATA =>
-        DataCommand.handleData(accumulator)
+        DataCommand.handleData
       case MAIL =>
-        MailCommand.handleMail(command, commandIterator, argument, accumulator, sizeHandler, addressHandler)
+        MailCommand.handleMail(command, commandIterator, argument, sizeHandler, addressHandler)
       case RCPT =>
-        RcptCommand.handleRcpt(commandIterator, argument, accumulator, addressHandler)
+        RcptCommand.handleRcpt(commandIterator, argument, addressHandler)
       case STARTTLS =>
-        StarttlsCommand.handleStarttls
-      case other: String =>
-        handleOtherMessages(other, line, accumulator)
+        StarttlsCommand.handleStarttls(starttlsSupport)
+      case HANDSHAKE =>
+        HandshakeCommand.handleHandshake
+      case QUIT =>
+        handleQuit(localHostName)
+      case RSET =>
+        handleReset
+      case NOOP =>
+        handleNoop(line)
+      case VRFY =>
+        handleVrfy
+      case _ =>
+        commandNotImplemented(line)
     }
 
-  private def handleOtherMessages(command: String, line: String, accumulator: MailAccumulator) = command match {
-    case QUIT =>
-      handleQuit(localHostName)
-    case RSET =>
-      handleReset(accumulator)
-    case NOOP =>
-      handleNoop(line, accumulator)
-    case VRFY =>
-      handleVrfy(accumulator)
-    case _ =>
-      commandNotImplemented(line, accumulator)
-  }
-
-  private def commandNotImplemented(line: String, accumulator: MailAccumulator): (MailAccumulator, ResponseMessage) = {
-    response(accumulator, commandNotRecognized(line))
-
-  }
+  private def commandNotImplemented(line: String)(implicit acc: MailAccumulator): (MailAccumulator, ResponseMessage) =
+    response(commandNotRecognized(line))
 
 }

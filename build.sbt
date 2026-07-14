@@ -1,10 +1,11 @@
 import java.time.LocalDate
 import Versions.*
 
-val `scalaVersion_3`    = "3.3.8"
-val `scalaVersion_2.13` = "2.13.18"
+val `scalaVersion_3_lts` = "3.3.8"
+val `scalaVersion_3.8`   = "3.8.4"
+val `scalaVersion_2.13`  = "2.13.18"
 
-ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3`)
+ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3_lts`, `scalaVersion_3.8`)
 
 ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
 
@@ -24,10 +25,7 @@ ThisBuild / scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
   "-feature",
-  "-language:_",
-  s"-release:$targetJdk",
-  "-Xmaxwarns",
-  200.toString
+  s"-release:$targetJdk"
 ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
   case Some((2, _)) =>
     Seq(
@@ -35,10 +33,13 @@ ThisBuild / scalacOptions ++= Seq(
       "-Ycache-macro-class-loader:last-modified",
       "-Ywarn-dead-code",
       "-Xlint",
+      "-language:_",
       "-Yrangepos",
       "-Xsource:3",
       "-Xlint:-byname-implicit",
-      "-Ymacro-annotations"
+      "-Ymacro-annotations",
+      "-Xmaxwarns",
+      200.toString
     )
   case _ =>
     Seq(
@@ -69,7 +70,7 @@ val wartConfig = Warts.allBut(
 
 publish / skip := true
 
-val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.5.35"
+val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.5.38"
 val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.6"
 val `org.apache.james_apache-mime4j`           = "org.apache.james"            % "apache-mime4j"   % "0.8.14"
 val `org.apache.pekko_akka-slf4j`              = "org.apache.pekko"           %% "pekko-slf4j"     % pekkoVersion
@@ -90,6 +91,7 @@ lazy val `runtime` = projectName("runtime", file("runtime"))
   .settings(publish / skip := true)
   .dependsOn(`pekko-smtp`)
   .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test") *)
+  .enablePlugins(PackPlugin)
 
 lazy val `pekko-smtp` = projectName("pekko-smtp", file("pekko-smtp"))
   .settings(
@@ -98,7 +100,12 @@ lazy val `pekko-smtp` = projectName("pekko-smtp", file("pekko-smtp"))
     )
   )
   .dependsOn(`smtp-util`, `smtp-util` % "test->test")
-  .enablePlugins(PackPlugin)
+
+lazy val docs = project
+  .in(file("smtp-docs"))
+  .settings(mdocVariables := Map("VERSION" -> version.value))
+  .dependsOn(runtime)
+  .enablePlugins(MdocPlugin)
 
 def projectName(name: String, file: File): Project =
   Project(name, file).settings(
