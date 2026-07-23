@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.server.command
 
-import pl.jozwik.smtp.server.{ MailAccumulator, ResponseMessage }
+import pl.jozwik.smtp.server.{MailAccumulator, ResponseMessage}
 import pl.jozwik.smtp.util.SmtpResponses
 
 object HandshakeCommand {

@@ -2,9 +2,9 @@ package pl.jozwik.smtp.util
 
 import SmtpCodes.*
 
-import java.nio.charset.{ Charset, StandardCharsets }
+import java.nio.charset.{Charset, StandardCharsets}
 import java.util.Locale
-import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object Constants {
 

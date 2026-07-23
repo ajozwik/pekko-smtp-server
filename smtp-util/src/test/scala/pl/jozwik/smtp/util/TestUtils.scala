@@ -1,7 +1,7 @@
 package pl.jozwik.smtp.util
 
-import java.io.{ BufferedReader, PrintWriter }
-import java.net.{ InetAddress, ServerSocket, Socket }
+import java.io.{BufferedReader, PrintWriter}
+import java.net.{InetAddress, ServerSocket, Socket}
 import java.util.Objects
 import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.StrictLogging
@@ -9,7 +9,7 @@ import pl.jozwik.smtp.util.Constants.*
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 object TestUtils extends StrictLogging {
 

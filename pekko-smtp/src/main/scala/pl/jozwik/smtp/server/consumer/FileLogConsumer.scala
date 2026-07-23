@@ -1,9 +1,9 @@
 package pl.jozwik.smtp.server.consumer
 
-import java.io.{ File, PrintWriter }
+import java.io.{File, PrintWriter}
 import java.util.concurrent.atomic.AtomicInteger
 
-import pl.jozwik.smtp.util.{ ConsumedResult, Mail, SuccessfulConsumed }
+import pl.jozwik.smtp.util.{ConsumedResult, Mail, SuccessfulConsumed}
 
 import scala.concurrent.Future
 

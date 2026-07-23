@@ -3,7 +3,7 @@ package pl.jozwik.smtp
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.TestUtils
 
-import java.io.{ BufferedReader, InputStreamReader, PrintWriter }
+import java.io.{BufferedReader, InputStreamReader, PrintWriter}
 
 import java.net.Socket
 

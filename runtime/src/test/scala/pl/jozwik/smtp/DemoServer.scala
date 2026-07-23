@@ -1,6 +1,6 @@
 package pl.jozwik.smtp
 
-import pl.jozwik.smtp.util.{ ScalaAppWithLogger, TestUtils }
+import pl.jozwik.smtp.util.{ScalaAppWithLogger, TestUtils}
 
 import scala.concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
@@ -18,7 +18,7 @@ class DemoServer(port: Int) extends Demo {
   def runDemo(): Future[Unit] = {
     TestUtils.waitFor(!run.isBound, 10.millis)
 
-    val futures = (1 to 1).map(i => Future(action(s"client$i")(port)))
+    val futures = (1 to 1).map(i => Future(sendMail(s"client$i")(port)))
 
     Future.sequence(futures).map(_ => run.close()).recover { case e: Exception =>
       logger.error("Error:", e)

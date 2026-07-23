@@ -1,21 +1,22 @@
 package pl.jozwik.smtp.tls
 
 import pl.jozwik.smtp.TlsOpts
-import pl.jozwik.smtp.util.{ ByteBufferHelper, Constants, SmtpResponses }
+import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, SmtpResponses}
 
-import java.io.InputStream
+import java.io.{FileInputStream, InputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.{ SelectableChannel, SelectionKey, ServerSocketChannel, SocketChannel }
+import java.nio.channels.{SelectableChannel, SelectionKey, ServerSocketChannel, SocketChannel}
+import javax.net.ssl.SSLEngine
 
 class NioSslServer(
     protocol: String,
     hostAddress: String,
     port: Int,
-    keyPath: => InputStream = classOf[NioSslServer].getResourceAsStream("/tls13/server.jks"),
+    keyPath: => InputStream = new FileInputStream(EphemeralTls.serverKeyStoreFile),
     keystorePassword: String = TlsOpts.keystorePassword,
     keyPassword: String = TlsOpts.keystorePassword
-)(trustPath: => InputStream = classOf[NioSslServer].getResourceAsStream("/tls13/trustedCerts.jks"), trustPassword: String = TlsOpts.trustPassword)
+)(trustPath: => InputStream = new FileInputStream(EphemeralTls.trustStoreFile), trustPassword: String = TlsOpts.trustPassword)
   extends NioSslPeer(protocol)(keyPath, keystorePassword, keyPassword)(trustPath, trustPassword)
   with WithSslEngineServer {
 
@@ -76,8 +77,8 @@ class NioSslServer(
       str match {
         case Constants.STARTTLS =>
           write(a.engine, ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}"))(writeByteBuffer, closeConn)
-          val e = context.createSSLEngine()
-          setEngineModeAndStartHandshake(e, a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer)
+          implicit val e: SSLEngine = context.createSSLEngine()
+          setEngineModeAndStartHandshake(a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer)
         case _ =>
           write(a.engine, ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}"))(writeByteBuffer, closeConn)
       }

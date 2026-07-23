@@ -4,7 +4,7 @@ import pl.jozwik.smtp.util.ByteBufferHelper
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.net.ssl.{ SSLEngine, SSLEngineResult }
+import javax.net.ssl.{SSLEngine, SSLEngineResult}
 
 trait WithSslEngineServer extends WithSslEngine {
 

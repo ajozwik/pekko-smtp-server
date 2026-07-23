@@ -26,5 +26,6 @@ object RuntimeConstants {
   val trustStorePassword: RuntimeConstant     = RuntimeConstant(s"$prefix.trustStorePassword", "password for trust store")
   val trustStoreFile: RuntimeConstant         = RuntimeConstant(s"$prefix.trustStoreFile", "path to trust store")
   val trustStoreResource: RuntimeConstant     = RuntimeConstant(s"$prefix.trustStoreResource", "path to trust store resource")
+  val ephemeral: RuntimeConstant = RuntimeConstant(s"$prefix.ephemeral", "generate a throwaway self-signed key/trust store instead of requiring one")
 
 }

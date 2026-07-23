@@ -8,13 +8,13 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.stream.scaladsl.Tcp
 import org.scalatest.BeforeAndAfterAll
-import pl.jozwik.smtp.client.{ ClientWithActor, StreamClient }
+import pl.jozwik.smtp.client.{ClientWithActor, StreamClient}
 import pl.jozwik.smtp.server.*
 import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.util.*
 
 import scala.concurrent.duration.*
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
 
 object ActorSpec {
   private[smtp] val number = Iterator from 1

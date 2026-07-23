@@ -1,7 +1,7 @@
 package pl.jozwik.smtp
 
-import pl.jozwik.smtp.client.{ FailedResult, SenderClient, SuccessResult }
-import pl.jozwik.smtp.util.{ EmailWithContent, Mail, Utils }
+import pl.jozwik.smtp.client.{FailedResult, SenderClient, SuccessResult}
+import pl.jozwik.smtp.util.{EmailWithContent, Mail, Utils}
 
 class SmtpStreamIntegrationSpec extends AbstractSmtpIntegrationSpec {
   protected val client: SenderClient = clientStream

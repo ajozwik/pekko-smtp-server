@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.tls
 
-import java.util.concurrent.atomic.{ AtomicBoolean, AtomicReference }
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 

@@ -4,7 +4,7 @@ package util
 import com.typesafe.scalalogging.StrictLogging
 
 import java.net.InetAddress
-import java.time.{ ZoneOffset, ZonedDateTime }
+import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
@@ -164,8 +164,8 @@ object Utils extends StrictLogging {
         Right(addressWithBrackets)
     }
 
-  def extractMessage(lines: IndexedSeq[String]): EmailWithContent =
-    MailParser.parse(lines.mkString)
+  def extractMessage(lines: IndexedSeq[String], from: MailAddress, to: Seq[MailAddress]): EmailWithContent =
+    MailParser.parse(lines.mkString, from, to)
 
   def unsafeHead[S](seq: Iterable[S]): S =
     seq.headOption.getOrElse(throw new NoSuchElementException())

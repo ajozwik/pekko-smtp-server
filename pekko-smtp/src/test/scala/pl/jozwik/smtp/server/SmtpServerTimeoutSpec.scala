@@ -8,7 +8,7 @@ import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.TestUtils.*
 
 import scala.concurrent.duration.*
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with WithSocket {
 

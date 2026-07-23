@@ -5,13 +5,13 @@ import pl.jozwik.smtp.util.Utils
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.spi.SelectorProvider
-import java.nio.channels.{ SelectableChannel, SelectionKey, Selector, SocketChannel }
+import java.nio.channels.{SelectableChannel, SelectionKey, Selector, SocketChannel}
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ ExecutorService, Executors, TimeUnit }
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.*
 import scala.annotation.tailrec
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePassword: String, keyPassword: String)(
     trustPath: => InputStream,
@@ -67,12 +67,12 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       logger.trace(s"$whoIAm: Leave mainLoop")
     }
 
-  protected def setEngineModeAndStartHandshake(e: SSLEngine, a: Attachment, useClientMode: Boolean)(
+  protected def setEngineModeAndStartHandshake(a: Attachment, useClientMode: Boolean)(
       selectionKey: SelectionKey
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int): Unit = {
-    val attachment = setEngineModeAndStartHandshake(a, e, useClientMode)
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
+    val attachment: Attachment = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
-    doHandshake(e, attachment.buffers, attachment.handshakeStatus, attachment.open)(readByteBuffer, writeByteBuffer)
+    doHandshake(attachment.buffers, attachment.handshakeStatus, attachment.open)(readByteBuffer, writeByteBuffer)
   }
 
   protected def closeConnection(sc: SocketChannel): Unit
@@ -86,7 +86,8 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
             case Attachment(Some(engine), buffers, status, result)
                 if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
               logger.trace(s"$whoIAm: ($seq)  Handshake is still in progress: ${status.get()}")
-              doHandshake(engine, buffers, status, result)(sc.read, b => sc.write(b))
+              implicit val e: SSLEngine = engine
+              doHandshake(buffers, status, result)(sc.read, b => sc.write(b))
             case a @ Attachment(_, _, _, open) =>
               readAndResponse(a.clearBuffers, key, open.get())(sc.read, b => sc.write(b), () => closeConnection(sc))
             case r =>

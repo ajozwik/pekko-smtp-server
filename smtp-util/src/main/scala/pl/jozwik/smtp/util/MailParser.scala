@@ -22,20 +22,20 @@ object MailParser extends StrictLogging {
   private[util] val messageBuilder = new DefaultMessageBuilder
   private val writer               = new DefaultMessageWriter
 
-  def parse(mailAsTxt: String): EmailWithContent = {
+  def parse(mailAsTxt: String, from: MailAddress = MailAddress.empty, to: Seq[MailAddress] = Seq.empty): EmailWithContent = {
     val mimeMsg = toMessage(mailAsTxt)
-    parseMessage(mimeMsg)
+    parseMessage(mimeMsg, from, to)
   }
 
   private[util] def toMessage(mailAsTxt: String) =
     messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes(Constants.Utf8sCharset)))
 
-  private[util] def parseMessage(mimeMsg: Message): EmailWithContent = {
+  private[util] def parseMessage(mimeMsg: Message, f: MailAddress, t: Seq[MailAddress]): EmailWithContent = {
     val subject = Option(mimeMsg.getSubject)
-    val from    = toList(Option(mimeMsg.getFrom))
-    val to      = toList(Option(mimeMsg.getTo).map(_.flatten()))
-    logger.trace(s"To: ${mimeMsg.getTo}")
-    logger.trace(s"From: ${mimeMsg.getFrom}")
+    val from    = toList(Option(mimeMsg.getFrom), Seq(f))
+    val to      = toList(Option(mimeMsg.getTo).map(_.flatten()), t)
+    logger.trace(s"""From: ${from.mkString(";")}""")
+    logger.trace(s"""To: ${to.mkString(";")}""")
     logger.trace(s"Subject: $subject")
     mimeMsg.getBody match {
       case multipart: Multipart =>
@@ -51,7 +51,7 @@ object MailParser extends StrictLogging {
     }
   }
 
-  private def toList(mailboxList: Option[MailboxList]): Seq[MailAddress] =
+  private def toList(mailboxList: Option[MailboxList], default: Seq[MailAddress]): Seq[MailAddress] =
     mailboxList
       .map { list =>
         (0 until list.size()).map { i =>
@@ -62,7 +62,7 @@ object MailParser extends StrictLogging {
           MailAddress(name, domain)
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(default)
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private[smtp] def createTextMessage(mail: Mail): String = {

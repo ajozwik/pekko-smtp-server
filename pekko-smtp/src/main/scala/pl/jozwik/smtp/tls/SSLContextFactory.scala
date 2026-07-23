@@ -4,18 +4,18 @@ import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.TlsOpts
 
 import java.io.InputStream
-import java.security.{ KeyStore, SecureRandom }
-import javax.net.ssl.{ KeyManager, KeyManagerFactory, SSLContext, SSLEngine, TrustManager, TrustManagerFactory }
+import java.security.{KeyStore, SecureRandom}
+import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, SSLEngine, TrustManager, TrustManagerFactory}
 import scala.util.Using
 
 object SSLContextFactory extends StrictLogging {
 
   def sslEngine(protocol: String = "TLSv1.3")(
-      keyStoreInputStream: => InputStream = getClass.getResourceAsStream("/tls13/server.p12"),
+      keyStoreInputStream: => InputStream = TlsOpts.fromSystemProps.keyStoreInputStream.call(),
       keystorePassword: String = TlsOpts.keystorePassword,
       keyPassword: String = TlsOpts.keystorePassword
   )(
-      trustStoreInputStream: => InputStream = getClass.getResourceAsStream("/tls13/trustedCerts.jks"),
+      trustStoreInputStream: => InputStream = TlsOpts.fromSystemProps.trustStoreInputStream.call(),
       trustPassword: String = TlsOpts.trustPassword
   ): () => SSLEngine =
     () =>

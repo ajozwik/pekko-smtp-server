@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.Done
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
 import scala.util.*
 
 object StreamServer {

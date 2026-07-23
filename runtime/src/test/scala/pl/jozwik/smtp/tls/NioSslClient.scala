@@ -1,15 +1,15 @@
 package pl.jozwik.smtp.tls
 
 import pl.jozwik.smtp.TlsOpts
-import pl.jozwik.smtp.util.{ ByteBufferHelper, Constants, Utils }
+import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Utils}
 
-import java.io.InputStream
+import java.io.{FileInputStream, InputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.{ SelectableChannel, SelectionKey, SocketChannel }
+import java.nio.channels.{SelectableChannel, SelectionKey, SocketChannel}
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.{ Condition, Lock, ReentrantLock }
-import javax.net.ssl.{ SSLEngine, SSLEngineResult }
+import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
+import javax.net.ssl.{SSLEngine, SSLEngineResult}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import scala.annotation.tailrec
 
@@ -18,10 +18,10 @@ class NioSslClient(
     remoteHost: String,
     remotePort: Int,
     override protected val whoIAm: String,
-    keyPath: => InputStream = classOf[NioSslClient].getResourceAsStream("/tls13/client.p12"),
+    keyPath: => InputStream = new FileInputStream(EphemeralTls.clientKeyStoreFile),
     keystorePassword: String = TlsOpts.clientKeystorePassword,
     keyPassword: String = TlsOpts.clientKeystorePassword
-)(trustPath: => InputStream = classOf[NioSslClient].getResourceAsStream("/tls13/trustedCerts.jks"), trustPassword: String = TlsOpts.trustPassword)
+)(trustPath: => InputStream = new FileInputStream(EphemeralTls.trustStoreFile), trustPassword: String = TlsOpts.trustPassword)
   extends NioSslPeer(protocol: String)(keyPath, keystorePassword, keyPassword)(trustPath, trustPassword) {
 
   override protected val whoContactMe: String   = "server"
@@ -34,11 +34,12 @@ class NioSslClient(
   private val engineCondition: Condition        = engineLock.newCondition
 
   private def createEngine(): Unit = {
-    val e = context.createSSLEngine(remoteHost, remotePort)
-    setEngineModeAndStartHandshake(e, selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
+    implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
+    implicit val seq: Int     = iterator.next()
+    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
       socketChannel.read,
       b => socketChannel.write(b)
-    )(iterator.next())
+    )
   }
 
   def startTls(): ByteBuffer = {

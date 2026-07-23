@@ -3,13 +3,13 @@ package pl.jozwik.smtp.client
 import java.net.InetSocketAddress
 import java.time.LocalDateTime
 import org.apache.pekko.actor.Status.Failure
-import org.apache.pekko.actor.{ ActorRef, PoisonPill, Props }
+import org.apache.pekko.actor.{ActorRef, PoisonPill, Props}
 import org.apache.pekko.io.Tcp.*
-import org.apache.pekko.io.{ IO, Tcp }
+import org.apache.pekko.io.{IO, Tcp}
 import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.SmtpUtils.toWrite
 import pl.jozwik.smtp.server.ActorWithTimeout
-import pl.jozwik.smtp.util.{ Mail, SocketAddress }
+import pl.jozwik.smtp.util.{Mail, SocketAddress}
 
 import scala.concurrent.duration.*
 

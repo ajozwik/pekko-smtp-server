@@ -8,7 +8,7 @@ import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.Response.*
 import pl.jozwik.smtp.util.SmtpResponses.*
 import pl.jozwik.smtp.util.Utils.*
-import pl.jozwik.smtp.util.{ Constants, Mail, SizeParameterHandler }
+import pl.jozwik.smtp.util.{Constants, Mail, SizeParameterHandler}
 
 object MessageHandler {
 

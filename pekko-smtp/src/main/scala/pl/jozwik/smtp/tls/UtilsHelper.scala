@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.tls
 
-import java.util.concurrent.locks.{ Condition, Lock }
+import java.util.concurrent.locks.{Condition, Lock}
 
 object UtilsHelper {
 

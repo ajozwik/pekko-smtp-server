@@ -1,14 +1,14 @@
 package pl.jozwik.smtp.tls
 
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.tls.TlsHelper.{ toApplicationBufferSize, toPacketBufferSize }
+import pl.jozwik.smtp.tls.TlsHelper.{toApplicationBufferSize, toPacketBufferSize}
 import pl.jozwik.smtp.util.ByteBufferHelper
 
 import java.nio.ByteBuffer
-import java.util.concurrent.atomic.{ AtomicBoolean, AtomicReference }
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
-import javax.net.ssl.SSLEngineResult.Status.{ BUFFER_OVERFLOW, BUFFER_UNDERFLOW, CLOSED, OK }
-import javax.net.ssl.{ SSLEngine, SSLEngineResult, SSLException }
+import javax.net.ssl.SSLEngineResult.Status.{BUFFER_OVERFLOW, BUFFER_UNDERFLOW, CLOSED, OK}
+import javax.net.ssl.{SSLEngine, SSLEngineResult, SSLException}
 import scala.annotation.tailrec
 
 trait WithSslEngine extends WithSequenceIterator with StrictLogging {
@@ -25,7 +25,7 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
       engine: Option[SSLEngine]
   )(readByteBuffer: ByteBuffer => Int, closeConn: () => Unit)(implicit seq: Int): (Option[ByteBuffer], Option[SSLEngineResult])
 
-  protected def setEngineModeAndStartHandshake(a: Attachment, e: SSLEngine, useClientMode: Boolean): Attachment = {
+  protected def setEngineModeAndStartHandshake(a: Attachment, useClientMode: Boolean)(implicit e: SSLEngine): Attachment = {
     e.setUseClientMode(useClientMode)
     e.beginHandshake()
     val appBufferSize    = e.getSession.getApplicationBufferSize
@@ -113,11 +113,10 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
 
   @tailrec
   protected final def doHandshake(
-      engine: SSLEngine,
       b: Buffers,
       handshakeStatus: AtomicReference[HandshakeStatus],
       open: AtomicBoolean
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int): Unit = {
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit engine: SSLEngine, seq: Int): Unit = {
     import b.*
     if (open.get && handshakeStatus.get != SSLEngineResult.HandshakeStatus.FINISHED && handshakeStatus.get != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
       val lastHandshakeStatus = handshakeStatus.get
@@ -133,11 +132,11 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
           if (rCount > 0) {
             peerNetData.get.flip()
             val engineResult = unwrap(peerNetData.get(), peerAppDataLocal.get(), engine)
-            if (engineResult.getHandshakeStatus == HandshakeStatus.FINISHED) {
+            if (engineResult.getHandshakeStatus == HandshakeStatus.NEED_WRAP) {
               logger.trace(s"$whoIAm: ($seq) $peerNetData")
             }
             peerNetData.get.compact()
-            if (engineResult.getHandshakeStatus == HandshakeStatus.FINISHED) {
+            if (engineResult.getHandshakeStatus == HandshakeStatus.NEED_WRAP) {
               logger.trace(s"$whoIAm: ($seq) $peerNetData")
             }
             handshakeStatus.set(engineResult.getHandshakeStatus)
@@ -209,11 +208,14 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
         (peerNetData.get().position() > 0 && handshakeStatus.get == HandshakeStatus.NEED_UNWRAP) ||
         handshakeRepeatOn.contains(handshakeStatus.get) || lastHandshakeStatus == HandshakeStatus.NEED_TASK || lastHandshakeStatus == HandshakeStatus.FINISHED
       ) {
-        doHandshake(engine, b, handshakeStatus, open)(readByteBuffer, writeByteBuffer)
+        doHandshake(b, handshakeStatus, open)(readByteBuffer, writeByteBuffer)
       }
     } else {
       logger.trace(s"$whoIAm: ($seq) Finished doHandshake: ${engine.getHandshakeStatus} handshakeStatus=$handshakeStatus")
       if (handshakeStatus.get == HandshakeStatus.FINISHED) {
+        if (whoIAm == "server") {
+          logger.trace(s"${b.myNetData}")
+        }
         ownHandshakeFinished()
       }
     }

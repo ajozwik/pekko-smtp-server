@@ -2,10 +2,10 @@ package pl.jozwik.smtp.server
 
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.stage.{ InHandler, OutHandler, TimerGraphStageLogic }
+import org.apache.pekko.stream.stage.{InHandler, OutHandler, TimerGraphStageLogic}
 
-import java.util.concurrent.atomic.{ AtomicBoolean, AtomicReference }
-import org.apache.pekko.stream.{ Inlet, Outlet }
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import org.apache.pekko.stream.{Inlet, Outlet}
 import org.apache.pekko.stream
 import pl.jozwik.smtp.server.command.MessageHandler
 import pl.jozwik.smtp.util.SmtpCodes.*

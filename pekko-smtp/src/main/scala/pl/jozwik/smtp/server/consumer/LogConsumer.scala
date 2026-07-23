@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.server.consumer
 
-import pl.jozwik.smtp.util.{ ConsumedResult, Mail, SuccessfulConsumed }
+import pl.jozwik.smtp.util.{ConsumedResult, Mail, SuccessfulConsumed}
 
 import scala.concurrent.Future
 

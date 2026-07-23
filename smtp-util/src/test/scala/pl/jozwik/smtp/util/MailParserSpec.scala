@@ -1,7 +1,7 @@
 package pl.jozwik.smtp
 package util
 
-import scala.io.{ Codec, Source }
+import scala.io.{Codec, Source}
 
 class MailParserSpec extends AbstractSpec {
 

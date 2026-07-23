@@ -1,10 +1,10 @@
 package pl.jozwik.smtp.server
 
-import pl.jozwik.smtp.server.consumer.{ Consumer, LogConsumer }
-import pl.jozwik.smtp.util.{ ConsumedResult, Mail, RuntimeConstants, SizeParameterHandler }
+import pl.jozwik.smtp.server.consumer.{Consumer, LogConsumer}
+import pl.jozwik.smtp.util.{ConsumedResult, Mail, RuntimeConstants, SizeParameterHandler}
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object ServerOpts {
   private val defaultPort = 1587

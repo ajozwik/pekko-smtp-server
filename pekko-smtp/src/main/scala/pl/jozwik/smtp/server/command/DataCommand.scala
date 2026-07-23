@@ -5,7 +5,7 @@ package command
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.server.Errors.*
 import pl.jozwik.smtp.util.Utils.*
-import pl.jozwik.smtp.util.{ Constants, Mail, SizeParameterHandler }
+import pl.jozwik.smtp.util.{Constants, Mail, SizeParameterHandler}
 
 object DataCommand extends StrictLogging {
 
@@ -41,7 +41,7 @@ object DataCommand extends StrictLogging {
     }
 
   private def sendToHandler(acc: MailAccumulator, consumer: Mail => Unit) = {
-    val emailContent = extractMessage(acc.content.content)
+    val emailContent = extractMessage(acc.content.content, acc.from, acc.to)
     val mail         = Mail(acc.from, acc.to, emailContent)
     logger.trace(s"Send to handler $mail")
     consumer(mail)
