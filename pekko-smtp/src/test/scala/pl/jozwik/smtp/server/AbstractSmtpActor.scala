@@ -3,8 +3,8 @@ package pl.jozwik.smtp.server
 import java.net.InetSocketAddress
 
 import org.apache.pekko.actor.PoisonPill
-import org.apache.pekko.io.Tcp.{ Bind, Bound, CommandFailed, Unbind }
-import org.apache.pekko.io.{ IO, Tcp }
+import org.apache.pekko.io.Tcp.{Bind, Bound, CommandFailed, Unbind}
+import org.apache.pekko.io.{IO, Tcp}
 import pl.jozwik.smtp.AbstractActor
 
 abstract class AbstractSmtpActor(bindAddress: InetSocketAddress) extends AbstractActor {
@@ -12,7 +12,7 @@ abstract class AbstractSmtpActor(bindAddress: InetSocketAddress) extends Abstrac
 
   override def unhandled(message: Any): Unit = message match {
     case b @ Bound(_) =>
-      logger.debug(s"$b")
+      logger.trace(s"$b")
     case CommandFailed(c) =>
       logger.error(s"$c\n${c.failureMessage}")
       self ! PoisonPill

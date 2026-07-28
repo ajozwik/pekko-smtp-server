@@ -1,7 +1,7 @@
 package pl.jozwik.smtp.util
 
-class IOUtilsSpec extends AbstractSpec {
-  import IOUtils.*
+class NetworkUtilsSpec extends AbstractSpec {
+  import NetworkUtils.*
 
   "IOUtilsSpec" should {
 

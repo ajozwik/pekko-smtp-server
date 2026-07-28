@@ -1,15 +1,16 @@
 package pl.jozwik.smtp
 package util
 
-import java.net.InetAddress
-import java.time.{ ZoneOffset, ZonedDateTime }
-import java.util.regex.Pattern
+import com.typesafe.scalalogging.StrictLogging
 
+import java.net.InetAddress
+import java.time.{ZoneOffset, ZonedDateTime}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
 import scala.util.Try
 
-object Utils {
+object Utils extends StrictLogging {
 
   import Constants.*
   import Response.*
@@ -17,21 +18,6 @@ object Utils {
   private val WHITE_SPACES_PATTERN = Pattern.compile("""\s+""")
 
   def now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC)
-
-  def withEndOfLine(line: String): String = s"$line$CrLf"
-
-  def splitLineByColon(message: String): (String, String) = {
-    val (head, argument) = message.indexOf(":") match {
-      case -1 =>
-        (message, "")
-      case x: Int =>
-        (message.substring(0, x), message.substring(x + 1))
-    }
-    (head.trim, argument.trim)
-  }
-
-  def splitOnWhiteSpaces(txt: String, limit: Int = 0): IndexedSeq[String] =
-    ArraySeq.unsafeWrapArray(WHITE_SPACES_PATTERN.split(txt, limit))
 
   def extractAddressAndParameters(txt: String): Either[String, (String, Map[String, String])] =
     extractMailAddress(txt.trim) match {
@@ -50,6 +36,30 @@ object Utils {
       case Left(error) =>
         Left(error)
     }
+
+  def ignoreErrors(f: => Unit): Unit = {
+    try {
+      f
+    } catch {
+      case e: Throwable =>
+        logger.error("Error ignored", e)
+    }
+  }
+
+  def splitLineByColon(message: String): (String, String) = {
+    val (head, argument) = message.indexOf(":") match {
+      case -1 =>
+        (message, "")
+      case x: Int =>
+        (message.substring(0, x), message.substring(x + 1))
+    }
+    (head.trim, argument.trim)
+  }
+
+  def splitOnWhiteSpaces(txt: String, limit: Int = 0): IndexedSeq[String] =
+    ArraySeq.unsafeWrapArray(WHITE_SPACES_PATTERN.split(txt, limit))
+
+  def withEndOfLine(line: String): String = s"$line$CrLf"
 
   private def parametersToMap(seq: Seq[String]): Either[String, Map[String, String]] = {
     @tailrec
@@ -154,21 +164,15 @@ object Utils {
         Right(addressWithBrackets)
     }
 
-  def extractMessage(lines: IndexedSeq[String]): EmailWithContent =
-    MailParser.parse(lines.mkString)
+  def extractMessage(lines: IndexedSeq[String], from: MailAddress, to: Seq[MailAddress]): EmailWithContent =
+    MailParser.parse(lines.mkString, from, to)
 
   def unsafeHead[S](seq: Iterable[S]): S =
     seq.headOption.getOrElse(throw new NoSuchElementException())
 
 }
 
-object RuntimeConstants {
-  val portKey       = "smtp.port"
-  val sizeKey       = "smtp.size"
-  val consumerClass = "consumer.class"
-}
-
-object IOUtils {
+object NetworkUtils {
 
   import sys.env
 

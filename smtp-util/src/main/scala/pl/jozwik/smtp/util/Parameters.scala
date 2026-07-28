@@ -4,7 +4,7 @@ package util
 import pl.jozwik.smtp.util.SmtpCodes.*
 import pl.jozwik.smtp.util.Response.*
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 object Parameters {
 

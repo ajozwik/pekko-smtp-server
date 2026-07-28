@@ -32,8 +32,6 @@ trait ActorWithTimeout extends AbstractActor {
     ()
   }
 
-
-
   override def postStop(): Unit = {
     super.postStop()
     cancellable.get().foreach(_.cancel())

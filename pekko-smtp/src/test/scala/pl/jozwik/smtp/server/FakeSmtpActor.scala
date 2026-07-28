@@ -21,7 +21,7 @@ class FakeSmtpActor(bindAddress: InetSocketAddress) extends AbstractSmtpActor(bi
 
     case Received(data) =>
       val str = data.utf8String
-      logger.debug(s"$str")
+      logger.trace(s"$str")
       sender() ! toWrite(s"ALA MA KOTA")
   }
 

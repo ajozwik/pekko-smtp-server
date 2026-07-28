@@ -3,13 +3,13 @@ package pl.jozwik.smtp.client
 import java.net.InetSocketAddress
 import java.time.LocalDateTime
 import org.apache.pekko.actor.Status.Failure
-import org.apache.pekko.actor.{ ActorRef, PoisonPill, Props }
+import org.apache.pekko.actor.{ActorRef, PoisonPill, Props}
 import org.apache.pekko.io.Tcp.*
-import org.apache.pekko.io.{ IO, Tcp }
+import org.apache.pekko.io.{IO, Tcp}
 import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.SmtpUtils.toWrite
 import pl.jozwik.smtp.server.ActorWithTimeout
-import pl.jozwik.smtp.util.{ Mail, SocketAddress }
+import pl.jozwik.smtp.util.{Mail, SocketAddress}
 
 import scala.concurrent.duration.*
 
@@ -39,11 +39,11 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
     case Connected(remote, local) =>
       val connection = sender()
       connection ! Register(self)
-      logger.debug(s"$self Connected to remote -> $remote local ->  $local")
+      logger.trace(s"$self Connected to remote -> $remote local ->  $local")
       become(hello)
 
     case x: ConnectionClosed =>
-      logger.debug(s"$self $x")
+      logger.trace(s"$self $x")
       self ! PoisonPill
       context.parent ! Counter(senderRef, FailedResult(s"$x"))
 
@@ -54,7 +54,7 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   }
 
   override protected def sendTimeoutMessage(lastAccess: LocalDateTime): Unit = {
-    logger.debug(s"$self ${ActorWithTimeout.TIMEOUT}")
+    logger.trace(s"$self ${ActorWithTimeout.TIMEOUT}")
     context.parent ! Counter(senderRef, FailedResult(ActorWithTimeout.TIMEOUT))
     self ! PoisonPill
   }
@@ -70,7 +70,7 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   }
 
   private def send(message: String): Unit = {
-    logger.debug(s"$self $message")
+    logger.trace(s"$self $message")
     sender() ! toWrite(message)
   }
 
@@ -82,7 +82,7 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
 
   private def validate(b: ByteString, expectedCode: Int, failOnError: Boolean = true): Option[String] = {
     val m = b.utf8String
-    logger.debug(s"$self $m")
+    logger.trace(s"$self $m")
     val expected = s"$expectedCode"
     if (m.take(3) == expected) {
       None
@@ -131,9 +131,9 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   private def close(failure: Option[String]): Receive = {
     case Received(d) =>
       validate(d, CLOSING_TERMINATION_CHANNEL)
-      ()
+      context.parent ! Counter(senderRef, SuccessResult)
     case x: ConnectionClosed =>
-      logger.debug(s"$self $x")
+      logger.trace(s"$self $x")
       self ! PoisonPill
       val response: Result = failure match {
         case Some(error) =>

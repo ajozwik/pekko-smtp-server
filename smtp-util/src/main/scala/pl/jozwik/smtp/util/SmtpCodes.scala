@@ -5,6 +5,7 @@ object SmtpCodes {
   val CLOSING_TERMINATION_CHANNEL: Int = 221
   val REQUEST_COMPLETE: Int            = 250
   val CANNOT_VRFY: Int                 = 252
+  val SERVER_CHALLENGE: Int            = 334
   val START_MAIL_INPUT: Int            = 354
   val SERVICE_NOT_AVAILABLE: Int       = 421
   val REQUEST_ACTION_ABORTED: Int      = 451

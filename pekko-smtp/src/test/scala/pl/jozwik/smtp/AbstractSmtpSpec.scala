@@ -8,13 +8,14 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.stream.scaladsl.Tcp
 import org.scalatest.BeforeAndAfterAll
-import pl.jozwik.smtp.client.{ ClientWithActor, StreamClient }
+import pl.jozwik.smtp.client.{ClientWithActor, StreamClient}
 import pl.jozwik.smtp.server.*
 import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.util.*
 
 import scala.concurrent.duration.*
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
+import scala.reflect.ClassTag
 
 object ActorSpec {
   private[smtp] val number = Iterator from 1
@@ -22,21 +23,22 @@ object ActorSpec {
 
 trait ActorSpec extends StrictLogging {
 
-  protected implicit val actorSystem: ActorSystem = ActorSystem(s"test-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
+  protected implicit val actorSystem: ActorSystem =
+    ActorSystem(s"test-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
 
   private val TIMEOUT                     = 3000
   protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
 
 }
 
-trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
+trait AbstractWithActorSystemSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
 
   override protected def afterAll(): Unit = {
     val terminated = Await.result(actorSystem.terminate(), timeout.duration)
-    logger.debug(s"$terminated")
+    logger.trace(s"$terminated")
   }
 
-  protected final def interceptAndPrint[T <: Throwable](f: => scala.Any)(implicit manifest: scala.reflect.Manifest[T]): T = {
+  protected final def interceptAndPrint[T <: Throwable: ClassTag](f: => scala.Any): T = {
     val t = intercept[T] {
       f
     }
@@ -46,9 +48,7 @@ trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with Ac
 
 }
 
-trait SmtpSpec extends ActorSpec {
-
-  import TestUtils.*
+trait SmtpSpec extends ActorSpec with WithPort {
 
   protected val host: String = InetAddress.getLocalHost.getHostAddress
 
@@ -58,21 +58,17 @@ trait SmtpSpec extends ActorSpec {
 
   protected def maxSize: Int = defaultMaxSize
 
-  protected val port: Int = notOccupiedPortNumber
-
   protected def consumer(mail: Mail): Future[ConsumedResult] = LogConsumer.consumer(mail)
 
   protected def addressHandler: AddressHandler              = NopAddressHandler
   protected lazy val address: SocketAddress                 = SocketAddress(host, port)
   protected final lazy val clientStream: StreamClient       = new StreamClient(address)
   protected final lazy val clientWithActor: ClientWithActor = new ClientWithActor(address)(actorSystem, readTimeout)
-  private val connectionHandler                             = ConnectionHandler.connectionHandler(addressHandler, maxSize, consumer, readTimeout)
+  private val connectionHandler                             = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, addressHandler)()
   protected final val server: StreamServer                  = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)
 }
 
-trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {
-
-  override protected def beforeAll(): Unit = {}
+trait AbstractSmtpSpec extends AbstractWithActorSystemSpec with SmtpSpec {
 
   override protected def afterAll(): Unit = {
     server.close()

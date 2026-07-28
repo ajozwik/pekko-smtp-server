@@ -18,7 +18,8 @@ class SmtpGraphStage(
     localHostName: String,
     consumer: Mail => Future[ConsumedResult],
     readTimeout: FiniteDuration,
-    tls: AtomicBoolean
+    tls: AtomicBoolean,
+    starttlsSupport: Boolean
 )(remote: InetSocketAddress)(implicit system: ActorSystem)
   extends GraphStage[stream.FlowShape[String, String]]
   with StrictLogging {
@@ -30,6 +31,6 @@ class SmtpGraphStage(
   }
 
   override def createLogic(inheritedAttributes: stream.Attributes): GraphStageLogic =
-    new SmtpTimerGraphStageLogic(shape, addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout, tls)
+    new SmtpTimerGraphStageLogic(shape, addressHandler, sizeHandler, localHostName, remote, consumer, readTimeout, tls, starttlsSupport)
 
 }

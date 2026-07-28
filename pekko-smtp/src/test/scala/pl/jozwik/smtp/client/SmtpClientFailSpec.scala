@@ -2,7 +2,7 @@ package pl.jozwik.smtp
 package client
 
 import java.io.OutputStreamWriter
-import java.net.{ InetSocketAddress, ServerSocket, Socket }
+import java.net.{InetSocketAddress, ServerSocket, Socket}
 
 import pl.jozwik.smtp.server.FakeSmtpActor
 import pl.jozwik.smtp.util.Constants.*
@@ -21,6 +21,11 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
   private val serverAddress   = new InetSocketAddress(fakePort)
   private val fakeServerActor = actorSystem.actorOf(FakeSmtpActor.props(serverAddress))
   private val bufferSize      = 4096
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+
+  }
 
   "Client " should {
     "Restart " in {
@@ -49,22 +54,25 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
 
     "Expected codes not in response " in {
       val serverSocket = new ServerSocket(0)
+      logger.trace(s"Socket port: ${serverSocket.getLocalPort}")
       serverSocket.setReuseAddress(true)
-      Future {
+      val f = Future {
         val socket = serverSocket.accept()
+        logger.trace(s"Socket accepted port: ${socket.getPort}")
         val writer = new OutputStreamWriter(socket.getOutputStream)
         val reader = socket.getInputStream
         val array  = new Array[Byte](bufferSize)
         reader.read(array)
-        logger.debug(s"${new String(array)}")
         writer.write(withEndOfLine(s"$SMTP_OK"))
         writer.flush()
         socket.close()
         socket.isClosed shouldBe true
-
       }
       val client = new StreamClient(serverAddress.getHostName, serverSocket.getLocalPort)
       val future = client.sendMail(mail)
+      Future.sequence(Seq(f, future)).foreach { _ =>
+        serverSocket.close()
+      }
       future
         .map { r =>
           r shouldBe a[FailedResult]
@@ -76,7 +84,7 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
 
     "Unhandled " in {
       fakeServerActor ! "OK"
-      2 shouldBe 2
+      succeed
     }
 
   }

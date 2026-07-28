@@ -1,7 +1,7 @@
 package pl.jozwik.smtp
 package util
 
-import scala.io.{ Codec, Source }
+import scala.io.{Codec, Source}
 
 class MailParserSpec extends AbstractSpec {
 
@@ -15,7 +15,7 @@ class MailParserSpec extends AbstractSpec {
   private def readMail(path: String)(implicit codec: Codec) = {
     val mail         = fileToString(path)
     val emailContent = MailParser.parse(mail)
-    logger.debug(s"$emailContent")
+    logger.trace(s"$emailContent")
     emailContent
   }
 
@@ -38,7 +38,7 @@ class MailParserSpec extends AbstractSpec {
     "Create email " in {
       val emailContent = EmailWithContent.txtOnly(Seq.empty, Seq.empty, "--Subject--", "--Text--")
       val mail         = MailParser.createTextMessage(Mail(mailAddress, Seq(mailAddress), emailContent))
-      logger.debug(s"$mail")
+      logger.trace(s"$mail")
     }
 
   }

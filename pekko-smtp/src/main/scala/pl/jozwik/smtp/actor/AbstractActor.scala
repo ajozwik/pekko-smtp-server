@@ -1,28 +1,28 @@
 package pl.jozwik.smtp.actor
 
-import org.apache.pekko.actor.{ Actor, ActorLogging }
+import org.apache.pekko.actor.{Actor, ActorLogging}
 import com.typesafe.scalalogging.StrictLogging
 
 trait AbstractActor extends Actor with StrictLogging with ActorLogging {
   protected val DISCARD = true
 
   override def preStart(): Unit = {
-    logger.debug(s"$self Actor preStart")
+    logger.trace(s"$self Actor preStart")
     super.preStart()
   }
 
   override def postStop(): Unit = {
-    logger.debug(s"$self Actor postStop")
+    logger.trace(s"$self Actor postStop")
     super.postStop()
   }
 
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
-    logger.debug(s"$self preRestart $message", reason)
+    logger.trace(s"$self preRestart $message", reason)
     super.preRestart(reason, message)
   }
 
   override def postRestart(reason: Throwable): Unit = {
-    logger.debug(s"$self postRestart ${reason.getMessage}")
+    logger.trace(s"$self postRestart ${reason.getMessage}")
     super.postRestart(reason)
   }
 

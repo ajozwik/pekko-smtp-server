@@ -1,7 +1,8 @@
-<configuration>
+<configuration scan="true" scanPeriod="30 seconds">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <immediateFlush>true</immediateFlush>
         <encoder>
-            <pattern>%date %file:%line - %message%n%xException{5}</pattern>
+            <pattern>>%date{STRICT} [%.-1level] %file:%line - %message%n%xException{5}</pattern>
         </encoder>
     </appender>
     <root level="TRACE">

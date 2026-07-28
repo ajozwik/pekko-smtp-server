@@ -4,7 +4,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.pattern.*
 import org.apache.pekko.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.util.{ Mail, SocketAddress }
+import pl.jozwik.smtp.util.{Mail, SocketAddress}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future

@@ -2,7 +2,6 @@ package pl.jozwik.smtp
 package util
 
 import java.io.*
-import java.nio.charset.StandardCharsets
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.james.mime4j.dom.Message.Builder
 import org.apache.james.mime4j.dom.*
@@ -23,21 +22,21 @@ object MailParser extends StrictLogging {
   private[util] val messageBuilder = new DefaultMessageBuilder
   private val writer               = new DefaultMessageWriter
 
-  def parse(mailAsTxt: String): EmailWithContent = {
+  def parse(mailAsTxt: String, from: MailAddress = MailAddress.empty, to: Seq[MailAddress] = Seq.empty): EmailWithContent = {
     val mimeMsg = toMessage(mailAsTxt)
-    parseMessage(mimeMsg)
+    parseMessage(mimeMsg, from, to)
   }
 
   private[util] def toMessage(mailAsTxt: String) =
-    messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes(StandardCharsets.UTF_8)))
+    messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes(Constants.Utf8sCharset)))
 
-  private[util] def parseMessage(mimeMsg: Message): EmailWithContent = {
+  private[util] def parseMessage(mimeMsg: Message, f: MailAddress, t: Seq[MailAddress]): EmailWithContent = {
     val subject = Option(mimeMsg.getSubject)
-    val from    = toList(Option(mimeMsg.getFrom))
-    val to      = toList(Option(mimeMsg.getTo).map(_.flatten()))
-    logger.debug(s"To: ${mimeMsg.getTo}")
-    logger.debug(s"From: ${mimeMsg.getFrom}")
-    logger.debug(s"Subject: $subject")
+    val from    = toList(Option(mimeMsg.getFrom), Seq(f))
+    val to      = toList(Option(mimeMsg.getTo).map(_.flatten()), t)
+    logger.trace(s"""From: ${from.mkString(";")}""")
+    logger.trace(s"""To: ${to.mkString(";")}""")
+    logger.trace(s"Subject: $subject")
     mimeMsg.getBody match {
       case multipart: Multipart =>
         val acc      = parseBodyParts(multipart.getBodyParts.asScala.toSeq, TmpEmailContent.empty)
@@ -52,23 +51,23 @@ object MailParser extends StrictLogging {
     }
   }
 
-  private def toList(mailboxList: Option[MailboxList]): Seq[MailAddress] =
+  private def toList(mailboxList: Option[MailboxList], default: Seq[MailAddress]): Seq[MailAddress] =
     mailboxList
       .map { list =>
         (0 until list.size()).map { i =>
           val el     = list.get(i)
           val name   = el.getLocalPart
           val domain = el.getDomain
-          logger.debug(s"${el.getAddress} ${el.getName}")
+          logger.trace(s"${el.getAddress} ${el.getName}")
           MailAddress(name, domain)
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(default)
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private[smtp] def createTextMessage(mail: Mail): String = {
     val emailContent = mail.emailContent
-    val body         = new BasicBodyFactory().textBody(emailContent.bodyAsString, StandardCharsets.UTF_8)
+    val body         = new BasicBodyFactory().textBody(emailContent.bodyAsString, Constants.Utf8sCharset)
     val builder      = Builder.of().setSubject(emailContent.subject.orNull).setBody(body)
     val out          = new ByteArrayOutputStream()
     writer.writeMessage(builder.build, out)
@@ -77,7 +76,7 @@ object MailParser extends StrictLogging {
 
   private def getTxtPart(singleBody: SingleBody): String = {
     val bytes = toByteArray(singleBody)
-    new String(bytes, StandardCharsets.UTF_8)
+    new String(bytes, Constants.Utf8sCharset)
   }
 
   private def toOption(seq: IndexedSeq[String]): Option[String] = {
