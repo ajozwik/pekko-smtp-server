@@ -1,6 +1,6 @@
 # pekko-smtp-server
 
-[![Scala CI](https://github.com/ajozwik/pekko-smtp-server/actions/workflows/scala.yml/badge.svg)](https://github.com/ajozwik/pekko-smtp-server/actions/workflows/scala.yml)
+[![Scala CI](https://github.com/ajozwik/pekko-smtp-server/actions/workflows/scala.yml/badge.svg)](https://github.com/ajozwik/pekko-smtp-server/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/ajozwik/pekko-smtp-server/badge.svg?branch=master)](https://coveralls.io/github/ajozwik/pekko-smtp-server?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c70d8b812914b44ab7f398a49c1c533)](https://www.codacy.com/app/ajozwik/pekko-smtp-server?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ajozwik/pekko-smtp-server&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/ajozwik/pekko-smtp-server/graph/badge.svg?token=f5DwN4hYmt)](https://codecov.io/gh/ajozwik/pekko-smtp-server)
@@ -38,8 +38,6 @@ Example usage:
 
 List of tls system properties (optional):
 
-* smtp.port - port to connect to
-* smtp.size - max size of message in bytes
 * consumer.class - class to consume messages
 * smtp.tls.client.keyStorePassword - password for client key store
 * smtp.tls.protocol - TLS protocol
@@ -50,6 +48,8 @@ List of tls system properties (optional):
 * smtp.tls.trustStoreFile - path to trust store
 * smtp.tls.trustStoreResource - path to trust store resource
 * smtp.tls.ephemeral - generate a throwaway self-signed key/trust store instead of requiring one
+* smtp.size - max size of message in bytes
+* smtp.port - port to connect to
 
 Thanks to https://github.com/alexbokos/sslengine.example for example of tls/ssl implementation.
 
