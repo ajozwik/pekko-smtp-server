@@ -18,10 +18,12 @@ class StreamClientStartTlsSpec extends AbstractAsyncSpec with BeforeAndAfterAll 
   private val clientTlsOpts = EphemeralTls.clientTlsOpts
 
   private val run =
-    new StreamServerRunner((host, port) => Tcp().bind(host, port))(
-      ServerOpts(port, 10 * 1000, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout),
-      Option(serverTlsOpts)
-    )
+    createServer
+
+  private def createServer = new StreamServerRunner((host, port) => Tcp().bind(host, port))(
+    ServerOpts(port, 10 * 1000, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout),
+    Option(serverTlsOpts)
+  )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -36,6 +38,10 @@ class StreamClientStartTlsSpec extends AbstractAsyncSpec with BeforeAndAfterAll 
   }
 
   "StreamClient with STARTTLS" should {
+
+    "run again" in {
+      createServer.isBound shouldBe false
+    }
 
     "send a mail after upgrading the connection to TLS" in {
       val client = new StreamClient(SocketAddress("localhost", port), clientTlsOpts)

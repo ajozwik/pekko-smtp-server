@@ -3,9 +3,18 @@ package pl.jozwik.smtp.util
 class RuntimeConstantsSpec extends AbstractSpec {
 
   "Runtime constants" should {
-    RuntimeConstants.getClass.getMethods.filter(_.getReturnType == classOf[RuntimeConstant]).foreach { f =>
-      val r = f.invoke(RuntimeConstants).asInstanceOf[RuntimeConstant]
-      logger.trace(s"* ${r.asString}")
+    "Iterate by all values " in
+      RuntimeConstants.getClass.getMethods.filter(_.getReturnType == classOf[RuntimeConstant]).foreach { f =>
+        f.invoke(RuntimeConstants) match {
+          case r: RuntimeConstant =>
+            logger.trace(s"* ${r.asString}")
+          case _ =>
+            fail()
+        }
+      }
+
+    "Return None" in {
+      RuntimeConstant("_ _", "").propOrNone shouldBe None
     }
   }
 
