@@ -154,7 +154,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
           Source(s)
         }
       case x =>
-        logger.error(s"$x", new IllegalStateException(s"Unexpected message: $x"))
+        sys.error(s"Unexpected message: $x")
         Source.empty[ByteString]
     })
 

@@ -34,6 +34,7 @@ jobs:
     - uses: sbt/setup-sbt@v1.5.4
     - name: Run tests
       shell: bash
+      timeout-minutes: 10
       run: sbt "++${{ matrix.scala }};clean;coverage;test"
 
     - name: Aggregate

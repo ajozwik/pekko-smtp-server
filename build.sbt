@@ -2,10 +2,9 @@ import java.time.LocalDate
 import Versions.*
 
 val `scalaVersion_3_lts` = "3.3.8"
-val `scalaVersion_3.8`   = "3.8.4"
 val `scalaVersion_2.13`  = "2.13.18"
 
-ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3_lts`, `scalaVersion_3.8`)
+ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3_lts`)
 
 ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
 

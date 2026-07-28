@@ -1,3 +1,3 @@
 #!/bin/bash
 
-PATH=$HOME/bin:$PATH sbt +clean +test +publishLocal +publishSigned +sonatypeRelease
+sbt +clean +test +publishLocalSigned +publishSigned +sonaUpload +sonaRelease
