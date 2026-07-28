@@ -6,7 +6,7 @@ class ParametersSpec extends AbstractSpec {
 
   "Parameters " should {
     "SizeParameterHandler do not parse wrong string" in {
-      sizeHandler.validate("y") shouldBe Symbol("left")
+      sizeHandler.validate("y") should be(a[Left[?,?]])
     }
   }
 

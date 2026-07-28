@@ -1,9 +1,10 @@
 package pl.jozwik.smtp
 package client
 
+import org.apache.pekko.pattern.ask
+
 import java.io.OutputStreamWriter
 import java.net.{InetSocketAddress, ServerSocket, Socket}
-
 import pl.jozwik.smtp.server.FakeSmtpActor
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.TestUtils.*
@@ -83,8 +84,10 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
     }
 
     "Unhandled " in {
-      fakeServerActor ! "OK"
-      succeed
+      fakeServerActor.ask("OK")(timeout.copy(duration = timeout.duration / 1000)).map(_ => fail()).recover { case th =>
+        logger.error("", th)
+        succeed
+      }
     }
 
   }

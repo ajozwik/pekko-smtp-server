@@ -1,7 +1,5 @@
 package pl.jozwik.smtp.tls
 
-import pl.jozwik.smtp.util.ByteBufferHelper
-
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLEngine, SSLEngineResult}

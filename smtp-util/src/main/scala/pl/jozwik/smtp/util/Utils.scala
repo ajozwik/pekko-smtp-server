@@ -25,11 +25,15 @@ object Utils extends StrictLogging {
         validateBrackets(
           addressWithoutBrackets,
           address =>
-            parametersToMap(parameters) match {
-              case Right(map) =>
-                Right((address, map))
-              case Left(error) =>
-                Left(error)
+            if (address.indexOf('@') != address.lastIndexOf('@')) {
+              Left(BAD_SENDER_ADDRESS_SYNTAX)
+            } else {
+              parametersToMap(parameters) match {
+                case Right(map) =>
+                  Right((address, map))
+                case Left(error) =>
+                  Left(error)
+              }
             }
         )
 
@@ -140,17 +144,23 @@ object Utils extends StrictLogging {
         f(withoutBrackets)
     }
 
-  private def notEmptyStringToMailAddress(addressWithoutBrackets: String): Either[String, MailAddress] =
-    addressWithoutBrackets.indexOf('@') match {
-      case -1 =>
-        Left(domainNameRequired(addressWithoutBrackets))
-      case index: Int if index != 0 && index != addressWithoutBrackets.length - 1 =>
-        val user   = addressWithoutBrackets.substring(0, index)
-        val domain = addressWithoutBrackets.substring(index + 1, addressWithoutBrackets.length)
-        Right(MailAddress(user, domain.toLowerCase(Constants.LocaleRoot)))
-      case _ =>
-        Left(hostNameRequired(addressWithoutBrackets))
+  private def notEmptyStringToMailAddress(addressWithoutBrackets: String): Either[String, MailAddress] = {
+    val index = addressWithoutBrackets.indexOf('@')
+    if (index != -1 && index != addressWithoutBrackets.lastIndexOf('@')) {
+      Left(BAD_SENDER_ADDRESS_SYNTAX)
+    } else {
+      index match {
+        case -1 =>
+          Left(domainNameRequired(addressWithoutBrackets))
+        case i if i != 0 && i != addressWithoutBrackets.length - 1 =>
+          val user   = addressWithoutBrackets.substring(0, i)
+          val domain = addressWithoutBrackets.substring(i + 1, addressWithoutBrackets.length)
+          Right(MailAddress(user, domain.toLowerCase(Constants.LocaleRoot)))
+        case _ =>
+          Left(hostNameRequired(addressWithoutBrackets))
+      }
     }
+  }
 
   private def cutBrackets(addressWithBrackets: String): Either[String, String] =
     (addressWithBrackets.startsWith(OpenBracketString), addressWithBrackets.endsWith(CloseBracketString)) match {
@@ -167,7 +177,7 @@ object Utils extends StrictLogging {
   def extractMessage(lines: IndexedSeq[String], from: MailAddress, to: Seq[MailAddress]): EmailWithContent =
     MailParser.parse(lines.mkString, from, to)
 
-  def unsafeHead[S](seq: Iterable[S]): S =
+  private def unsafeHead[S](seq: Iterable[S]): S =
     seq.headOption.getOrElse(throw new NoSuchElementException())
 
 }
