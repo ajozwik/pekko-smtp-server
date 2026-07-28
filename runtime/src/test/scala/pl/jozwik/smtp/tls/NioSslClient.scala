@@ -33,13 +33,11 @@ class NioSslClient(
   private val engineLock: Lock                  = new ReentrantLock()
   private val engineCondition: Condition        = engineLock.newCondition
 
-  private def createEngine(): Unit = {
-    implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
-    implicit val seq: Int     = iterator.next()
-    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
-      socketChannel.read,
-      b => socketChannel.write(b)
-    )
+  def connect(): Unit = {
+    socketChannel.configureBlocking(false)
+    socketChannel.connect(new InetSocketAddress(remoteHost, remotePort))
+    active.set(true)
+    waitForConnect()
   }
 
   def startTls(): ByteBuffer = {
@@ -48,20 +46,29 @@ class NioSslClient(
     b
   }
 
-  def connect(): Unit = {
-    socketChannel.configureBlocking(false)
-    socketChannel.connect(new InetSocketAddress(remoteHost, remotePort))
-    active.set(true)
-    waitForConnect()
-  }
-
   def writeAndWaitForRead(message: String): ByteBuffer = {
     UtilsHelper.await(readLock, readCondition) {
       logger.trace(s"writeAndWaitForRead ${message.trim} ${ByteBufferHelper.toString(lastRead.get()).trim}")
-      val e = waitForEngine
-      write(e, ByteBufferHelper.toByteBuffer(message))(b => socketChannel.write(b), () => socketChannel.close())(iterator.next())
+      implicit val seq: Int             = iterator.next()
+      implicit val e: Option[SSLEngine] = waitForEngine
+      write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, b => socketChannel.write(b), () => socketChannel.close())
     }
     lastRead.getAndSet(ByteBufferHelper.ReadOnlyBuffer)
+  }
+
+  def writeMessage(message: String): Unit = {
+    implicit val seq: Int             = iterator.next()
+    implicit val e: Option[SSLEngine] = waitForEngine
+    write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, b => socketChannel.write(b), () => socketChannel.close())
+  }
+
+  private def createEngine(): Unit = {
+    implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
+    implicit val seq: Int     = iterator.next()
+    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
+      socketChannel.read,
+      b => socketChannel.write(b)
+    )
   }
 
   private def waitForEngine: Option[SSLEngine] = fromSelectionKey match {
@@ -86,21 +93,28 @@ class NioSslClient(
     logger.trace(s"$whoIAm: closing the channel")
     UtilsHelper.signal(readLock, readCondition) {}
     UtilsHelper.signal(engineLock, engineCondition) {}
-    val a = fromSelectionKey
+    val a                             = fromSelectionKey
+    implicit val e: Option[SSLEngine] = a.engine
     Utils.ignoreErrors {
-      closeConnection(a.engine) { () =>
-        socketChannel.shutdownInput()
-        socketChannel.shutdownOutput()
-        socketChannel.close()
-      }
+      implicit val seq: Int = -1
+      closeConnection(
+        socketChannel.read,
+        b => socketChannel.write(b),
+        { () =>
+          socketChannel.shutdownInput()
+          socketChannel.shutdownOutput()
+          socketChannel.close()
+        }
+      )
     }
     logger.trace(s"$whoIAm: closed the channel")
   }
 
-  protected override def handleRead(
+  protected override def handleRead(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
       engine: Option[SSLEngine]
-  )(readByteBuffer: ByteBuffer => Int, closeConn: () => Unit)(implicit seq: Int): (Option[ByteBuffer], Option[SSLEngineResult]) =
-    read(engine, _ => (), _ => ())(readByteBuffer, closeConn)
+  ): (Option[ByteBuffer], Option[SSLEngineResult]) =
+    read(_ => (), _ => ())(readByteBuffer, writeByteBuffer, closeConn)
 
   @tailrec
   private def waitForConnect(): Unit =

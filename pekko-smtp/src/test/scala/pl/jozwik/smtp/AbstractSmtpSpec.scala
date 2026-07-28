@@ -15,6 +15,7 @@ import pl.jozwik.smtp.util.*
 
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
+import scala.reflect.ClassTag
 
 object ActorSpec {
   private[smtp] val number = Iterator from 1
@@ -30,14 +31,14 @@ trait ActorSpec extends StrictLogging {
 
 }
 
-trait AbstractActorSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
+trait AbstractWithActorSystemSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
 
   override protected def afterAll(): Unit = {
     val terminated = Await.result(actorSystem.terminate(), timeout.duration)
     logger.trace(s"$terminated")
   }
 
-  protected final def interceptAndPrint[T <: Throwable](f: => scala.Any)(implicit manifest: scala.reflect.Manifest[T]): T = {
+  protected final def interceptAndPrint[T <: Throwable: ClassTag](f: => scala.Any): T = {
     val t = intercept[T] {
       f
     }
@@ -67,7 +68,7 @@ trait SmtpSpec extends ActorSpec with WithPort {
   protected final val server: StreamServer                  = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)
 }
 
-trait AbstractSmtpSpec extends AbstractActorSpec with SmtpSpec {
+trait AbstractSmtpSpec extends AbstractWithActorSystemSpec with SmtpSpec {
 
   override protected def afterAll(): Unit = {
     server.close()

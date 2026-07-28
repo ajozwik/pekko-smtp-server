@@ -5,7 +5,7 @@ import org.scalatest.BeforeAndAfterAll
 import pl.jozwik.smtp.server.{ServerOpts, StreamServerRunner}
 import pl.jozwik.smtp.server.consumer.LogConsumer
 import pl.jozwik.smtp.tls.EphemeralTls
-import pl.jozwik.smtp.util.{AbstractAsyncSpec, EmailWithContent, Mail, TestUtils}
+import pl.jozwik.smtp.util.{AbstractAsyncSpec, EmailWithContent, Mail, SocketAddress, TestUtils}
 import pl.jozwik.smtp.{ActorSpec, WithPort}
 
 import scala.concurrent.Await
@@ -17,7 +17,11 @@ class StreamClientStartTlsSpec extends AbstractAsyncSpec with BeforeAndAfterAll 
 
   private val clientTlsOpts = EphemeralTls.clientTlsOpts
 
-  private val run = new StreamServerRunner((host, port) => Tcp().bind(host, port))(ServerOpts(port, 10 * 1000, LogConsumer.consumer), Option(serverTlsOpts))
+  private val run =
+    new StreamServerRunner((host, port) => Tcp().bind(host, port))(
+      ServerOpts(port, 10 * 1000, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout),
+      Option(serverTlsOpts)
+    )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -34,7 +38,7 @@ class StreamClientStartTlsSpec extends AbstractAsyncSpec with BeforeAndAfterAll 
   "StreamClient with STARTTLS" should {
 
     "send a mail after upgrading the connection to TLS" in {
-      val client = new StreamClient("localhost", port, Option(clientTlsOpts))
+      val client = new StreamClient(SocketAddress("localhost", port), clientTlsOpts)
       val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
       client.sendMail(mail).map { result =>
         result shouldBe SuccessResult

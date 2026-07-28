@@ -4,14 +4,11 @@ import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustStoreInputStream}
 import pl.jozwik.smtp.tls.NioSslClient
 import pl.jozwik.smtp.util.Constants.*
-import pl.jozwik.smtp.util.{ByteBufferHelper, Utils}
-
-import java.nio.ByteBuffer
 import scala.util.Using
 
-trait Demo extends StrictLogging {
+trait Demo extends WithClient with StrictLogging {
 
-  private def toMessage(b: ByteBuffer): String = ByteBufferHelper.toString(b).trim
+
 
   protected def sendMail(name: String)(port: Int): Unit =
     Using.resource(
@@ -41,7 +38,6 @@ trait Demo extends StrictLogging {
       logger.trace(s"${toMessage(quitResponse)}")
     }
 
-  private def writeAndWaitForRead(txt: String)(implicit client: NioSslClient): ByteBuffer =
-    client.writeAndWaitForRead(Utils.withEndOfLine(txt))
+
 
 }

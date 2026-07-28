@@ -2,12 +2,15 @@ package pl.jozwik.smtp.runtime
 
 import org.scalatest.Assertion
 import pl.jozwik.smtp.TlsOpts
+import pl.jozwik.smtp.client.{FailedResult, StreamClient, SuccessResult}
+import pl.jozwik.smtp.tls.EphemeralTls.clientTlsOpts
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.SmtpCodes.*
 import pl.jozwik.smtp.util.TestUtils.*
 import pl.jozwik.smtp.util.*
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 
 abstract class AbstractSmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts: Option[TlsOpts] = None) extends SmtpServerSpec(consumer, tlsOpts) {
 
@@ -43,6 +46,18 @@ abstract class AbstractSmtpServerSpec(consumer: Mail => Future[ConsumedResult], 
       writeLineAndValidateAnswer(s"$DATA", BAD_SEQUENCE_OF_COMMANDS)
       writeLineAndValidateAnswer(s"$MAIL_FROM:${OpenBracket}a@a.pl$CloseBracket", REQUEST_COMPLETE)
       writeLineAndValidateAnswer(s"$DATA:${OpenBracket}a@a$CloseBracket", BAD_SEQUENCE_OF_COMMANDS)
+    }
+    s"Reject $STARTTLS with stream client" in {
+      val client = new StreamClient(SocketAddress("localhost", port), clientTlsOpts)
+      val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
+      val result = Await.result(client.sendMail(mail), TimeoutSeconds.second)
+      result match {
+        case FailedResult(error) =>
+          logger.debug(s"$error")
+          error should startWith(s"$TLS_NOT_SUPPORTED")
+        case SuccessResult =>
+          fail()
+      }
     }
 
     s"Reject $STARTTLS" in {

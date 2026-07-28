@@ -11,11 +11,12 @@ trait WithSslEngineServer extends WithSslEngine {
   override protected val whoIAm: String       = "server"
   override protected val whoContactMe: String = "client"
 
-  protected override def handleRead(
+  protected override def handleRead(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
       engine: Option[SSLEngine]
-  )(readByteBuffer: ByteBuffer => Int, closeConn: () => Unit)(implicit seq: Int): (Option[ByteBuffer], Option[SSLEngineResult]) = {
+  ): (Option[ByteBuffer], Option[SSLEngineResult]) = {
     val closed = new AtomicBoolean(false)
-    read(engine, _ => (), closed.set)(readByteBuffer, closeConn) match {
+    read(_ => (), closed.set)(readByteBuffer, writeByteBuffer, closeConn) match {
       case s @ (Some(message), _) =>
         val str = ByteBufferHelper.toString(message)
         if (str.nonEmpty) {

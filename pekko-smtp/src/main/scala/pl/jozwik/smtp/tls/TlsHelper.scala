@@ -9,18 +9,18 @@ object TlsHelper {
   def failedHandshakeResult(status: HandshakeStatus): SSLEngineResult = new SSLEngineResult(Status.CLOSED, status, 0, 0)
 
   @tailrec
-  def runDelegatedTasks(engine: SSLEngine): Unit =
+  def runDelegatedTasks(implicit engine: SSLEngine): Unit =
     Option(engine.getDelegatedTask) match {
       case Some(task) =>
         task.run()
-        runDelegatedTasks(engine)
+        runDelegatedTasks
       case _ =>
     }
 
-  def toApplicationBufferSize(engine: Option[SSLEngine], applicationBufferSize: Int): Int =
+  def toApplicationBufferSize(applicationBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
     engine.map(_.getSession.getApplicationBufferSize).getOrElse(applicationBufferSize)
 
-  def toPacketBufferSize(engine: Option[SSLEngine], packetBufferSize: Int): Int =
+  def toPacketBufferSize(packetBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
     engine.map(_.getSession.getPacketBufferSize).getOrElse(packetBufferSize)
 
 }

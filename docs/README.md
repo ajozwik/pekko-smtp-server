@@ -46,6 +46,7 @@ import pl.jozwik.smtp.util.*
     }
 ```
 
+Thanks to https://github.com/alexbokos/sslengine.example for example of tls/ssl implementation.
 
 For build docs/README.md use:
 ```

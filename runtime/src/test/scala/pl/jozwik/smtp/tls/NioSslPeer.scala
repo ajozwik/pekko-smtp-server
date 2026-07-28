@@ -6,12 +6,24 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.spi.SelectorProvider
 import java.nio.channels.{SelectableChannel, SelectionKey, Selector, SocketChannel}
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{ExecutorService, Executors, ThreadFactory, TimeUnit}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.*
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
+
+object NioSslPeer {
+
+  private val threadCount = new AtomicInteger(0)
+
+  private val daemonThreadFactory: ThreadFactory = (r: Runnable) => {
+    val thread = new Thread(r, s"nio-ssl-peer-${threadCount.incrementAndGet()}")
+    thread.setDaemon(true)
+    thread
+  }
+
+}
 
 abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePassword: String, keyPassword: String)(
     trustPath: => InputStream,
@@ -21,7 +33,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
 
   protected lazy val selector: Selector                               = SelectorProvider.provider.openSelector()
   protected val active: AtomicBoolean                                 = new AtomicBoolean(false)
-  protected lazy val executor: ExecutorService                        = Executors.newCachedThreadPool()
+  protected lazy val executor: ExecutorService                        = Executors.newCachedThreadPool(NioSslPeer.daemonThreadFactory)
   protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set.empty
 
   protected lazy val context: SSLContext =
@@ -72,7 +84,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
   )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
     val attachment: Attachment = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
-    doHandshake(attachment.buffers, attachment.handshakeStatus, attachment.open)(readByteBuffer, writeByteBuffer)
+    doHandshake(attachment)(readByteBuffer, writeByteBuffer)
   }
 
   protected def closeConnection(sc: SocketChannel): Unit
@@ -83,11 +95,11 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
         case sc: SocketChannel =>
           implicit val seq: Int = iterator.next()
           key.attachment() match {
-            case Attachment(Some(engine), buffers, status, result)
+            case a @ Attachment(Some(engine), buffers, status, _)
                 if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
               logger.trace(s"$whoIAm: ($seq)  Handshake is still in progress: ${status.get()}")
               implicit val e: SSLEngine = engine
-              doHandshake(buffers, status, result)(sc.read, b => sc.write(b))
+              doHandshake(a)(sc.read, b => sc.write(b))
             case a @ Attachment(_, _, _, open) =>
               readAndResponse(a.clearBuffers, key, open.get())(sc.read, b => sc.write(b), () => closeConnection(sc))
             case r =>
@@ -103,8 +115,9 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       a: Attachment,
       key: SelectionKey,
       open: Boolean
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit seq: Int): Unit =
-    handleRead(a.engine)(readByteBuffer, closeConn) match {
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit seq: Int): Unit = {
+    implicit val en: Option[SSLEngine] = a.engine
+    handleRead(readByteBuffer, writeByteBuffer, closeConn) match {
       case (Some(message), _) =>
         readResponse(a, open)(message, key)(readByteBuffer, writeByteBuffer, closeConn)
       case (_, s) =>
@@ -114,6 +127,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
         }
 
     }
+  }
 
   protected def readResponse(
       a: Attachment,

@@ -54,16 +54,15 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
 
     "Expected codes not in response " in {
       val serverSocket = new ServerSocket(0)
-      logger.trace(s"Socket ${serverSocket.getLocalPort}")
+      logger.trace(s"Socket port: ${serverSocket.getLocalPort}")
       serverSocket.setReuseAddress(true)
       val f = Future {
         val socket = serverSocket.accept()
-        logger.trace(s"Socket accepted: ${socket.getPort}")
+        logger.trace(s"Socket accepted port: ${socket.getPort}")
         val writer = new OutputStreamWriter(socket.getOutputStream)
         val reader = socket.getInputStream
         val array  = new Array[Byte](bufferSize)
         reader.read(array)
-        logger.trace(s"${new String(array)}")
         writer.write(withEndOfLine(s"$SMTP_OK"))
         writer.flush()
         socket.close()

@@ -15,7 +15,7 @@ final case class Attachment(
     open: AtomicBoolean = new AtomicBoolean(true)
 ) {
 
-  def withEngine(engine: SSLEngine, buffers: Buffers): Attachment = {
+  def withEngine(buffers: Buffers)(implicit engine: SSLEngine): Attachment = {
     val status = engine.getHandshakeStatus
     handshakeStatus.set(status)
     copy(engine = Option(engine), buffers = buffers, handshakeStatus = handshakeStatus)

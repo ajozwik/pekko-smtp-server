@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 
 class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps) extends Demo {
 
-  private val serverOpts                   = ServerOpts[Consumer](port, 2048, LogConsumer.consumer)
+  private val serverOpts                   = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)
   private implicit val system: ActorSystem = ActorSystem(s"SMTP-${serverOpts.port}")
   private val run                          = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, Option(tlsOpts))
 
@@ -22,7 +22,7 @@ class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps) extends De
     val objectMethods = classOf[Object].getMethods.map(_.getName).toSet
     RuntimeConstants.getClass.getMethods.filter(_.getReturnType == classOf[String]).filterNot(m => objectMethods.contains(m.getName)).foreach { f =>
       if (f.getGenericParameterTypes.length == 0)
-        println(s"""${f.invoke(RuntimeConstants)}
+        logger.trace(s"""${f.invoke(RuntimeConstants)}
              |""".stripMargin)
     }
     TestUtils.waitFor(!run.isBound, 10.millis)

@@ -44,29 +44,19 @@ object StartTlsBidiFlow extends WithSslEngineServer {
       logger.trace(s"From network ($seq): engine=${attachment.get().engine.isDefined} ${bytes.length} ${tls.get()}")
       val list = if (tls.get) {
         val l = attachment.get() match {
-          case Attachment(Some(engine), buffers, handshakeStatus, open) =>
+          case a @ Attachment(Some(engine), buffers, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
             val bb                    =
               if (handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get() == HandshakeStatus.FINISHED) {
-                unwrapFromNetwork(bytes.asByteBuffer)
+                unwrapFromNetwork(bytes.asByteBuffer, handshakeBuffer)
               } else {
-                doHandshake(buffers, handshakeStatus, open)(
+                doHandshake(a)(
                   BufferAction.copyTo(bytes),
-                  b => {
-                    logger.trace(s"Add to buffer: $b ${engine.getHandshakeStatus}  -> $handshakeStatus")
-                    handshakeBuffer.accumulateAndGet(
-                      Seq(ByteString(b)),
-                      (prev, next) => {
-                        b.position(b.limit)
-                        prev ++ next
-                      }
-                    )
-
-                  }
+                  addToHandshakeBuffer(handshakeBuffer)
                 )
                 val remainingAfterFinished = if (handshakeStatus.get() == HandshakeStatus.FINISHED) {
                   val remaining = buffers.peerNetData.get().flip()
-                  unwrapFromNetwork(remaining)
+                  unwrapFromNetwork(remaining, handshakeBuffer)
                 } else {
                   None
                 }
@@ -85,8 +75,25 @@ object StartTlsBidiFlow extends WithSslEngineServer {
     })
   }
 
-  private def unwrapFromNetwork(buffer: ByteBuffer)(implicit seq: Int, engine: SSLEngine): Option[SessionBytes] =
-    handleRead(Option(engine))(BufferAction.copyTo(buffer), () => ()) match {
+  private def addToHandshakeBuffer(handshakeBuffer: AtomicReference[Seq[ByteString]])(
+      b: ByteBuffer
+  ): Unit = {
+    handshakeBuffer.accumulateAndGet(
+      Seq(ByteString(b)),
+      (prev, next) => {
+        b.position(b.limit)
+        prev ++ next
+      }
+    )
+    ()
+  }
+
+  private def unwrapFromNetwork(buffer: ByteBuffer, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
+      seq: Int,
+      engine: SSLEngine
+  ): Option[SessionBytes] = {
+    implicit val en: Option[SSLEngine] = Option(engine)
+    handleRead(BufferAction.copyTo(buffer), addToHandshakeBuffer(handshakeBuffer), () => ()) match {
       case (Some(buffer), _) =>
         val bs = ByteString(buffer)
         logger.trace(s"($seq) ${bs.utf8String.trim}")
@@ -95,6 +102,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
         logger.trace(s"($seq) No data")
         None
     }
+  }
 
   private def toNetwork(createSSLEngine: () => SSLEngine, tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],
@@ -111,7 +119,8 @@ object StartTlsBidiFlow extends WithSslEngineServer {
               val holder = new AtomicReference[Seq[ByteString]](buf)
               if (handshakeStatus.get == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get == HandshakeStatus.FINISHED) {
                 if (str != SmtpResponses.HANDSHAKE_RESPONSE) {
-                  write(Option(engine), bytes.asByteBuffer)(
+                  write(bytes.asByteBuffer)(
+                    _ => 0,
                     b => {
                       holder.accumulateAndGet(
                         Seq(ByteString(b)),
@@ -121,7 +130,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
                       )
                     },
                     () => ()
-                  )(iterator.next())
+                  )(iterator.next(), Option(engine))
                 }
               }
               holder.get

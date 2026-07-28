@@ -74,13 +74,14 @@ class NioSslServer(
       logger.trace(s"$whoIAm: ($seq) Received message from the $whoContactMe: $str")
     }
     if (open) {
+      implicit val en: Option[SSLEngine] = a.engine
       str match {
         case Constants.STARTTLS =>
-          write(a.engine, ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}"))(writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}"))(readByteBuffer, writeByteBuffer, closeConn)
           implicit val e: SSLEngine = context.createSSLEngine()
           setEngineModeAndStartHandshake(a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer)
         case _ =>
-          write(a.engine, ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}"))(writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}"))(readByteBuffer, writeByteBuffer, closeConn)
       }
 
     }

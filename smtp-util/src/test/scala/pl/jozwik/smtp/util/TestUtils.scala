@@ -8,10 +8,12 @@ import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.*
 
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.util.{Failure, Success, Try}
 
 object TestUtils extends StrictLogging {
+
+  val ReadTimeout: FiniteDuration = 10.seconds
 
   def notOccupiedPortNumber: Int = {
     val server = new ServerSocket(0)

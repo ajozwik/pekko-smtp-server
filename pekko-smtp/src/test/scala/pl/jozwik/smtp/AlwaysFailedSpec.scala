@@ -5,7 +5,7 @@ import java.util.concurrent.TimeoutException
 import org.apache.pekko.pattern.*
 import org.scalatest.compatible.Assertion
 
-class AlwaysFailedSpec extends AbstractActorSpec {
+class AlwaysFailedSpec extends AbstractWithActorSystemSpec {
 
   private val failedRef = actorSystem.actorOf(AlwaysFailActor.props)
 
