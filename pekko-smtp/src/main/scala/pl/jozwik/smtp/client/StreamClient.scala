@@ -98,6 +98,11 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     context.createSSLEngine(host, port)
   }
 
+  private def closeConn(implicit sourceQueue: SourceQueueWithComplete[ByteString], sinkQueue: SinkQueueWithCancel[ByteString]): Unit = {
+    sourceQueue.complete()
+    sinkQueue.cancel()
+  }
+
   private def negotiateTls(opts: TlsOpts)(implicit
       sourceQueue: SourceQueue[ByteString],
       engine: AtomicReference[Option[SSLEngine]],
@@ -106,7 +111,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     implicit val e: SSLEngine = clientSslEngine(opts)
     val attachment            = setEngineModeAndStartHandshake(Attachment.empty, useClientMode = true)
     for {
-      _ <- doHandshakeStep(attachment, _ => -1)
+      _ <- doHandshakeStep(attachment, readBlocking(sinkQueue))
       _ <-
         if (handshakeDone(attachment)) {
           Future.unit
@@ -131,29 +136,15 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
         .toMat(Sink.queue[ByteString]())(Keep.both)
         .run()
 
-    val pending: AtomicReference[ByteString]                = new AtomicReference(ByteString.empty)
+    implicit val pending: AtomicReference[ByteString]       = new AtomicReference(ByteString.empty)
     implicit val engine: AtomicReference[Option[SSLEngine]] = new AtomicReference(None)
     implicit def engineImplicit: Option[SSLEngine]          = engine.get()
-    def closeConn(): Unit                                   = {
-      sourceQueue.complete()
-      sinkQueue.cancel()
-    }
+    implicit val acc: AtomicReference[(Result, Seq[Int])]   = new AtomicReference((SuccessResult, Seq.empty[Int]))
 
-    def step(line: String, seq: Int): Future[Seq[String]] = {
-      implicit val s: Int = seq
-      for {
-        _ <- writeLine(line, () => closeConn())
-        r <- readResponse()(pending, () => closeConn())
-      } yield {
-        r
-      }
-    }
-
-    val ehlo                                              = s"$EHLO ${mail.from.domain}"
-    implicit val acc: AtomicReference[(Result, Seq[Int])] = new AtomicReference((SuccessResult, Seq.empty[Int]))
+    val ehlo = s"$EHLO ${mail.from.domain}"
 
     val task = for {
-      _             <- readPendingAndResponse(pending)(() => closeConn())
+      _             <- readPendingAndResponse(closeConnection)
       _             <- step(ehlo, iterator.next()).map(toCodes)
       startTlsLines <- step(STARTTLS, iterator.next()).map { l =>
         toCodes(l)
@@ -182,25 +173,43 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       _ <- step(DATA, iterator.next()).map(toCodes)
       _ <- writeText(
         Seq(s"$Subject:${mail.emailContent.subject}", "", mail.emailContent.bodyAsString, END_DATA).map(Utils.withEndOfLine).mkString,
-        () => closeConn()
+        closeConnection
       )
-      _ <- readPendingAndResponse(pending)(() => closeConn())
+      _ <- readPendingAndResponse(closeConnection)
       _ <- step(QUIT, iterator.next()).map(toCodes)
 
     } yield {
-      finishConnection(() => closeConn())
+      finishConnection(closeConnection)
       finalResult(acc.get())
     }
     task.recover { case e =>
       logger.error("", e)
-      finishConnection(() => closeConn())
+      finishConnection(closeConnection)
       FailedResult(e.getMessage)
+    }
+  }
+
+  private def closeConnection(implicit sourceQueue: SourceQueueWithComplete[ByteString], sinkQueue: SinkQueueWithCancel[ByteString]) = () => closeConn
+
+  private def step(line: String, seq: Int)(implicit
+      pending: AtomicReference[ByteString],
+      engine: AtomicReference[Option[SSLEngine]],
+      sourceQueue: SourceQueueWithComplete[ByteString],
+      sinkQueue: SinkQueueWithCancel[ByteString]
+  ): Future[Seq[String]] = {
+    implicit val en: Option[SSLEngine] = engine.get()
+    implicit val s: Int                = seq
+    for {
+      _ <- writeLine(line, closeConnection)
+      r <- readResponse()(closeConnection)
+    } yield {
+      r
     }
   }
 
   private def finishConnection(closeConn: () => Unit)(implicit
       engine: Option[SSLEngine],
-      sinkQueue: SinkQueueWithCancel[ByteString],
+      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString]
   ): Unit = {
     implicit val seq: Int = iterator.next() - 1
@@ -208,9 +217,10 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     closeConnection(readBlocking(sinkQueue), writeToSource(p), () => closeConn())
   }
 
-  private def readPendingAndResponse(pending: AtomicReference[ByteString])(
+  private def readPendingAndResponse(
       closeConn: () => Unit
   )(implicit
+      pending: AtomicReference[ByteString],
       acc: AtomicReference[(Result, Seq[Int])],
       engine: AtomicReference[Option[SSLEngine]],
       sinkQueue: SinkQueue[ByteString],
@@ -218,7 +228,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
   ) = {
 
     implicit val seq: Int = iterator.next()
-    readResponse()(pending, () => closeConn()).map(toCodes)
+    readResponse()(() => closeConn()).map(toCodes)
 
   }
 
@@ -314,7 +324,8 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     } yield ()
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  private def readResponse(acc: Seq[String] = Seq.empty)(pending: AtomicReference[ByteString], closeConn: () => Unit)(implicit
+  private def readResponse(acc: Seq[String] = Seq.empty)(closeConn: () => Unit)(implicit
+      pending: AtomicReference[ByteString],
       engine: AtomicReference[Option[SSLEngine]],
       sourceQueue: SourceQueue[ByteString],
       sinkQueue: SinkQueue[ByteString],
@@ -323,7 +334,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     for {
       opt <- readLine(pending, () => closeConn())
       r   <- opt match {
-        case Some(line) if line.length > 3 && line.charAt(3) == '-' => readResponse(acc :+ line)(pending, closeConn)
+        case Some(line) if line.length > 3 && line.charAt(3) == '-' => readResponse(acc :+ line)(closeConn)
         case Some(line)                                             => Future.successful(acc :+ line)
         case None                                                   => Future.successful(acc)
       }

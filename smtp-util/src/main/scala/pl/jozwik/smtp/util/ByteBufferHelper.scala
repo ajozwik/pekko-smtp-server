@@ -14,6 +14,8 @@ object ByteBufferHelper {
       ByteBuffer.allocate(currentCapacity * 2)
     }
 
+  val fakeRead: ByteBuffer => Int = _ => 0
+
   def handleBufferUnderflow(bufferSize: Int, buffer: AtomicReference[ByteBuffer]): Unit =
     if (bufferSize >= buffer.get.limit) {
       val replaceBuffer = createBuffer(buffer.get.capacity(), bufferSize)

@@ -5,7 +5,7 @@ import org.apache.pekko.stream.TLSProtocol.{SendBytes, SessionBytes, SslTlsOutbo
 import org.apache.pekko.stream.scaladsl.{GraphDSL, Source}
 import org.apache.pekko.stream.{BidiShape, FlowShape, Graph, scaladsl}
 import org.apache.pekko.util.ByteString
-import pl.jozwik.smtp.util.{Constants, SmtpResponses, Utils}
+import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, SmtpResponses, Utils}
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -41,8 +41,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
 
     b.add(scaladsl.Flow[ByteString].flatMap { bytes =>
       implicit val seq: Int = iterator.next()
-      logger.trace(s"From network ($seq): engine=${attachment.get().engine.isDefined} ${bytes.length} ${tls.get()}")
-      val list = if (tls.get) {
+      val list              = if (tls.get) {
         val l = attachment.get() match {
           case a @ Attachment(Some(engine), buffers, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
@@ -96,10 +95,8 @@ object StartTlsBidiFlow extends WithSslEngineServer {
     handleRead(BufferAction.copyTo(buffer), addToHandshakeBuffer(handshakeBuffer), () => ()) match {
       case (Some(buffer), _) =>
         val bs = ByteString(buffer)
-        logger.trace(s"($seq) ${bs.utf8String.trim}")
         Option(SessionBytes(engine.getSession, bs))
       case _ =>
-        logger.trace(s"($seq) No data")
         None
     }
   }
@@ -111,8 +108,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
     b.add(scaladsl.Flow[SslTlsOutbound].flatMap {
       case SendBytes(bytes) =>
         val str = bytes.utf8String.trim
-        logger.trace(s"Plain response to network: $tls $str ${attachment.get().engine.map(_.getHandshakeStatus)}")
-        val s = if (tls.get) {
+        val s   = if (tls.get) {
           val toNetBytes = attachment.get() match {
             case Attachment(Some(engine), _, handshakeStatus, _) =>
               val buf    = handshakeBuffer.getAndSet(Seq.empty)
@@ -120,7 +116,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
               if (handshakeStatus.get == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get == HandshakeStatus.FINISHED) {
                 if (str != SmtpResponses.HANDSHAKE_RESPONSE) {
                   write(bytes.asByteBuffer)(
-                    _ => 0,
+                    ByteBufferHelper.fakeRead,
                     b => {
                       holder.accumulateAndGet(
                         Seq(ByteString(b)),
@@ -144,15 +140,8 @@ object StartTlsBidiFlow extends WithSslEngineServer {
         } else {
           Seq(bytes)
         }
-        logger.trace(s"${s.size}")
-        s.foreach { b =>
-          logger.trace(s"Sending to network: $str: ${b.length} bytes.")
-        }
-        if (s.isEmpty) {
-          Source.empty[ByteString]
-        } else {
-          Source(s)
-        }
+        Source(s)
+
       case x =>
         logger.error(s"$x", new IllegalStateException(s"Unexpected message: $x"))
         Source.empty[ByteString]

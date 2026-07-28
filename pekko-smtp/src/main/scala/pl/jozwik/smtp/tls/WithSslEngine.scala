@@ -46,17 +46,10 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
           } else {
             peerNetData.get().position()
           }
-          logger.trace(s"$whoIAm: ($seq) ${handshakeStatus.get()} $rCount ${peerNetData.get()}")
           if (rCount > 0) {
             peerNetData.get.flip()
             val engineResult = unwrap(peerNetData.get(), peerAppDataLocal.get())
-            if (engineResult.getHandshakeStatus == HandshakeStatus.NEED_WRAP) {
-              logger.trace(s"$whoIAm: ($seq) $peerNetData")
-            }
             peerNetData.get.compact()
-            if (engineResult.getHandshakeStatus == HandshakeStatus.NEED_WRAP) {
-              logger.trace(s"$whoIAm: ($seq) $peerNetData")
-            }
             handshakeStatus.set(engineResult.getHandshakeStatus)
             engineResult.getStatus match {
               case OK              =>
@@ -98,7 +91,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
           handshakeStatus.set(result.getHandshakeStatus)
           result.getStatus match {
             case OK =>
-              logger.trace(s"$whoIAm: ($seq) $result $myAppDataLocal")
               writeToChannel(Option(result))(myNetData.get())(writeByteBuffer)
             case BUFFER_OVERFLOW =>
               val newBuffer = ByteBufferHelper.createBuffer(myNetData.get().capacity(), e.getSession.getPacketBufferSize)
@@ -131,11 +123,7 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
         a
       }
     } else {
-      logger.trace(s"$whoIAm: ($seq) Finished doHandshake: ${e.getHandshakeStatus} handshakeStatus=$handshakeStatus")
       if (handshakeStatus.get == HandshakeStatus.FINISHED) {
-        if (whoIAm == "server") {
-          logger.trace(s"${b.myNetData}")
-        }
         ownHandshakeFinished()
       }
       a
@@ -172,12 +160,10 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
       case bytesRead if bytesRead > 0 =>
         peerNetData.get.flip()
         readBuffer(peerNetData, exitRead, closed)(readByteBuffer, writeByteBuffer, closeConn)
-      case x =>
-        logger.trace(s"$whoIAm: ($seq)  Received end of stream. Close connection with $whoContactMe $x")
+      case _ =>
         handleEndOfStream(readByteBuffer, writeByteBuffer, closeConn)
         exitRead(true)
         closed(true)
-        logger.trace(s"$whoIAm: ($seq)  Goodbye $whoContactMe!")
         (None, None)
     }
   }
@@ -198,7 +184,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
   protected def write(
       message: ByteBuffer
   )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit seq: Int, engine: Option[SSLEngine]): Unit = {
-    logger.trace(s"$whoIAm: ($seq)  writes to a $whoContactMe: ${ByteBufferHelper.toString(message).trim}")
     val myAppData = ByteBuffer.allocate(toApplicationBufferSize(applicationBufferSize))
     val myNetData = new AtomicReference(ByteBuffer.allocate(toPacketBufferSize(packetBufferSize)))
     myAppData.put(message)
@@ -216,14 +201,14 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
       }
     } catch {
       case e: SSLException =>
-        logger.warn(e.getMessage)
+        logger.error("", e)
     }
     closeConnection(readByteBuffer, writeByteBuffer, close)
   }
 
-  private def handleError(implicit engine: SSLEngine): PartialFunction[Throwable, SSLEngineResult] = { case e: SSLException =>
+  private def handleError(implicit engine: SSLEngine, seq: Int): PartialFunction[Throwable, SSLEngineResult] = { case e: SSLException =>
     logger.error(
-      s"$whoIAm: Will try to properly close connection...",
+      s"$whoIAm: ($seq) Will try to properly close connection...",
       e
     )
     engine.closeOutbound()
@@ -265,7 +250,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
         case Some(e) =>
           implicit val en: SSLEngine = e
           val r                      = unwrap(peerNetData.get, peerAppData.get)
-          logger.trace(s"$whoIAm: ($seq) $peerNetData '${ByteBufferHelper.toString(peerAppData.get)}' $r")
           r.getStatus match {
             case OK =>
               peerAppData.get.flip()
@@ -276,7 +260,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
             case BUFFER_UNDERFLOW =>
               ByteBufferHelper.handleBufferUnderflow(e.getSession.getPacketBufferSize, peerNetData)
             case _ =>
-              logger.trace(s"$whoIAm: ($seq) $whoContactMe wants to close connection...")
               closeConnection(readByteBuffer, writeByteBuffer, closeConn)
               closed(true)
 
@@ -295,18 +278,14 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
       engine: SSLEngine
   ): SSLEngineResult =
     try {
-      val r = engine.unwrap(peerNetData, peerAppDataLocal)
-      logger.trace(s"$whoIAm: unwrap ($seq) $r ${engine.getHandshakeStatus} $peerNetData")
-      r
+      engine.unwrap(peerNetData, peerAppDataLocal)
     } catch {
-      handleError(engine)
+      handleError
     }
 
   private def wrap(myAppDataLocal: ByteBuffer, myNetData: ByteBuffer)(implicit seq: Int, engine: SSLEngine) =
     try {
-      val r = engine.wrap(myAppDataLocal, myNetData)
-      logger.trace(s"$whoIAm: wrap ($seq) $r")
-      r
+      engine.wrap(myAppDataLocal, myNetData)
     } catch {
       handleError
     }
@@ -326,8 +305,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
           result.getStatus match {
             case OK =>
               writeToChannel()(myNetData.get())(writeByteBuffer)
-              val message = ByteBufferHelper.toString(myAppData)
-              logger.trace(s"$whoIAm: ($seq)  Message sent to the $whoContactMe: $message")
               continue.set(false)
             case BUFFER_OVERFLOW =>
               val buffer = ByteBufferHelper.createBuffer(myNetData.get().capacity(), e.getSession.getPacketBufferSize)
@@ -356,9 +333,6 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
   @tailrec
   private def writeToChannelLoop(status: Option[SSLEngineResult])(myNetData: ByteBuffer)(writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int): Unit =
     if (myNetData.hasRemaining) {
-      if (status.isDefined) {
-        logger.trace(s"$whoIAm: ($seq)  writeToChannelLoop  $status $myNetData")
-      }
       writeByteBuffer(myNetData)
       writeToChannelLoop(status)(myNetData)(writeByteBuffer)
     }

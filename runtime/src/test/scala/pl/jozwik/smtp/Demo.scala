@@ -8,8 +8,6 @@ import scala.util.Using
 
 trait Demo extends WithClient with StrictLogging {
 
-
-
   protected def sendMail(name: String)(port: Int): Unit =
     Using.resource(
       new NioSslClient(TlsVersion, "localhost", port, name, keyStoreClientInputStream, TlsOpts.clientKeystorePassword, TlsOpts.clientKeystorePassword)(
@@ -24,6 +22,7 @@ trait Demo extends WithClient with StrictLogging {
       logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
       val bb = writeAndWaitForRead(s"$EHLO again_$name!")
       logger.trace(s"${toMessage(bb)}")
+      client.writeMessage("")
       val mailResponse = writeAndWaitForRead(s"$MAIL_FROM: aa@aa.pl")
       logger.trace(s"${toMessage(mailResponse)}")
       val rcptResponse = writeAndWaitForRead(s"$RCPT_TO: aa@aa.pl")
@@ -37,7 +36,5 @@ trait Demo extends WithClient with StrictLogging {
       val quitResponse = writeAndWaitForRead(s"$QUIT")
       logger.trace(s"${toMessage(quitResponse)}")
     }
-
-
 
 }

@@ -12,7 +12,7 @@ Smtp server based on pekko stream.
 Add to your project:
 
 ```
- libraryDependencies += "com.github.ajozwik" %% "pekko-smtp" % "0.1.0"
+ libraryDependencies += "com.github.ajozwik" %% "pekko-smtp" % "0.4.0"
 ```
 
 
@@ -38,11 +38,8 @@ Example usage:
 
 List of tls system properties (optional):
 
-* smtp.tls.trustStoreFile - path to trust store
-* smtp.tls.trustStoreResource - path to trust store resource
-* smtp.tls.ephemeral - generate a throwaway self-signed key/trust store instead of requiring one
-* smtp.size - max size of message in bytes
 * smtp.port - port to connect to
+* smtp.size - max size of message in bytes
 * consumer.class - class to consume messages
 * smtp.tls.client.keyStorePassword - password for client key store
 * smtp.tls.protocol - TLS protocol
@@ -50,6 +47,9 @@ List of tls system properties (optional):
 * smtp.tls.keyStoreFile - path to key store
 * smtp.tls.keyStoreResource - path to key store resource
 * smtp.tls.trustStorePassword - password for trust store
+* smtp.tls.trustStoreFile - path to trust store
+* smtp.tls.trustStoreResource - path to trust store resource
+* smtp.tls.ephemeral - generate a throwaway self-signed key/trust store instead of requiring one
 
 Thanks to https://github.com/alexbokos/sslengine.example for example of tls/ssl implementation.
 
