@@ -1,6 +1,7 @@
 package pl.jozwik.smtp.tls
 
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.{SSLEngine, SSLEngineResult}
 
 trait WithSslEngineClient extends WithSslEngine {
@@ -10,7 +11,8 @@ trait WithSslEngineClient extends WithSslEngine {
 
   protected override def handleRead(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
-      engine: Option[SSLEngine]
+      engine: Option[SSLEngine],
+      underflowBuffer: AtomicReference[ByteBuffer]
   ): (Option[ByteBuffer], Option[SSLEngineResult]) =
     read(_ => (), _ => ())(readByteBuffer, writeByteBuffer, closeConn)
 

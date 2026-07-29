@@ -1,9 +1,9 @@
 package pl.jozwik.smtp.runtime
 
 import pl.jozwik.smtp.util.AbstractAsyncSpec
-import pl.jozwik.smtp.{Demo, DemoServer, WithPort}
+import pl.jozwik.smtp.{DemoServer, WithPort}
 
-class DemoServerSpec extends AbstractAsyncSpec with Demo with WithPort {
+class DemoServerSpec extends AbstractAsyncSpec with WithPort {
 
   "ServerDemo " should {
     s"Client/Server demo" in {

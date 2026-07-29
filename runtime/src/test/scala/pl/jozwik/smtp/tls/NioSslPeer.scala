@@ -6,7 +6,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.spi.SelectorProvider
 import java.nio.channels.{SelectableChannel, SelectionKey, Selector, SocketChannel}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 import java.util.concurrent.{ExecutorService, Executors, ThreadFactory, TimeUnit}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.*
@@ -93,15 +93,16 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     if (key.isValid) {
       key.channel() match {
         case sc: SocketChannel =>
-          implicit val seq: Int = iterator.next()
+          implicit val socket: SocketChannel = sc
+          implicit val seq: Int              = iterator.next()
           key.attachment() match {
-            case a @ Attachment(Some(engine), buffers, status, _)
-                if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
+            case a @ Attachment(Some(engine), _, status, _) if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
               logger.trace(s"$whoIAm: ($seq)  Handshake is still in progress: ${status.get()}")
               implicit val e: SSLEngine = engine
-              doHandshake(a)(sc.read, b => sc.write(b))
-            case a @ Attachment(_, _, _, open) =>
-              readAndResponse(a.clearBuffers, key, open.get())(sc.read, b => sc.write(b), () => closeConnection(sc))
+              doHandshake(a)(sc.read, writeToOutputBuffer)
+            case a @ Attachment(_, b, _, open) =>
+              implicit val underflowBuffer: AtomicReference[ByteBuffer] = b.underflowBuffer
+              readAndResponse(a.clearBuffers, key, open.get())(sc.read, writeToOutputBuffer, () => closeConnection(sc))
             case r =>
               sys.error(s"Attachment: $r")
           }
@@ -111,11 +112,17 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       }
     }
 
+  protected def writeToOutputBuffer(b: ByteBuffer)(implicit sc: SocketChannel): Unit =
+    sc.write(b)
+
   private def readAndResponse(
       a: Attachment,
       key: SelectionKey,
       open: Boolean
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit seq: Int): Unit = {
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
+      underflowBuffer: AtomicReference[ByteBuffer]
+  ): Unit = {
     implicit val en: Option[SSLEngine] = a.engine
     handleRead(readByteBuffer, writeByteBuffer, closeConn) match {
       case (Some(message), _) =>

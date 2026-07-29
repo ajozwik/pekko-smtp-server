@@ -26,22 +26,25 @@ object StartTlsBidiFlow extends WithSslEngineServer {
 
   private def graph(createSSLEngine: () => SSLEngine, tls: AtomicBoolean): Graph[BidiShape[SslTlsOutbound, ByteString, ByteString, SessionBytes], NotUsed] = {
     scaladsl.GraphDSL.create() { implicit b =>
-      implicit val attachment: AtomicReference[Attachment]  = new AtomicReference(Attachment.empty)
-      val handshakeBuffer: AtomicReference[Seq[ByteString]] = new AtomicReference(Seq.empty)
-      val fromClient: FlowShape[ByteString, SessionBytes]   = fromNetwork(tls, handshakeBuffer)
-      val toClient: FlowShape[SslTlsOutbound, ByteString]   = toNetwork(createSSLEngine, tls, handshakeBuffer)
+      implicit val attachment: AtomicReference[Attachment]      = new AtomicReference(Attachment.empty)
+      val handshakeBuffer: AtomicReference[Seq[ByteString]]     = new AtomicReference(Seq.empty)
+      implicit val underflowBuffer: AtomicReference[ByteBuffer] = attachment.get().buffers.underflowBuffer
+      val fromClient: FlowShape[ByteString, SessionBytes]       = fromNetwork(tls, handshakeBuffer)
+      val toClient: FlowShape[SslTlsOutbound, ByteString]       = toNetwork(createSSLEngine, tls, handshakeBuffer)
       BidiShape.fromFlows(toClient, fromClient)
     }
   }
 
   private def fromNetwork(tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],
-      attachment: AtomicReference[Attachment]
+      attachment: AtomicReference[Attachment],
+      underflowBuffer: AtomicReference[ByteBuffer]
   ): FlowShape[ByteString, SessionBytes] = {
 
     b.add(scaladsl.Flow[ByteString].flatMap { bytes =>
       implicit val seq: Int = iterator.next()
-      val list              = if (tls.get) {
+      logger.debug(s"fromNetwork ($seq) ${bytes.length}")
+      val list = if (tls.get) {
         val l = attachment.get() match {
           case a @ Attachment(Some(engine), buffers, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
@@ -89,7 +92,8 @@ object StartTlsBidiFlow extends WithSslEngineServer {
 
   private def unwrapFromNetwork(buffer: ByteBuffer, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       seq: Int,
-      engine: SSLEngine
+      engine: SSLEngine,
+      underflowBuffer: AtomicReference[ByteBuffer]
   ): Option[SessionBytes] = {
     implicit val en: Option[SSLEngine] = Option(engine)
     handleRead(BufferAction.copyTo(buffer), addToHandshakeBuffer(handshakeBuffer), () => ()) match {
@@ -140,6 +144,7 @@ object StartTlsBidiFlow extends WithSslEngineServer {
         } else {
           Seq(bytes)
         }
+        logger.debug(s"To network ${s.map(_.length).mkString(", ")}")
         Source(s)
 
       case x =>

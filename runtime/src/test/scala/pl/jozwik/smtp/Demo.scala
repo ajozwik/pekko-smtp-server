@@ -1,28 +1,24 @@
 package pl.jozwik.smtp
 
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustStoreInputStream}
-import pl.jozwik.smtp.tls.NioSslClient
 import pl.jozwik.smtp.util.Constants.*
+
 import scala.util.Using
 
 trait Demo extends WithClient with StrictLogging {
 
   protected def sendMail(name: String)(port: Int): Unit =
     Using.resource(
-      new NioSslClient(TlsVersion, "localhost", port, name, keyStoreClientInputStream, TlsOpts.clientKeystorePassword, TlsOpts.clientKeystorePassword)(
-        trustStoreInputStream,
-        TlsOpts.trustPassword
-      )
+      createClient(name)(port)
     ) { implicit client =>
       client.connect()
-      val ehloResponse = writeAndWaitForRead(s"EHLO $name!")
+      val ehloResponse = writeAndWaitForRead(s"$EHLO $name!")
       logger.trace(s"${toMessage(ehloResponse)}")
       val tlsResponse = client.startTls()
       logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
       val bb = writeAndWaitForRead(s"$EHLO again_$name!")
       logger.trace(s"${toMessage(bb)}")
-      client.writeMessage("")
+      writeAndWaitForRead(s"$NOOP")
       val mailResponse = writeAndWaitForRead(s"$MAIL_FROM: aa@aa.pl")
       logger.trace(s"${toMessage(mailResponse)}")
       val rcptResponse = writeAndWaitForRead(s"$RCPT_TO: aa@aa.pl")
