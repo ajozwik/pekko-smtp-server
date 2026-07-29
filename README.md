@@ -17,39 +17,167 @@ Add to your project:
 
 
 For minimal usage you need to provide `consumer` method with signature (Mail=>Future[ConsumedResult]).
-`consumer` method receives [Mail](/smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object, and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
+`consumer` method receives [Mail](smtp-util/src/main/scala/pl/jozwik/smtp/util/Mail.scala) object, and it repeats with Future[SuccessfulConsumed] or Future[FailedConsumed].
 
-[AddressHandler.scala](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is an optional implementation for fail fast address resolution (blacklist).
+[AddressHandler.scala](pekko-smtp/src/main/scala/pl/jozwik/smtp/server/AddressHandler.scala) is an optional implementation for fail fast address resolution (blacklist).
 
 Usage:
-Implement trait [Consumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala)
+Implement trait [Consumer](pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala)
+
+#### Custom Consumer Implementation
+
+```scala
+import pl.jozwik.smtp.server.consumer.Consumer
+import pl.jozwik.smtp.util.{ConsumedResult, Mail, SuccessfulConsumed}
+import scala.concurrent.Future
+
+class MyConsumer extends Consumer {
+  override def consumer(mail: Mail): Future[ConsumedResult] = {
+    // Process mail here
+    Future.successful(SuccessfulConsumed)
+  }
+}
+```
+
+### Programmatic Usage
+
+#### Minimal SMTP Server
+
+```scala
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Tcp
+import pl.jozwik.smtp.server.{ConnectionHandler, NopAddressHandler, StreamServer}
+import pl.jozwik.smtp.util.{Mail, SuccessfulConsumed}
+import scala.concurrent.Future
+import scala.concurrent.duration.*
+
+implicit val system: ActorSystem = ActorSystem("smtp-server")
+val consumer = (mail: Mail) => {
+  println(s"Received mail from ${mail.from} to ${mail.to}")
+  Future.successful(SuccessfulConsumed)
+}
+
+val maxSize = 1024 * 1024 // 1MB
+val readTimeout = 30.seconds
+val connectionHandler = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, NopAddressHandler)()(system)
+val port = 2525
+val server = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)(system)
+
+// To stop the server:
+// server.close()
+```
+
+#### SMTP Client
+
+```scala
+import pl.jozwik.smtp.client.StreamClient
+import pl.jozwik.smtp.util.{EmailWithContent, Mail, MailAddress, SocketAddress}
+
+val address = SocketAddress("localhost", port)
+val client = new StreamClient(address)
+
+val mail = Mail(
+  from = MailAddress("sender", "example.com"),
+  to = Seq(MailAddress("recipient", "example.com")),
+  emailContent = EmailWithContent.txtOnly(Seq.empty, Seq.empty, "Subject", "Hello World!")
+)
+
+client.sendMail(mail)
+```
+
+#### Custom Address Handler
+
+You can implement `AddressHandler` to filter incoming or outgoing mail addresses.
+
+```scala
+import pl.jozwik.smtp.server.AddressHandler
+import pl.jozwik.smtp.util.MailAddress
+
+class BlacklistAddressHandler(blacklist: Set[String]) extends AddressHandler {
+  override def acceptFrom(from: MailAddress): Boolean = !blacklist.contains(from.domain)
+  override def acceptTo(to: MailAddress): Boolean = true
+}
+```
+
+#### TLS Support
+
+To enable TLS (STARTTLS), you need to provide `TlsOpts`.
+
+```scala
+import pl.jozwik.smtp.TlsOpts
+import java.util.concurrent.Callable
+import java.io.InputStream
+
+// Example using classpath resources
+val keyStoreStream: Callable[InputStream] = () => getClass.getResourceAsStream("/keystore.jks")
+val trustStoreStream: Callable[InputStream] = () => getClass.getResourceAsStream("/truststore.jks")
+
+val tlsOpts = TlsOpts(
+  keyStoreInputStream = keyStoreStream,
+  keystorePassword = "password",
+  keyPassword = "password",
+  trustStoreInputStream = trustStoreStream,
+  trustPassword = "password"
+)
+
+// Server with TLS and Address Handler
+val tlsConnectionHandler = ConnectionHandler.connectionHandler(
+  maxSize,
+  consumer,
+  readTimeout,
+  new BlacklistAddressHandler(Set("spam.com"))
+)(Some(tlsOpts))(system)
+
+// Client with TLS
+val tlsClient = new StreamClient(address, tlsOpts)(system)
+```
+
+#### Sending Mail with Attachments
+
+```scala
+import pl.jozwik.smtp.util.Attachment
+import org.apache.pekko.util.ByteString
+
+val mailWithAttachment = Mail(
+  from = MailAddress("sender", "example.com"),
+  to = Seq(MailAddress("recipient", "example.com")),
+  emailContent = EmailWithContent(
+    from = Seq(MailAddress("sender", "example.com")),
+    to = Seq(MailAddress("recipient", "example.com")),
+    subject = Some("Report"),
+    txtBody = Some("Please find the report attached."),
+    htmlBody = None,
+    attachments = Seq(Attachment("report.pdf", ByteString("...pdf content...")))
+  )
+)
+```
 
 Example implementation:
-[LogConsumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/LogConsumer.scala)
+[LogConsumer](pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/LogConsumer.scala)
 
 Example usage:
 
  - Pack project
 > sbt pack
- - Provide [Consumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala) implementation ([FileLogConsumer](/pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/FileLogConsumer.scala) in example)
+ - Provide [Consumer](pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/Consumer.scala) implementation ([FileLogConsumer](pekko-smtp/src/main/scala/pl/jozwik/smtp/server/consumer/FileLogConsumer.scala) in example)
 > pekko-smtp/target/pack/bin/main -Dconsumer.class=pl.jozwik.smtp.server.consumer.FileLogConsumer
 
  - or use a project as a dependency and provide own Main class 
 
 List of tls system properties (optional):
 
+* smtp.port - port to connect to
 * consumer.class - class to consume messages
-* smtp.tls.client.keyStorePassword - password for client key store
-* smtp.tls.protocol - TLS protocol
+* smtp.tls.ephemeral - generate a throwaway self-signed key/trust store instead of requiring one
 * smtp.tls.keyStorePassword - password for key store
+* smtp.tls.trustStorePassword - password for trust store
+* smtp.tls.protocol - TLS protocol
 * smtp.tls.keyStoreFile - path to key store
 * smtp.tls.keyStoreResource - path to key store resource
-* smtp.tls.trustStorePassword - password for trust store
 * smtp.tls.trustStoreFile - path to trust store
 * smtp.tls.trustStoreResource - path to trust store resource
-* smtp.tls.ephemeral - generate a throwaway self-signed key/trust store instead of requiring one
+* smtp.tls.client.keyStorePassword - password for client key store
 * smtp.size - max size of message in bytes
-* smtp.port - port to connect to
 
 Thanks to https://github.com/alexbokos/sslengine.example for example of tls/ssl implementation.
 
