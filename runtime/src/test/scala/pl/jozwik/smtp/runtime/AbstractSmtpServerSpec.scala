@@ -1,9 +1,9 @@
 package pl.jozwik.smtp.runtime
 
 import org.scalatest.Assertion
-import pl.jozwik.smtp.TlsOpts
 import pl.jozwik.smtp.client.{FailedResult, StreamClient, SuccessResult}
 import pl.jozwik.smtp.tls.EphemeralTls.clientTlsOpts
+import pl.jozwik.smtp.tls.TlsOpts
 import pl.jozwik.smtp.util.Constants.*
 import pl.jozwik.smtp.util.SmtpCodes.*
 import pl.jozwik.smtp.util.TestUtils.*
@@ -53,7 +53,7 @@ abstract class AbstractSmtpServerSpec(consumer: Mail => Future[ConsumedResult], 
       val result = Await.result(client.sendMail(mail), TimeoutSeconds.second)
       result match {
         case FailedResult(error) =>
-          logger.debug(s"$error")
+          logger.trace(s"$error")
           error should startWith(s"$TLS_NOT_SUPPORTED")
         case SuccessResult =>
           fail()

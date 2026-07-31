@@ -27,7 +27,7 @@ object MailParser extends StrictLogging {
     parseMessage(mimeMsg, from, to)
   }
 
-  private[util] def toMessage(mailAsTxt: String) =
+  private[util] def toMessage(mailAsTxt: String): Message =
     messageBuilder.parseMessage(new ByteArrayInputStream(mailAsTxt.getBytes(Constants.Utf8sCharset)))
 
   private[util] def parseMessage(mimeMsg: Message, f: MailAddress, t: Seq[MailAddress]): EmailWithContent = {

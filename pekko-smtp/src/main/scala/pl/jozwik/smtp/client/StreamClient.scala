@@ -3,15 +3,15 @@ package pl.jozwik.smtp.client
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Flow, Framing, Keep, Sink, SinkQueue, SinkQueueWithCancel, Source, SourceQueue, SourceQueueWithComplete, Tcp}
 import org.apache.pekko.util.ByteString
-import pl.jozwik.smtp.{SmtpUtils, TlsOpts}
+import pl.jozwik.smtp.SmtpUtils
 import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Mail, SmtpCodes, SocketAddress, Utils}
 import Constants.*
 import org.apache.pekko.stream.OverflowStrategy
 import pl.jozwik.smtp.tls.TlsHelper.toApplicationBufferSize
-import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, WithSslEngineClient}
+import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, TlsOpts, WithSslEngineClient}
 
 import java.nio.ByteBuffer
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.SSLEngine
 import scala.concurrent.duration.DurationInt
@@ -35,11 +35,13 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
   private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =
     Tcp().outgoingConnection(host, port)
 
-  def sendMail(mail: Mail): Future[Result] =
+  def sendMail(mail: Mail): Future[Result] = {
+    implicit val open: AtomicBoolean = new AtomicBoolean(true)
     tlsOpts match {
       case Some(opts) => runStartTlsSession(mail, opts).recover(recoverError)
       case _          => sendMailPlain(mail)
     }
+  }
 
   private def sendMailPlain(mail: Mail): Future[Result] = {
     val source = Source.single(mail)
@@ -104,9 +106,9 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
   }
 
   private def negotiateTls(opts: TlsOpts)(implicit
-      sourceQueue: SourceQueue[ByteString],
+      sourceQueue: SourceQueueWithComplete[ByteString],
       engine: AtomicReference[Option[SSLEngine]],
-      sinkQueue: SinkQueue[ByteString]
+      sinkQueue: SinkQueueWithCancel[ByteString]
   ): Future[Boolean] = {
     implicit val underflowBuffer: AtomicReference[ByteBuffer] = ByteBufferHelper.referenceByteBuffer
     implicit val e: SSLEngine                                 = clientSslEngine(opts)
@@ -129,7 +131,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
     }
   }
 
-  private def runStartTlsSession(mail: Mail, opts: TlsOpts): Future[Result] = {
+  private def runStartTlsSession(mail: Mail, opts: TlsOpts)(implicit open: AtomicBoolean): Future[Result] = {
     implicit val (sourceQueue: SourceQueueWithComplete[ByteString], sinkQueue: SinkQueueWithCancel[ByteString]) =
       Source
         .queue[ByteString](QueueSize, OverflowStrategy.backpressure)
@@ -149,7 +151,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       _             <- step(ehlo, iterator.next()).map(toCodes)
       startTlsLines <- step(STARTTLS, iterator.next()).map { l =>
         toCodes(l)
-        logger.debug(s"$l")
+        logger.trace(s"$l")
         l
       }
       startTlsCode = startTlsLines.headOption.flatMap(l => SmtpUtils.toInt(l.take(3)))
@@ -197,7 +199,8 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       pending: AtomicReference[ByteString],
       engine: AtomicReference[Option[SSLEngine]],
       sourceQueue: SourceQueueWithComplete[ByteString],
-      sinkQueue: SinkQueueWithCancel[ByteString]
+      sinkQueue: SinkQueueWithCancel[ByteString],
+      open: AtomicBoolean
   ): Future[Seq[String]] = {
     implicit val en: Option[SSLEngine] = engine.get()
     implicit val s: Int                = seq
@@ -227,7 +230,8 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       acc: AtomicReference[(Result, Seq[Int])],
       engine: AtomicReference[Option[SSLEngine]],
       sinkQueue: SinkQueue[ByteString],
-      sourceQueue: SourceQueue[ByteString]
+      sourceQueue: SourceQueue[ByteString],
+      open: AtomicBoolean
   ) = {
 
     implicit val seq: Int = iterator.next()
@@ -246,7 +250,8 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       engine: AtomicReference[Option[SSLEngine]],
       sourceQueue: SourceQueue[ByteString],
       sinkQueue: SinkQueue[ByteString],
-      seq: Int
+      seq: Int,
+      open: AtomicBoolean
   ): Future[Option[String]] = {
     val idx = pending.get().indexOf('\n'.toByte)
     if (idx >= 0) {
@@ -262,8 +267,9 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
           case Some(bytes) =>
             implicit val en: Option[SSLEngine] = engine.get()
             val p                              = Promise[Unit]()
-            handleRead(
-              BufferAction.copyTo(bytes),
+            val peerNetData                    = ByteBufferHelper.toByteBufferFlip(bytes)
+            handleRead(peerNetData)(
+              ByteBufferHelper.fakeRead,
               buff => sourceQueue.offer(ByteString(buff)).onComplete { _ => p.trySuccess(()) },
               () => closeConn()
             ) match {
@@ -292,13 +298,15 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
 
   private def doHandshakeStep(attachment: Attachment, readByteBuffer: ByteBuffer => Int)(implicit
       e: SSLEngine,
-      sourceQueue: SourceQueue[ByteString]
+      sourceQueue: SourceQueueWithComplete[ByteString],
+      sinkQueue: SinkQueueWithCancel[ByteString]
   ): Future[Unit] = {
     implicit val seq: Int = iterator.next()
     val p                 = Promise[Unit]()
     doHandshake(attachment)(
       readByteBuffer,
-      writeToSource(p)
+      writeToSource(p),
+      closeConnection
     )
     p.future
   }
@@ -311,7 +319,13 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def runHandshake(
       attachment: Attachment
-  )(implicit e: SSLEngine, sinkQueue: SinkQueue[ByteString], sourceQueue: SourceQueue[ByteString], underflowBuffer: AtomicReference[ByteBuffer]): Future[Unit] =
+  )(implicit
+      e: SSLEngine,
+      sinkQueue: SinkQueueWithCancel[ByteString],
+      sourceQueue: SourceQueueWithComplete[ByteString],
+      underflowBuffer: AtomicReference[ByteBuffer]
+  ): Future[Unit] =
+
     for {
       b <- readByteBufferFuture(sinkQueue)
       _ <- b match {
@@ -338,7 +352,8 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
       engine: AtomicReference[Option[SSLEngine]],
       sourceQueue: SourceQueue[ByteString],
       sinkQueue: SinkQueue[ByteString],
-      seq: Int
+      seq: Int,
+      open: AtomicBoolean
   ): Future[Seq[String]] =
     for {
       opt <- readLine(pending, () => closeConn())

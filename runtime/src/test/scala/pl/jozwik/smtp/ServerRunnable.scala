@@ -1,7 +1,7 @@
 package pl.jozwik.smtp
 
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.tls.NioSslServer
+import pl.jozwik.smtp.tls.{NioSslServer, TlsOpts}
 import pl.jozwik.smtp.DemoHelper.*
 
 class ServerRunnable(port: Int) extends Runnable with AutoCloseable with StrictLogging {

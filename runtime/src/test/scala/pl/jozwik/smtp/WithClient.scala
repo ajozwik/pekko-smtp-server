@@ -1,8 +1,9 @@
 package pl.jozwik.smtp
 
+import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustStoreInputStream}
-import pl.jozwik.smtp.tls.NioSslClient
-import pl.jozwik.smtp.util.{ByteBufferHelper, Utils}
+import pl.jozwik.smtp.tls.{NioSslClient, TlsOpts}
+import pl.jozwik.smtp.util.Utils
 
 import java.nio.ByteBuffer
 
@@ -14,9 +15,11 @@ trait WithClient {
       TlsOpts.trustPassword
     )
 
-  protected def toMessage(b: ByteBuffer): String = ByteBufferHelper.toString(b).trim
+  protected def toMessage(b: ByteString): String = b.utf8String.trim
 
-  protected def writeAndWaitForRead(txt: String)(implicit client: NioSslClient): ByteBuffer =
+  protected def toMessage(b: ByteBuffer): String = toMessage(ByteString(b))
+
+  protected def writeAndWaitForRead(txt: String)(implicit client: NioSslClient): ByteString =
     client.writeAndWaitForRead(Utils.withEndOfLine(txt))
 
 }

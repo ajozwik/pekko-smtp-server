@@ -2,10 +2,9 @@ package pl.jozwik.smtp.runtime
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Tcp
-import pl.jozwik.smtp.TlsOpts
 import pl.jozwik.smtp.server.ServerOpts
 import pl.jozwik.smtp.server.StreamServerRunner
-import pl.jozwik.smtp.tls.EphemeralTls
+import pl.jozwik.smtp.tls.{EphemeralTls, TlsOpts}
 import pl.jozwik.smtp.util.{RuntimeConstants, ScalaAppWithLogger}
 
 object Main extends ScalaAppWithLogger {

@@ -5,7 +5,7 @@ import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustSt
 import pl.jozwik.smtp.server.consumer.{Consumer, LogConsumer}
 import pl.jozwik.smtp.server.{ServerOpts, StreamServerRunner}
 import pl.jozwik.smtp.util.{TestUtils, Utils}
-import pl.jozwik.smtp.{AbstractWithActorSystemSpec, TlsOpts, WithClient, WithPort}
+import pl.jozwik.smtp.{AbstractWithActorSystemSpec, WithClient, WithPort}
 import pl.jozwik.smtp.util.Constants.*
 import scala.concurrent.duration.DurationInt
 import scala.util.Using

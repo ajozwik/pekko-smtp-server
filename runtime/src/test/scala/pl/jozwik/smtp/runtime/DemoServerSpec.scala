@@ -12,9 +12,9 @@ class DemoServerSpec extends AbstractAsyncSpec with WithPort {
 
       demo
         .runDemo()
-        .map { _ =>
+        .map { b =>
           logger.warn("Demo finished")
-          succeed
+          b shouldBe true
         }
         .recover { case e: Throwable =>
           logger.error(e.getMessage, e)

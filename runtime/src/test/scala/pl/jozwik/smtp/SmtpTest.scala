@@ -5,6 +5,7 @@ import org.apache.pekko.stream.scaladsl.Tcp
 import pl.jozwik.smtp.server.StreamServerRunner
 import pl.jozwik.smtp.server.ServerOpts
 import pl.jozwik.smtp.server.consumer.{Consumer, LogConsumer}
+import pl.jozwik.smtp.tls.TlsOpts
 import pl.jozwik.smtp.util.{RuntimeConstants, ScalaAppWithLogger, TestUtils}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,8 +30,9 @@ class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps) extends De
 
     val futures = (1 to 1).map(i => Future(sendMail(s"client$i")(port)))
 
-    Future.sequence(futures).map { _ =>
+    Future.sequence(futures).flatMap { _ =>
       run.close()
+      system.terminate().map(t => logger.trace(s"$t"))
     }
 
   }

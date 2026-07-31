@@ -1,7 +1,7 @@
 package pl.jozwik.smtp
 package server
 
-import pl.jozwik.smtp.client.FailedResult
+import pl.jozwik.smtp.client.{FailedResult, SuccessResult}
 import pl.jozwik.smtp.util.*
 
 import scala.concurrent.Future
@@ -43,6 +43,29 @@ abstract class FailedHandlerSpec extends AbstractSmtpSpec {
     "Not accepted to" in {
       val mail = Mail(mailAddress, Seq(mailAddress.copy(user = userUnknown)), emptyContent)
       shouldFailed(mail)
+    }
+
+    "Wrong address " in {
+      val mail       = Mail(mailAddress, Seq(mailAddress), emptyContent)
+      val failClient = createClientActor(SocketAddress(host, 2222))
+      failClient.sendMail(mail).map(_ => fail()).recover { case exp =>
+        logger.warn("", exp)
+        succeed
+      }
+    }
+
+    "No address " in {
+      for {
+        s <- clientWithActor.sendMail(Mail.empty).map {
+          case FailedResult(ex) =>
+            logger.debug("", ex)
+            succeed
+          case SuccessResult =>
+            fail()
+        }
+      } yield {
+        s
+      }
     }
 
   }

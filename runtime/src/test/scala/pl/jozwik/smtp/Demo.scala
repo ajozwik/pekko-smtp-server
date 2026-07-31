@@ -13,18 +13,18 @@ trait Demo extends WithClient with StrictLogging {
     ) { implicit client =>
       client.connect()
       val ehloResponse = writeAndWaitForRead(s"$EHLO $name!")
-      logger.trace(s"${toMessage(ehloResponse)}")
+      logger.trace(s"$EHLO Response ${toMessage(ehloResponse)}")
       val tlsResponse = client.startTls()
       logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
       val bb = writeAndWaitForRead(s"$EHLO again_$name!")
       logger.trace(s"${toMessage(bb)}")
       writeAndWaitForRead(s"$NOOP")
       val mailResponse = writeAndWaitForRead(s"$MAIL_FROM: aa@aa.pl")
-      logger.trace(s"${toMessage(mailResponse)}")
+      logger.trace(s"$MAIL_FROM ${toMessage(mailResponse)}")
       val rcptResponse = writeAndWaitForRead(s"$RCPT_TO: aa@aa.pl")
-      logger.trace(s"${toMessage(rcptResponse)}")
+      logger.trace(s"$RCPT_TO ${toMessage(rcptResponse)}")
       val dataResponse = writeAndWaitForRead(s"$DATA")
-      logger.trace(s"${toMessage(dataResponse)}")
+      logger.trace(s"$DATA ${toMessage(dataResponse)}")
       val message = writeAndWaitForRead(s"""Ala ma kota
           |I co z tego?
           |$END_DATA""".stripMargin)

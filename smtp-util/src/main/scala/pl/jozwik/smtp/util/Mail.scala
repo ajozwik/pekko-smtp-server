@@ -36,6 +36,10 @@ final case class EmailWithContent(
   def bodyAsString: String = txtBody.getOrElse("")
 }
 
+object Mail {
+  val empty: Mail = Mail(MailAddress.empty, Seq.empty, EmailWithContent.txtOnly(Seq.empty, Seq.empty, "", ""))
+}
+
 final case class Mail(from: MailAddress, to: Seq[MailAddress], emailContent: EmailWithContent)
 
 final case class SocketAddress(host: String, port: Int)

@@ -16,7 +16,7 @@ class UnderflowSpec extends SpecWithServer with WithClient {
       createClient("client")(port)
     ) { implicit client =>
       client.connect()
-      TestUtils.waitFor(client.getLastRead.capacity() > 0, 5.millis)
+      TestUtils.waitFor(client.getLastRead.nonEmpty, 5.millis)
       val ehloResponse = writeAndWaitForRead(s"$EHLO test")
       logger.trace(s"$EHLO ${toMessage(ehloResponse)}")
       val tlsResponse = client.startTls()
