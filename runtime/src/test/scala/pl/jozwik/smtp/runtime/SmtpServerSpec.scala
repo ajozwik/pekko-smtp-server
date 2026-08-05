@@ -4,13 +4,14 @@ import org.apache.pekko.stream.scaladsl.Tcp
 import org.scalatest.{Assertion, BeforeAndAfter, BeforeAndAfterAll}
 import pl.jozwik.smtp.server.ServerOpts
 import pl.jozwik.smtp.server.StreamServerRunner
+import pl.jozwik.smtp.tls.TlsOpts
 import pl.jozwik.smtp.util.Constants.QUIT
 import pl.jozwik.smtp.util.SmtpCodes.CLOSING_TERMINATION_CHANNEL
-import pl.jozwik.smtp.{ActorSpec, TlsOpts, WithSocket}
+import pl.jozwik.smtp.{ActorSpec, WithSocket}
 import pl.jozwik.smtp.util.{AbstractAsyncSpec, ConsumedResult, Mail, TestUtils}
 import pl.jozwik.smtp.util.TestUtils.*
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 abstract class SmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts: Option[TlsOpts])
@@ -22,13 +23,13 @@ abstract class SmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts:
 
   logger.trace(s"PORT=$port $consumer")
   protected val sizeOfMailBody: Int = 10 * 1000
-  private lazy val r                = new StreamServerRunner((host, port) => Tcp().bind(host, port))(ServerOpts(port, sizeOfMailBody, consumer, readTimeout = TestUtils.ReadTimeout), tlsOpts)
+
+  private lazy val r =
+    new StreamServerRunner((host, port) => Tcp().bind(host, port))(ServerOpts(port, sizeOfMailBody, consumer, readTimeout = TestUtils.ReadTimeout), tlsOpts)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    while (!r.isBound) {
-      TestUtils.sleep(10.millis)
-    }
+    TestUtils.waitFor(!r.isBound, 10.millis, s"${r.getClass.getName}")
     logger.trace(s"${readAnswer(reader)}")
   }
 
@@ -36,6 +37,7 @@ abstract class SmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts:
     writeLineAndValidateAnswer(s"$QUIT", CLOSING_TERMINATION_CHANNEL)
     r.close()
     close()
+    Await.result(actorSystem.terminate(), TimeoutSeconds.seconds)
     super.afterAll()
   }
 

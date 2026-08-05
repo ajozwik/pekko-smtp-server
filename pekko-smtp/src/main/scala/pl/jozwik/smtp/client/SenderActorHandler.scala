@@ -2,7 +2,6 @@ package pl.jozwik.smtp.client
 
 import java.net.InetSocketAddress
 import java.time.LocalDateTime
-import org.apache.pekko.actor.Status.Failure
 import org.apache.pekko.actor.{ActorRef, PoisonPill, Props}
 import org.apache.pekko.io.Tcp.*
 import org.apache.pekko.io.{IO, Tcp}
@@ -35,22 +34,11 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
     super.preStart()
   }
 
-  def receive: Receive = {
-    case Connected(remote, local) =>
-      val connection = sender()
-      connection ! Register(self)
-      logger.trace(s"$self Connected to remote -> $remote local ->  $local")
-      become(hello)
-
-    case x: ConnectionClosed =>
-      logger.trace(s"$self $x")
-      self ! PoisonPill
-      context.parent ! Counter(senderRef, FailedResult(s"$x"))
-
-    case CommandFailed(cmd) =>
-      logger.error(s"$self $cmd failed")
-      context.parent ! Counter(senderRef, FailedResult(s"${cmd.failureMessage}"))
-      self ! PoisonPill
+  def receive: Receive = { case Connected(remote, local) =>
+    val connection = sender()
+    connection ! Register(self)
+    logger.trace(s"$self Connected to remote -> $remote local ->  $local")
+    become(hello)
   }
 
   override protected def sendTimeoutMessage(lastAccess: LocalDateTime): Unit = {
@@ -60,10 +48,14 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   }
 
   override def unhandled(message: Any): Unit = message match {
-
     case CommandFailed(cmd) =>
       logger.error(s"$self $cmd failed")
-      senderRef ! Failure(new IllegalStateException(s"$cmd failed"))
+      context.parent ! Counter(senderRef, FailedResult(s"${cmd.failureMessage}"))
+      self ! PoisonPill
+    // The server went away in the middle of the conversation - report it instead of waiting for the ask to time out.
+    case x: ConnectionClosed =>
+      logger.trace(s"$self $x")
+      context.parent ! Counter(senderRef, FailedResult(s"$x"))
       self ! PoisonPill
     case _ =>
       super.unhandled(message)

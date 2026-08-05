@@ -8,18 +8,19 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object Constants {
 
-  val CloseBracket               = '>'
-  val CloseBracketString: String = '>'.toString
-  val OpenBracket                = '<'
-  val OpenBracketString: String  = '<'.toString
-  val Space                      = ' '
-  val Delimiter                  = "\n"
-  val CrLf: String               = s"\r$Delimiter"
-  val Subject                    = "Subject"
-  val LocaleRoot: Locale         = Locale.ROOT
-  val NeedHello                  = true
-  val MaximumFrameLength: Int    = 1024 * 16
-  val Utf8sCharset: Charset      = StandardCharsets.UTF_8
+  val CloseBracket                = '>'
+  val CloseBracketString: String  = '>'.toString
+  val OpenBracket                 = '<'
+  val OpenBracketString: String   = '<'.toString
+  val Space                       = ' '
+  val Delimiter                   = "\n"
+  val DelimiterBytes: Array[Byte] = "\n".getBytes(StandardCharsets.UTF_8)
+  val CrLf: String                = s"\r$Delimiter"
+  val Subject                     = "Subject"
+  val LocaleRoot: Locale          = Locale.ROOT
+  val NeedHello                   = true
+  val MaximumFrameLength: Int     = 1024 * 16
+  val Utf8sCharset: Charset       = StandardCharsets.UTF_8
 
   val DATA              = "DATA"
   val EHLO              = "EHLO"

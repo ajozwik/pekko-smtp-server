@@ -6,8 +6,7 @@ import org.apache.pekko.stream.{TLSProtocol, scaladsl}
 import org.apache.pekko.{Done, NotUsed, stream}
 import org.apache.pekko.stream.scaladsl.{Concat, Flow, Framing, GraphDSL, Sink, Source, Tcp}
 import org.apache.pekko.util.ByteString
-import pl.jozwik.smtp.TlsOpts
-import pl.jozwik.smtp.tls.{SSLContextFactory, StartTlsBidiFlow}
+import pl.jozwik.smtp.tls.{SSLContextFactory, StartTlsBidiFlow, TlsOpts}
 import pl.jozwik.smtp.util.NetworkUtils.localHostName
 import pl.jozwik.smtp.util.SmtpCodes.SERVICE_READY
 import pl.jozwik.smtp.util.{Constants, ConsumedResult, Mail, SizeParameterHandler, Utils}
@@ -19,27 +18,25 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLEngine
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 object ConnectionHandler extends StrictLogging {
-
-  private def dateNow = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
-
-  private def welcome: Source[ByteString, NotUsed] =
-    Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $dateNow")))
 
   def connectionHandler(
       maxSize: Long,
       consumer: Mail => Future[ConsumedResult],
       readTimeout: FiniteDuration,
+      whoIAm: String,
       addressHandler: AddressHandler = NopAddressHandler
   )(
       tlsOpts: Option[TlsOpts] = None
   )(implicit
       actorSystem: ActorSystem
-  ): Sink[Tcp.IncomingConnection, Future[Done]] =
+  ): Sink[Tcp.IncomingConnection, Future[Done]] = {
+    val prefix = s"$whoIAm "
     Sink.foreach[Tcp.IncomingConnection] { conn =>
       val remoteAddress = conn.remoteAddress
-      logger.trace(s"Incoming connection from: $remoteAddress ${conn.localAddress}")
+      logger.trace(s"${prefix}Incoming connection from: $remoteAddress ${conn.localAddress}")
       val flow                       = conn.flow
       val tls                        = new AtomicBoolean(false)
       val (newFlow, starttlsSupport) = tlsOpts match {
@@ -54,11 +51,28 @@ object ConnectionHandler extends StrictLogging {
           (flow, false)
       }
 
+      val logic = serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport, prefix)(remoteAddress)
+        .watchTermination() { (_, future) =>
+          import actorSystem.dispatcher
+          future.onComplete {
+            case Success(_) =>
+              logger.trace(s"${prefix}Connection closed from: $remoteAddress")
+            case Failure(ex) =>
+              logger.error(s"${prefix}Failed: $remoteAddress", ex)
+          }
+        }
+
       conn
         .copy(flow = newFlow)
-        .handleWith(serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress))
+        .handleWith(logic)
       ()
     }
+  }
+
+  private def dateNow = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
+
+  private def welcome: Source[ByteString, NotUsed] =
+    Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $dateNow")))
 
   private def bidi(
       tls: AtomicBoolean,
@@ -96,7 +110,8 @@ object ConnectionHandler extends StrictLogging {
       consumer: Mail => Future[ConsumedResult],
       readTimeout: FiniteDuration,
       tls: AtomicBoolean,
-      starttlsSupport: Boolean
+      starttlsSupport: Boolean,
+      prefix: String
   )(
       remoteAddress: InetSocketAddress
   )(implicit
@@ -111,12 +126,12 @@ object ConnectionHandler extends StrictLogging {
           .map { msg =>
             val msgStr        = msg.utf8String
             val msgStrTrimmed = msgStr.trim
-            logger.trace(s"${tls.get()} Smtp Server received: $msgStrTrimmed")
+            logger.trace(s"$prefix${tls.get()} Smtp Server received: $msgStrTrimmed")
             s"$msgStr${Constants.Delimiter}"
           }
           .via(handler(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress))
           .map { msg =>
-            logger.trace(s"Smtp Out: ${msg.trim}")
+            logger.trace(s"${prefix}Smtp Out: ${msg.trim}")
             msg
           }
           .map(ByteString.apply)

@@ -6,7 +6,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object UtilsHelper {
 
-  private val DefaultAwaitTimeout: FiniteDuration = 20.seconds
+  private val DefaultAwaitTimeout: FiniteDuration = 15.seconds
 
   def await[T](lock: Lock, condition: Condition, timeout: FiniteDuration = DefaultAwaitTimeout)(f: => T): T =
     handleLock(lock, condition, awaitOrTimeout(timeout))(f)
@@ -19,17 +19,15 @@ object UtilsHelper {
       throw new TimeoutException(s"Timed out after $timeout waiting for signal")
     }
 
-  private def handleLock[T](lock: Lock, condition: Condition, c: Condition => Unit)(f: => T): T =
-    if (lock.tryLock()) {
-      try {
-        val r = f
-        c(condition)
-        r
-      } finally {
-        lock.unlock()
-      }
-    } else {
-      f
+  private def handleLock[T](lock: Lock, condition: Condition, c: Condition => Unit)(f: => T): T = {
+    lock.lock()
+    try {
+      val r = f
+      c(condition)
+      r
+    } finally {
+      lock.unlock()
     }
+  }
 
 }

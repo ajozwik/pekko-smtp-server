@@ -17,10 +17,10 @@ object TlsHelper {
       case _ =>
     }
 
-  def toApplicationBufferSize(applicationBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
-    engine.map(_.getSession.getApplicationBufferSize).getOrElse(applicationBufferSize)
+  def toApplicationBufferSize(defaultApplicationBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
+    engine.map(_.getSession.getApplicationBufferSize).getOrElse(defaultApplicationBufferSize)
 
-  def toPacketBufferSize(packetBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
-    engine.map(_.getSession.getPacketBufferSize).getOrElse(packetBufferSize)
+  def toPacketBufferSize(defaultPacketBufferSize: Int)(implicit engine: Option[SSLEngine]): Int =
+    engine.map(_.getSession.getPacketBufferSize).getOrElse(defaultPacketBufferSize)
 
 }

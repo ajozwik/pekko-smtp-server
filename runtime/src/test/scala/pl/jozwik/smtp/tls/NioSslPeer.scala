@@ -1,12 +1,13 @@
 package pl.jozwik.smtp.tls
 
-import pl.jozwik.smtp.util.Utils
+import org.apache.pekko.util.ByteString
+import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Utils}
 
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.spi.SelectorProvider
 import java.nio.channels.{SelectableChannel, SelectionKey, Selector, SocketChannel}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 import java.util.concurrent.{ExecutorService, Executors, ThreadFactory, TimeUnit}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.*
@@ -49,13 +50,19 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
 
   def close(): Unit = {
     logger.trace(s"$whoIAm: Close connection with the $whoContactMe...")
-    Utils.ignoreErrors {
+    active.set(false)
+    Utils.ignoreError {
       selector.wakeup()
-      val keys = selector.keys()
-      keys.forEach(_.cancel())
+      Utils.ignoreError {
+        val keys = selector.keys()
+        keys.forEach { k =>
+          if (k.isValid) {
+            k.cancel()
+          }
+        }
+      }
       selector.close()
     }
-    active.set(false)
     executor.shutdown()
     closeImpl()
     executor.awaitTermination(2, TimeUnit.SECONDS)
@@ -76,15 +83,15 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
           close()
       }
     } else {
-      logger.trace(s"$whoIAm: Leave mainLoop")
+      logger.trace(s"$whoIAm: Leave mainLoop $isActive ${selector.isOpen}")
     }
 
   protected def setEngineModeAndStartHandshake(a: Attachment, useClientMode: Boolean)(
       selectionKey: SelectionKey
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, close: () => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
     val attachment: Attachment = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
-    doHandshake(attachment)(readByteBuffer, writeByteBuffer)
+    doHandshake(attachment)(readByteBuffer, writeByteBuffer, close)
   }
 
   protected def closeConnection(sc: SocketChannel): Unit
@@ -93,15 +100,18 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     if (key.isValid) {
       key.channel() match {
         case sc: SocketChannel =>
-          implicit val seq: Int = iterator.next()
+          implicit val socket: SocketChannel = sc
+          implicit val seq: Int              = iterator.next()
           key.attachment() match {
-            case a @ Attachment(Some(engine), buffers, status, _)
-                if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
-              logger.trace(s"$whoIAm: ($seq)  Handshake is still in progress: ${status.get()}")
+            case a @ Attachment(Some(engine), _, status, _) if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
               implicit val e: SSLEngine = engine
-              doHandshake(a)(sc.read, b => sc.write(b))
-            case a @ Attachment(_, _, _, open) =>
-              readAndResponse(a.clearBuffers, key, open.get())(sc.read, b => sc.write(b), () => closeConnection(sc))
+              doHandshake(a)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
+            case a @ Attachment(e, b, _, open) =>
+              implicit val o: AtomicBoolean                             = open
+              implicit val underflowBuffer: AtomicReference[ByteBuffer] = b.underflowBuffer
+              implicit val en                                           = e
+              handleReadKeyLoop(key, a)
+
             case r =>
               sys.error(s"Attachment: $r")
           }
@@ -111,29 +121,61 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       }
     }
 
-  private def readAndResponse(
+  private def handleReadKeyLoop(key: SelectionKey, a: Attachment)(implicit
+      seq: Int,
+      underflowBuffer: AtomicReference[ByteBuffer],
+      open: AtomicBoolean,
+      e: Option[SSLEngine],
+      sc: SocketChannel
+  ): Unit = {
+    val peerNetData = createPacketBuffer(e)
+    val count       = sc.read(peerNetData)
+    peerNetData.flip()
+    if (count > 0) {
+      readAndResponse(peerNetData)(a.clearBuffers, key)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
+      handleReadKeyLoop(key, a)
+    }
+  }
+
+  protected def writeToOutputBuffer(b: ByteBuffer)(implicit sc: SocketChannel): Unit =
+    sc.write(b)
+
+  private def readAndResponse(peerNetData: ByteBuffer)(
       a: Attachment,
-      key: SelectionKey,
-      open: Boolean
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit seq: Int): Unit = {
+      key: SelectionKey
+  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
+      underflowBuffer: AtomicReference[ByteBuffer],
+      open: AtomicBoolean
+  ): Unit = {
     implicit val en: Option[SSLEngine] = a.engine
-    handleRead(readByteBuffer, writeByteBuffer, closeConn) match {
+    handleRead(peerNetData)(readByteBuffer, writeByteBuffer, closeConn) match {
       case (Some(message), _) =>
-        readResponse(a, open)(message, key)(readByteBuffer, writeByteBuffer, closeConn)
+        val bs = ByteBufferHelper.toByteStringImmutable(message)
+        if (bs.endsWith(Constants.DelimiterBytes)) {
+          val b = ByteBufferHelper.merge(underflowBuffer.get(), message.flip())
+          val m = ByteBufferHelper.toByteString(b)
+          readResponse(a)(m, key)(readByteBuffer, writeByteBuffer, closeConn)
+          underflowBuffer.set(ByteBufferHelper.ReadOnlyBuffer)
+        } else {
+          underflowBuffer.accumulateAndGet(message.flip(), ByteBufferHelper.mergeAndFlip)
+          ()
+        }
+
       case (_, s) =>
         logger.trace(s"$whoIAm: ($seq) No message received. ${s.map(_.getHandshakeStatus)}")
         if (s.exists(_.getHandshakeStatus == HandshakeStatus.FINISHED)) {
-          peerHandshakeFinished()
+          peerHandshakeFinished(peerNetData)
         }
 
     }
   }
 
   protected def readResponse(
-      a: Attachment,
-      open: Boolean
-  )(message: ByteBuffer, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
-      seq: Int
+      a: Attachment
+  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
+      open: AtomicBoolean
   ): Unit
 
   protected def handleKeyImpl(key: SelectionKey)(ch: SelectableChannel): Unit

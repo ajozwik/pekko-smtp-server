@@ -68,11 +68,11 @@ object TestUtils extends StrictLogging {
     }
 
   @tailrec
-  def waitFor(condition: => Boolean, duration: Duration): Unit =
+  def waitFor(condition: => Boolean, duration: Duration, forWhoWait: String): Unit =
     if (condition) {
-      logger.trace("Waiting for")
+      logger.trace(s"Waiting for $forWhoWait")
       sleep(duration)
-      waitFor(condition, duration)
+      waitFor(condition, duration, forWhoWait)
     }
 
   def sleep(duration: Duration): Unit =
