@@ -1,10 +1,10 @@
 package pl.jozwik.smtp.runtime
 
 import pl.jozwik.smtp.tls.EphemeralTls
-import pl.jozwik.smtp.{Demo, SmtpTest, WithPort}
+import pl.jozwik.smtp.{SmtpTest, WithPort}
 import pl.jozwik.smtp.util.AbstractAsyncSpec
 
-class TlsServerSpec extends AbstractAsyncSpec with Demo with WithPort {
+class TlsServerSpec extends AbstractAsyncSpec with WithPort {
 
   "TlsServer " should {
     s"Call Demo" in {
@@ -21,6 +21,7 @@ class TlsServerSpec extends AbstractAsyncSpec with Demo with WithPort {
           fail(e)
         }
     }
+
   }
 
 }

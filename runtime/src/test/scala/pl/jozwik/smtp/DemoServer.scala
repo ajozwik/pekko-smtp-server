@@ -15,14 +15,21 @@ class DemoServer(port: Int) extends Demo {
     server.start()
   }
 
-  def runDemo(): Future[Unit] = {
+  def runDemo(): Future[Boolean] = {
     TestUtils.waitFor(!run.isBound, 10.millis)
 
     val futures = (1 to 1).map(i => Future(sendMail(s"client$i")(port)))
 
-    Future.sequence(futures).map(_ => run.close()).recover { case e: Exception =>
-      logger.error("Error:", e)
-    }
+    Future
+      .sequence(futures)
+      .map { _ =>
+        run.close()
+        true
+      }
+      .recover { case e: Exception =>
+        logger.error("Error:", e)
+        false
+      }
 
   }
 

@@ -76,7 +76,6 @@ class SmtpTimerGraphStageLogic(
 
   private def outHandler(in: Inlet[String]) =
     new OutHandler {
-
       override def onPull(): Unit = {
         pullAndResetTimer(in)
       }

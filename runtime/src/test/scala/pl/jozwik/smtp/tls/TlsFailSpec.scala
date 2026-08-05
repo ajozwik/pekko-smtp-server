@@ -5,8 +5,8 @@ import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustSt
 import pl.jozwik.smtp.server.consumer.{Consumer, LogConsumer}
 import pl.jozwik.smtp.server.{ServerOpts, StreamServerRunner}
 import pl.jozwik.smtp.util.{TestUtils, Utils}
-import pl.jozwik.smtp.{AbstractWithActorSystemSpec, TlsOpts, WithClient, WithPort}
-
+import pl.jozwik.smtp.{AbstractWithActorSystemSpec, WithClient, WithPort}
+import pl.jozwik.smtp.util.Constants.*
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
@@ -43,7 +43,7 @@ class TlsFailSpec extends AbstractWithActorSystemSpec with WithClient with WithP
         Using.resource(
           createClient
         ) { implicit client =>
-          val ehloResponse = writeAndWaitForRead("EHLO test")
+          val ehloResponse = writeAndWaitForRead(s"$EHLO test")
           logger.trace(s"${toMessage(ehloResponse)}")
           val tlsResponse = client.startTls()
           logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
@@ -57,7 +57,7 @@ class TlsFailSpec extends AbstractWithActorSystemSpec with WithClient with WithP
         Using.resource(
           createClient
         ) { implicit client =>
-          client.writeMessage(Utils.withEndOfLine("EHLO test"))
+          client.writeMessage(Utils.withEndOfLine(s"$EHLO test"))
         }
       }
       succeed
@@ -68,11 +68,11 @@ class TlsFailSpec extends AbstractWithActorSystemSpec with WithClient with WithP
         Using.resource(
           createClient
         ) { implicit client =>
-          val ehloResponse = writeAndWaitForRead("EHLO test")
+          val ehloResponse = writeAndWaitForRead(s"$EHLO test")
           logger.trace(s"${toMessage(ehloResponse)}")
           val tlsResponse = client.startTls()
           logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
-          client.writeMessage(Utils.withEndOfLine("EHLO test"))
+          client.writeMessage(Utils.withEndOfLine(s"$EHLO test"))
         }
       }
       succeed

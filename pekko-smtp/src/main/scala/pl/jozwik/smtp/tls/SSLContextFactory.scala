@@ -1,7 +1,6 @@
 package pl.jozwik.smtp.tls
 
 import com.typesafe.scalalogging.StrictLogging
-import pl.jozwik.smtp.TlsOpts
 
 import java.io.InputStream
 import java.security.{KeyStore, SecureRandom}

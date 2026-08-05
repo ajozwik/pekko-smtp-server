@@ -1,4 +1,4 @@
-package pl.jozwik.smtp
+package pl.jozwik.smtp.tls
 
 import pl.jozwik.smtp.util.{RuntimeConstant, RuntimeConstants}
 

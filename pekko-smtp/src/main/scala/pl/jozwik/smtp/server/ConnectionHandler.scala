@@ -6,8 +6,7 @@ import org.apache.pekko.stream.{TLSProtocol, scaladsl}
 import org.apache.pekko.{Done, NotUsed, stream}
 import org.apache.pekko.stream.scaladsl.{Concat, Flow, Framing, GraphDSL, Sink, Source, Tcp}
 import org.apache.pekko.util.ByteString
-import pl.jozwik.smtp.TlsOpts
-import pl.jozwik.smtp.tls.{SSLContextFactory, StartTlsBidiFlow}
+import pl.jozwik.smtp.tls.{SSLContextFactory, StartTlsBidiFlow, TlsOpts}
 import pl.jozwik.smtp.util.NetworkUtils.localHostName
 import pl.jozwik.smtp.util.SmtpCodes.SERVICE_READY
 import pl.jozwik.smtp.util.{Constants, ConsumedResult, Mail, SizeParameterHandler, Utils}
@@ -19,13 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLEngine
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 object ConnectionHandler extends StrictLogging {
-
-  private def dateNow = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
-
-  private def welcome: Source[ByteString, NotUsed] =
-    Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $dateNow")))
 
   def connectionHandler(
       maxSize: Long,
@@ -54,11 +49,27 @@ object ConnectionHandler extends StrictLogging {
           (flow, false)
       }
 
+      val logic = serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress)
+        .watchTermination() { (_, future) =>
+          import actorSystem.dispatcher
+          future.onComplete {
+            case Success(_) =>
+              logger.trace(s"Connection closed from: $remoteAddress")
+            case Failure(ex) =>
+              logger.error(s"Failed: $remoteAddress", ex)
+          }
+        }
+
       conn
         .copy(flow = newFlow)
-        .handleWith(serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress))
+        .handleWith(logic)
       ()
     }
+
+  private def dateNow = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
+
+  private def welcome: Source[ByteString, NotUsed] =
+    Source.single(ByteString(Utils.withEndOfLine(s"$SERVICE_READY $localHostName SMTP SERVER $dateNow")))
 
   private def bidi(
       tls: AtomicBoolean,

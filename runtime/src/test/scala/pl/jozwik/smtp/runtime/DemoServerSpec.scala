@@ -1,9 +1,9 @@
 package pl.jozwik.smtp.runtime
 
 import pl.jozwik.smtp.util.AbstractAsyncSpec
-import pl.jozwik.smtp.{Demo, DemoServer, WithPort}
+import pl.jozwik.smtp.{DemoServer, WithPort}
 
-class DemoServerSpec extends AbstractAsyncSpec with Demo with WithPort {
+class DemoServerSpec extends AbstractAsyncSpec with WithPort {
 
   "ServerDemo " should {
     s"Client/Server demo" in {
@@ -12,9 +12,9 @@ class DemoServerSpec extends AbstractAsyncSpec with Demo with WithPort {
 
       demo
         .runDemo()
-        .map { _ =>
+        .map { b =>
           logger.warn("Demo finished")
-          succeed
+          b shouldBe true
         }
         .recover { case e: Throwable =>
           logger.error(e.getMessage, e)

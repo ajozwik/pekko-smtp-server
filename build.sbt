@@ -6,7 +6,7 @@ val `scalaVersion_2.13`  = "2.13.18"
 
 ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3_lts`)
 
-ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_2.13`)
+ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_3_lts`)
 
 ThisBuild / organization := "com.github.ajozwik"
 
@@ -69,7 +69,7 @@ val wartConfig = Warts.allBut(
 
 publish / skip := true
 
-val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.5.38"
+val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.6.1"
 val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.6"
 val `org.apache.james_apache-mime4j`           = "org.apache.james"            % "apache-mime4j"   % "0.8.14"
 val `org.apache.pekko_akka-slf4j`              = "org.apache.pekko"           %% "pekko-slf4j"     % pekkoVersion

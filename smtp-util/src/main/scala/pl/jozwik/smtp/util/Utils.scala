@@ -10,6 +10,17 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
 import scala.util.Try
 
+/** Deferred `Unit` computation. Varargs cannot be by-name, so [[Utils.ignoreErrors]] takes these instead and the implicit conversion in the companion keeps the
+  * call site free of explicit lambdas.
+  */
+final class Thunk private (f: () => Unit) {
+  def run(): Unit = f()
+}
+
+object Thunk {
+  implicit def fromByName(f: => Unit): Thunk = new Thunk(() => f)
+}
+
 object Utils extends StrictLogging {
 
   import Constants.*
@@ -41,14 +52,18 @@ object Utils extends StrictLogging {
         Left(error)
     }
 
-  def ignoreErrors(f: => Unit): Unit = {
+  val fakeCall: () => Unit = () => ()
+
+  def ignoreError(f: => Unit): Unit =
     try {
       f
     } catch {
       case e: Throwable =>
         logger.error("Error ignored", e)
     }
-  }
+
+  def ignoreErrors(f: Thunk*): Unit =
+    f.foreach(t => ignoreError(t.run()))
 
   def splitLineByColon(message: String): (String, String) = {
     val (head, argument) = message.indexOf(":") match {

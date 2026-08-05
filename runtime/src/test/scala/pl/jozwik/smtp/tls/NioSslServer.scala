@@ -1,12 +1,13 @@
 package pl.jozwik.smtp.tls
 
-import pl.jozwik.smtp.TlsOpts
+import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, SmtpResponses}
 
 import java.io.{FileInputStream, InputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectableChannel, SelectionKey, ServerSocketChannel, SocketChannel}
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLEngine
 
 class NioSslServer(
@@ -50,6 +51,16 @@ class NioSslServer(
     serverSocketChannel.close()
   }
 
+  // For UNDERFLOW test
+  override protected def createBuffers(implicit e: SSLEngine): Buffers =
+    Buffers(20, 20)
+
+//  override protected def createApplicationBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
+//    ByteBuffer.allocate(20)
+//
+//  override protected def createPacketBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
+//    ByteBuffer.allocate(20)
+
   private def accept(serverSocketChannel: ServerSocketChannel): Unit = Option(serverSocketChannel.accept()).foreach { socketChannel =>
     socketChannel.configureBlocking(false)
     logger.trace(s"New connection request! ${socketChannel.getRemoteAddress}")
@@ -64,24 +75,24 @@ class NioSslServer(
   }
 
   override protected def readResponse(
-      a: Attachment,
-      open: Boolean
-  )(message: ByteBuffer, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
-      seq: Int
+      a: Attachment
+  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
+      open: AtomicBoolean
   ): Unit = {
-    val str = ByteBufferHelper.toString(message)
+    val str = message.utf8String.trim
     if (str.nonEmpty) {
       logger.trace(s"$whoIAm: ($seq) Received message from the $whoContactMe: $str")
     }
-    if (open) {
+    if (open.get()) {
       implicit val en: Option[SSLEngine] = a.engine
       str match {
         case Constants.STARTTLS =>
-          write(ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}"))(readByteBuffer, writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}", Constants.CrLf))(readByteBuffer, writeByteBuffer, closeConn)
           implicit val e: SSLEngine = context.createSSLEngine()
-          setEngineModeAndStartHandshake(a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer)
+          setEngineModeAndStartHandshake(a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer, closeConn)
         case _ =>
-          write(ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}"))(readByteBuffer, writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}", Constants.CrLf))(readByteBuffer, writeByteBuffer, closeConn)
       }
 
     }

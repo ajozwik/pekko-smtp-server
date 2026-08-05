@@ -63,8 +63,10 @@ val connectionHandler = ConnectionHandler.connectionHandler(maxSize, consumer, r
 val port = 2525
 val server = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)(system)
 
-// To stop the server:
-// server.close()
+// To stop the server: it stops listening and completes the connections that are still open.
+// The ActorSystem is not owned by the server, so terminate it yourself when you are done with it.
+// server.close()                              // blocking, waits up to 3 seconds
+// server.closeAsync().flatMap(_ => system.terminate())
 ```
 
 #### SMTP Client

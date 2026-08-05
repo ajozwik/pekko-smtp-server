@@ -1,15 +1,16 @@
 package pl.jozwik.smtp.tls
 
-import pl.jozwik.smtp.TlsOpts
+import org.apache.pekko.util.ByteString
 import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Utils}
 
 import java.io.{FileInputStream, InputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectableChannel, SelectionKey, SocketChannel}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
-import javax.net.ssl.{SSLEngine, SSLEngineResult}
+import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import scala.annotation.tailrec
 
@@ -22,44 +23,78 @@ class NioSslClient(
     keystorePassword: String = TlsOpts.clientKeystorePassword,
     keyPassword: String = TlsOpts.clientKeystorePassword
 )(trustPath: => InputStream = new FileInputStream(EphemeralTls.trustStoreFile), trustPassword: String = TlsOpts.trustPassword)
-  extends NioSslPeer(protocol: String)(keyPath, keystorePassword, keyPassword)(trustPath, trustPassword) {
+  extends NioSslPeer(protocol: String)(keyPath, keystorePassword, keyPassword)(trustPath, trustPassword)
+  with WithSslEngineClientBase {
 
   override protected val whoContactMe: String   = "server"
   private lazy val socketChannel: SocketChannel = SocketChannel.open()
-  private lazy val selectionKey                 = socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
-  private val lastRead                          = new AtomicReference[ByteBuffer](ByteBufferHelper.ReadOnlyBuffer)
+  private lazy val selectionKey: SelectionKey   = socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
+  private val lastRead                          = new AtomicReference(ByteString.empty)
   private val readLock: Lock                    = new ReentrantLock()
   private val readCondition: Condition          = readLock.newCondition
   private val engineLock: Lock                  = new ReentrantLock()
   private val engineCondition: Condition        = engineLock.newCondition
 
+  private implicit def sc: SocketChannel = socketChannel
+
   def connect(): Unit = {
     socketChannel.configureBlocking(false)
     socketChannel.connect(new InetSocketAddress(remoteHost, remotePort))
-    active.set(true)
     waitForConnect()
+    active.set(true)
   }
 
-  def startTls(): ByteBuffer = {
+  def getLastRead: ByteString =
+    lastRead.get()
+
+  def startTls(): ByteString = {
     val b = writeAndWaitForRead(Utils.withEndOfLine(s"${Constants.STARTTLS}"))
     createEngine()
     b
   }
 
-  def writeAndWaitForRead(message: String): ByteBuffer = {
+  def writeAndWaitForRead(message: String): ByteString = {
     UtilsHelper.await(readLock, readCondition) {
-      logger.trace(s"writeAndWaitForRead ${message.trim} ${ByteBufferHelper.toString(lastRead.get()).trim}")
+      logger.trace(s"writeAndWaitForRead ${message.trim} lastRead=${getLastRead.utf8String.trim}")
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
-      write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, b => socketChannel.write(b), () => socketChannel.close())
+      write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, writeToOutputBuffer, () => socketChannel.close())
     }
-    lastRead.getAndSet(ByteBufferHelper.ReadOnlyBuffer)
+    lastRead.getAndSet(ByteString.empty)
   }
 
   def writeMessage(message: String): Unit = {
     implicit val seq: Int             = iterator.next()
     implicit val e: Option[SSLEngine] = waitForEngine
-    write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, b => socketChannel.write(b), () => socketChannel.close())
+    write(ByteBufferHelper.toByteBuffer(message))(
+      socketChannel.read,
+      writeToOutputBuffer,
+      () => socketChannel.close()
+    )
+  }
+
+  def writeSplitAndWaitForRead(message: String): ByteString = {
+    UtilsHelper.await(readLock, readCondition) {
+      implicit val seq: Int             = iterator.next()
+      implicit val e: Option[SSLEngine] = waitForEngine
+      write(ByteBufferHelper.toByteBuffer(message))(
+        socketChannel.read,
+        simulatePartialWrite,
+        () => socketChannel.close()
+      )
+    }
+    lastRead.getAndSet(ByteString.empty)
+  }
+
+  protected override def writeToOutputBuffer(b: ByteBuffer)(implicit sc: SocketChannel): Unit =
+    simulatePartialWrite(b)
+
+  private def simulatePartialWrite(b: ByteBuffer): Unit = {
+    val (x, y) = ByteBufferHelper.split(b, b.limit() / 2)
+    sc.write(x)
+    TimeUnit.MILLISECONDS.sleep(50)
+    sc.write(y)
+    b.position(b.limit())
   }
 
   private def createEngine(): Unit = {
@@ -67,7 +102,8 @@ class NioSslClient(
     implicit val seq: Int     = iterator.next()
     setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
       socketChannel.read,
-      b => socketChannel.write(b)
+      writeToOutputBuffer,
+      () => close()
     )
   }
 
@@ -95,14 +131,19 @@ class NioSslClient(
     UtilsHelper.signal(engineLock, engineCondition) {}
     val a                             = fromSelectionKey
     implicit val e: Option[SSLEngine] = a.engine
-    Utils.ignoreErrors {
+    Utils.ignoreError {
       implicit val seq: Int = -1
       closeConnection(
         socketChannel.read,
-        b => socketChannel.write(b),
+        writeToOutputBuffer,
         { () =>
-          socketChannel.shutdownInput()
-          socketChannel.shutdownOutput()
+          Utils.ignoreError {
+            if (selectionKey.isValid) {
+              selectionKey.cancel()
+            }
+            socketChannel.shutdownInput()
+            socketChannel.shutdownOutput()
+          }
           socketChannel.close()
         }
       )
@@ -110,15 +151,10 @@ class NioSslClient(
     logger.trace(s"$whoIAm: closed the channel")
   }
 
-  protected override def handleRead(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
-      seq: Int,
-      engine: Option[SSLEngine]
-  ): (Option[ByteBuffer], Option[SSLEngineResult]) =
-    read(_ => (), _ => ())(readByteBuffer, writeByteBuffer, closeConn)
-
   @tailrec
   private def waitForConnect(): Unit =
     if (socketChannel.finishConnect()) {
+      logger.trace(s"Connected with.. ${socketChannel.socket().getRemoteSocketAddress}")
       executor.execute { () =>
         selectionKey
         mainLoop()
@@ -131,27 +167,32 @@ class NioSslClient(
   override protected def handleKeyImpl(key: SelectionKey)(ch: SelectableChannel): Unit =
     logger.error(s"Unexpected channel: $ch")
 
-  override protected def peerHandshakeFinished(): Unit = {
-    logger.trace(s"$whoIAm: Handshake finished peer")
+  override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = {
+    logger.trace(s"$whoIAm: Handshake finished peer  $remaining")
     UtilsHelper.signal(readLock, readCondition) {
       logger.trace(s"$whoIAm: Handshake finished readLock")
       UtilsHelper.signal(engineLock, engineCondition) {}
     }
   }
 
-  override protected def ownHandshakeFinished(): Unit =
+  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit =
     UtilsHelper.signal(engineLock, engineCondition) {
-      logger.trace(s"$whoIAm: Handshake finished engine")
+      logger.trace(s"$whoIAm: Handshake finished engine $remaining")
     }
 
   override protected def readResponse(
-      a: Attachment,
-      open: Boolean
-  )(message: ByteBuffer, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
-      seq: Int
-  ): Unit = UtilsHelper.signal(readLock, readCondition) {
-    lastRead.set(message)
-  }
+      a: Attachment
+  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      seq: Int,
+      open: AtomicBoolean
+  ): Unit =
+    if (message.nonEmpty)
+      UtilsHelper.signal(readLock, readCondition) {
+        lastRead.set(message)
+      }
+    else {
+      logger.debug("Empty")
+    }
 
   override protected def closeConnection(sc: SocketChannel): Unit = close()
 }

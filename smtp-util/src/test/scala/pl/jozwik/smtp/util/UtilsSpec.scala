@@ -3,6 +3,8 @@ package pl.jozwik.smtp.util
 import org.scalacheck.Gen.*
 import org.scalacheck.Prop.*
 
+import scala.collection.mutable.ListBuffer
+
 class UtilsSpec extends AbstractSpecScalaCheck {
 
   import Utils.*
@@ -39,6 +41,16 @@ class UtilsSpec extends AbstractSpecScalaCheck {
       val user   = "ajozwik"
       val domain = "jozwik.pl"
       toMailAddress(s" < $user@$domain >    ") shouldBe Right(MailAddress(user, domain))
+    }
+
+    "Run every ignoreErrors argument and swallow the failing one" in {
+      val executed                = ListBuffer.empty[String]
+      def record(s: String): Unit = executed += s
+      def failing(): Unit         = throw new IllegalStateException("expected in test")
+
+      ignoreErrors(record("first"), failing(), record("third"))
+
+      executed.toList shouldBe List("first", "third")
     }
 
     "Extract user domain" in {
