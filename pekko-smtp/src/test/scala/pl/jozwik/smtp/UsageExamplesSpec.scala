@@ -43,7 +43,7 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
 
       val maxSize                           = 1024 * 1024 // 1MB
       val readTimeout                       = 30.seconds
-      def connectionHandler(whoAmI: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, whoAmI, NopAddressHandler)()(localSystem)
+      def connectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, whoIAm, NopAddressHandler)()(localSystem)
       val p                                 = TestUtils.notOccupiedPortNumber
       val server                            = StreamServer((h, port) => Tcp().bind(h, port), p, getClass.getSimpleName)(connectionHandler)(localSystem)
 
@@ -84,11 +84,11 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
       // Using EphemeralTls for reliable test material
       val tlsOpts = EphemeralTls.serverTlsOpts
 
-      def tlsConnectionHandler(whoAmI: String) = ConnectionHandler.connectionHandler(
+      def tlsConnectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(
         maxSize,
         consumer,
         readTimeout,
-        whoAmI,
+        whoIAm,
         NopAddressHandler
       )(Some(tlsOpts))(localSystem)
 

@@ -12,28 +12,38 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.{SSLContext, SSLEngine, SSLSession}
 
-object StartTlsBidiFlow extends WithSslEngineServer {
-
-  private val dummySession: SSLSession                                = SSLContext.getDefault.createSSLEngine.getSession
-  protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
-  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
+object StartTlsBidiFlow {
+  private val dummySession: SSLSession = SSLContext.getDefault.createSSLEngine.getSession
 
   def apply(
       tls: AtomicBoolean,
-      createSSLEngine: () => SSLEngine
+      createSSLEngine: () => SSLEngine,
+      whoIAm: String
   ): scaladsl.BidiFlow[SslTlsOutbound, ByteString, ByteString, SessionBytes, NotUsed] =
-    scaladsl.BidiFlow.fromGraph(graph(createSSLEngine, tls))
+    scaladsl.BidiFlow.fromGraph(graph(createSSLEngine, tls, whoIAm))
 
-  private def graph(createSSLEngine: () => SSLEngine, tls: AtomicBoolean): Graph[BidiShape[SslTlsOutbound, ByteString, ByteString, SessionBytes], NotUsed] = {
+  private def graph(
+      createSSLEngine: () => SSLEngine,
+      tls: AtomicBoolean,
+      whoIAm: String
+  ): Graph[BidiShape[SslTlsOutbound, ByteString, ByteString, SessionBytes], NotUsed] = {
     scaladsl.GraphDSL.create() { implicit b =>
       implicit val attachment: AtomicReference[Attachment]  = new AtomicReference(Attachment.empty)
       implicit val open: AtomicBoolean                      = new AtomicBoolean(true)
       val handshakeBuffer: AtomicReference[Seq[ByteString]] = new AtomicReference(Seq.empty)
-      val fromClient: FlowShape[ByteString, SessionBytes]   = fromNetwork(tls, handshakeBuffer)
-      val toClient: FlowShape[SslTlsOutbound, ByteString]   = toNetwork(createSSLEngine, tls, handshakeBuffer)
+      val bidiFlow                                          = new StartTlsBidiFlow(whoIAm)
+      val fromClient: FlowShape[ByteString, SessionBytes]   = bidiFlow.fromNetwork(tls, handshakeBuffer)
+      val toClient: FlowShape[SslTlsOutbound, ByteString]   = bidiFlow.toNetwork(createSSLEngine, tls, handshakeBuffer)
       BidiShape.fromFlows(toClient, fromClient)
     }
   }
+
+}
+
+class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer {
+  import StartTlsBidiFlow.dummySession
+  protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
+  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
 
   private def fromNetwork(tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],

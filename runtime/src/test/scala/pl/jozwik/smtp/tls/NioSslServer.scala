@@ -14,7 +14,7 @@ class NioSslServer(
     protocol: String,
     hostAddress: String,
     port: Int,
-    override protected val whoIAm: String = "server",
+    override protected val whoIAm: String = "NioSslServer",
     keyPath: => InputStream = new FileInputStream(EphemeralTls.serverKeyStoreFile),
     keystorePassword: String = TlsOpts.keystorePassword,
     keyPassword: String = TlsOpts.keystorePassword
@@ -69,7 +69,11 @@ class NioSslServer(
     implicit val sc: SocketChannel     = socketChannel
     implicit val seq: Int              = iterator.next()
     implicit val en: Option[SSLEngine] = None
-    write(ByteBufferHelper.toByteBuffer(s"${SmtpCodes.SERVICE_READY} SMTP DEMO", Constants.CrLf))(socketChannel.read, writeToOutputBuffer, () => socketChannel.close())
+    write(ByteBufferHelper.toByteBuffer(s"${SmtpCodes.SERVICE_READY} SMTP DEMO", Constants.CrLf))(
+      socketChannel.read,
+      writeToOutputBuffer,
+      () => socketChannel.close()
+    )
   }
 
   override protected def handleKeyImpl(key: SelectionKey)(ch: SelectableChannel): Unit = ch match {

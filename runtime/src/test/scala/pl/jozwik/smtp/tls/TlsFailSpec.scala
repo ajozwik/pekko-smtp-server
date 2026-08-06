@@ -13,7 +13,7 @@ import scala.util.Using
 class TlsFailSpec extends AbstractWithActorSystemSpec with WithNioSslClient with WithPort {
   private val tlsOpts    = EphemeralTls.serverTlsOpts
   private val serverOpts = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)
-  private val run        = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, Option(tlsOpts), tagged("server"))
+  private val run        = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, tagged("server"), Option(tlsOpts))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -21,7 +21,15 @@ class TlsFailSpec extends AbstractWithActorSystemSpec with WithNioSslClient with
   }
 
   protected def createClient =
-    new NioSslClient(TlsVersion, "localhost", port, tagged("client"), keyStoreClientInputStream, TlsOpts.clientKeystorePassword, TlsOpts.clientKeystorePassword)(
+    new NioSslClient(
+      TlsVersion,
+      "localhost",
+      port,
+      tagged("client"),
+      keyStoreClientInputStream,
+      TlsOpts.clientKeystorePassword,
+      TlsOpts.clientKeystorePassword
+    )(
       trustStoreInputStream,
       TlsOpts.trustPassword
     )

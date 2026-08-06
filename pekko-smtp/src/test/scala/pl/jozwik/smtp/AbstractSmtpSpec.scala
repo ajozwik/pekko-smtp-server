@@ -66,7 +66,7 @@ trait SmtpSpec extends ActorSpec with WithPort {
   protected lazy val address: SocketAddress                  = SocketAddress(host, port)
   protected final lazy val clientStream: StreamClient        = new StreamClient(address, tagged("client"))
   protected final lazy val clientWithActor: ClientWithActor  = createClientActor(address)
-  private def connectionHandler(whoAmI: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, tagged(whoAmI), addressHandler)()
+  private def connectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, tagged(whoIAm), addressHandler)()
   protected final val server: StreamServer      = StreamServer((host, port) => Tcp().bind(host, port), port, tagged("server"))(connectionHandler)
 }
 

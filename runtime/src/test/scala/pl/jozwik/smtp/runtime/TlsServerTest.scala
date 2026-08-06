@@ -14,7 +14,7 @@ object TlsServerTest extends ScalaAppWithLogger {
 
   private val serverOpts                   = ServerOpts.fromSystemProps
   private implicit val system: ActorSystem = ActorSystem(s"SMTP-${serverOpts.port}")
-  private val r = new StreamServerRunner((host, port) => Tcp().bindWithTls(host, port, SSLContextFactory.sslEngine()()()))(serverOpts)
+  private val r = new StreamServerRunner((host, port) => Tcp().bindWithTls(host, port, SSLContextFactory.sslEngine()()()))(serverOpts, "server")
   r.start()
 
 }
