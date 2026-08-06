@@ -2,10 +2,11 @@ package pl.jozwik.smtp
 
 import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.util.Constants.*
+import pl.jozwik.smtp.util.WithTagged
 
 import scala.util.Using
 
-trait Demo extends WithNioSslClient with StrictLogging {
+trait Demo extends WithNioSslClient with WithTagged with StrictLogging {
 
   protected def sendMail(name: String)(port: Int): Unit =
     Using.resource(

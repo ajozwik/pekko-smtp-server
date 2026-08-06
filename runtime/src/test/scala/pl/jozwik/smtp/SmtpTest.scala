@@ -15,12 +15,11 @@ import scala.util.{Failure, Success}
 
 class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps, testTag: String = "") extends Demo {
 
-  private def tagged(role: String): String = if (testTag.isEmpty) role else s"$role[$testTag]"
   private val systemName                   = if (testTag.isEmpty) "SMTP" else s"SMTP-$testTag"
 
   private val serverOpts                   = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)
   private implicit val system: ActorSystem = ActorSystem(s"$systemName-${serverOpts.port}")
-  private val run                          = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, Option(tlsOpts), tagged("server"))
+  private val run                          = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, tagged("server"), Option(tlsOpts))
 
   def runDemo(): Future[Unit] = {
     val objectMethods = classOf[Object].getMethods.map(_.getName).toSet

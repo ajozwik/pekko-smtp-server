@@ -30,7 +30,7 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
 
   "Client " should {
     "Restart " in {
-      val failFuture = new StreamClient(address.host, notOccupiedPortNumber).sendMail(mail)
+      val failFuture = new StreamClient(address.host, notOccupiedPortNumber, tagged("client")).sendMail(mail)
       failFuture.map(_ shouldBe a[FailedResult])
     }
 
@@ -40,7 +40,7 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
     }
 
     "Handle wrong answer" in {
-      val future = new StreamClient(address.host, fakePort).sendMail(mail)
+      val future = new StreamClient(address.host, fakePort, tagged("client")).sendMail(mail)
       future.map(_ shouldBe a[FailedResult])
     }
 
@@ -69,7 +69,7 @@ class SmtpClientFailSpec extends AbstractSmtpSpec {
         socket.close()
         socket.isClosed shouldBe true
       }
-      val client = new StreamClient(serverAddress.getHostName, serverSocket.getLocalPort)
+      val client = new StreamClient(serverAddress.getHostName, serverSocket.getLocalPort, tagged("client"))
       val future = client.sendMail(mail)
       Future.sequence(Seq(f, future)).foreach { _ =>
         serverSocket.close()

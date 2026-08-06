@@ -16,7 +16,7 @@ class StreamClientStartTlsSpec extends SpecWithServer {
     }
 
     "send a mail after upgrading the connection to TLS" in {
-      val client = new StreamClient(SocketAddress("localhost", port), clientTlsOpts)
+      val client = new StreamClient(SocketAddress("localhost", port), tagged("client"), clientTlsOpts)
       val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
       client.sendMail(mail).map { result =>
         result shouldBe SuccessResult

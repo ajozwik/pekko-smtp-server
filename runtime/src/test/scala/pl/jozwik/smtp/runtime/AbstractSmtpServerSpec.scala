@@ -48,7 +48,7 @@ abstract class AbstractSmtpServerSpec(consumer: Mail => Future[ConsumedResult], 
       writeLineAndValidateAnswer(s"$DATA:${OpenBracket}a@a$CloseBracket", BAD_SEQUENCE_OF_COMMANDS)
     }
     s"Reject $STARTTLS with stream client" in {
-      val client = new StreamClient(SocketAddress("localhost", port), clientTlsOpts)
+      val client = new StreamClient(SocketAddress("localhost", port), tagged("client"), clientTlsOpts)
       val mail   = Mail(mailAddress, Seq(mailAddress), EmailWithContent.txtOnly(Seq.empty, Seq.empty, "My Subject", "Content"))
       val result = Await.result(client.sendMail(mail), TimeoutSeconds.second)
       result match {

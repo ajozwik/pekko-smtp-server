@@ -24,7 +24,7 @@ object StreamSmtpClient extends ScalaAppWithLogger {
 
   import system.dispatcher
 
-  val client = new StreamClient(serverAddress)
+  val client = new StreamClient(serverAddress, tagged("client"))
 
   val futures = (1 to 1).map { _ =>
     TimeUnit.MILLISECONDS.sleep(WAIT_MILLIS)

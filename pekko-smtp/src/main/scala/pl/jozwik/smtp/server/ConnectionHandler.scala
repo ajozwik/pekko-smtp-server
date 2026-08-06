@@ -46,7 +46,7 @@ object ConnectionHandler extends StrictLogging {
               opts.trustStoreInputStream.call(),
               opts.trustPassword
             )
-          (flow.join(bidi(tls, engine)), true)
+          (flow.join(bidi(tls, engine, prefix)), true)
         case _ =>
           (flow, false)
       }
@@ -76,9 +76,10 @@ object ConnectionHandler extends StrictLogging {
 
   private def bidi(
       tls: AtomicBoolean,
-      createSSLEngine: () => SSLEngine
+      createSSLEngine: () => SSLEngine,
+      whoIAm: String
   ): scaladsl.BidiFlow[ByteString, ByteString, ByteString, ByteString, NotUsed] =
-    tlsWrapping.atop(StartTlsBidiFlow(tls, createSSLEngine)).reversed
+    tlsWrapping.atop(StartTlsBidiFlow(tls, createSSLEngine, whoIAm)).reversed
 
   private val tlsWrapping: scaladsl.BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     scaladsl.BidiFlow.fromFlows(

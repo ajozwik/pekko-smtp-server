@@ -8,7 +8,7 @@ import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Mail, SmtpCodes, Socket
 import Constants.*
 import org.apache.pekko.stream.OverflowStrategy
 import pl.jozwik.smtp.tls.TlsHelper.toApplicationBufferSize
-import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, TlsOpts, WithSslEngineClient}
+import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, TlsHelper, TlsOpts, WithSslEngineClient}
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -17,25 +17,22 @@ import javax.net.ssl.SSLEngine
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future, Promise}
 
-class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, override protected val whoIAm: String = "client")(implicit
-    system: ActorSystem
-) extends SenderClient
+class StreamClient(host: String, port: Int, override protected val whoIAm: String, tlsOpts: Option[TlsOpts] = None)(implicit system: ActorSystem)
+  extends SenderClient
   with WithSslEngineClient {
   import system.dispatcher
 
-  def this(serverAddress: SocketAddress)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port)
-
-  def this(serverAddress: SocketAddress, tlsOpts: TlsOpts)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port, Option(tlsOpts))
-
   def this(serverAddress: SocketAddress, whoIAm: String)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port, None, whoIAm)
+    this(serverAddress.host, serverAddress.port, whoIAm)
 
-  private val QueueSize                                               = 8
-  private val timeout                                                 = 2.second
-  private val dummySession                                            = javax.net.ssl.SSLContext.getDefault.createSSLEngine.getSession
-  protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
+  def this(serverAddress: SocketAddress, whoIAm: String, tlsOpts: TlsOpts)(implicit system: ActorSystem) =
+    this(serverAddress.host, serverAddress.port, whoIAm, Option(tlsOpts))
+
+  private val QueueSize = 8
+  private val timeout   = 2.second
+
+  protected val (applicationBufferSize: Int, packetBufferSize: Int) = TlsHelper.applicationPacketBufferSize
+
   protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
 
   private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =

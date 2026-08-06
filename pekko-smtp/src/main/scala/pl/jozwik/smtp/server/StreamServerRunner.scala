@@ -12,8 +12,8 @@ import scala.concurrent.Future
 
 class StreamServerRunner[T <: Consumer](listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]])(
     serverOpts: ServerOpts[T],
-    tlsOpts: Option[TlsOpts] = None,
-    whoIAm: String = ""
+    whoIAm: String,
+    tlsOpts: Option[TlsOpts] = None
 )(implicit
     actorSystem: ActorSystem
 ) extends StrictLogging

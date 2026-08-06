@@ -1,10 +1,17 @@
 package pl.jozwik.smtp.tls
 
 import javax.net.ssl.SSLEngineResult.{HandshakeStatus, Status}
-import javax.net.ssl.{SSLEngine, SSLEngineResult}
+import javax.net.ssl.{SSLContext, SSLEngine, SSLEngineResult}
 import scala.annotation.tailrec
 
 object TlsHelper {
+
+  val applicationPacketBufferSize: (Int, Int) = {
+    val dummySession = SSLContext.getDefault.createSSLEngine.getSession
+    val r            = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
+    dummySession.invalidate()
+    r
+  }
 
   def failedHandshakeResult(status: HandshakeStatus): SSLEngineResult = new SSLEngineResult(Status.CLOSED, status, 0, 0)
 

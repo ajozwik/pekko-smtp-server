@@ -43,7 +43,7 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
     if (open.get && handshakeStatus.get != SSLEngineResult.HandshakeStatus.FINISHED && handshakeStatus.get != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
       val lastHandshakeStatus = handshakeStatus.get
 
-//      logger.trace(s"$whoIAm: ($seq) doHandshake: $lastHandshakeStatus ${e.getHandshakeStatus}")
+      logger.trace(s"$whoIAm: ($seq) doHandshake: $lastHandshakeStatus ${e.getHandshakeStatus}")
       lastHandshakeStatus match {
         case HandshakeStatus.NEED_UNWRAP =>
           val bytesCount = if (b.peerNetData.get().position() == 0 && engineResultHolder.get().getStatus != SSLEngineResult.Status.BUFFER_OVERFLOW) {
@@ -312,9 +312,9 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
 
   private def unwrap(peerNetData: ByteBuffer, peerAppDataLocal: ByteBuffer)(implicit seq: Int, engine: SSLEngine): SSLEngineResult =
     try {
-      logger.debug(s"unwrap $whoIAm $peerNetData $peerAppDataLocal")
+      logger.debug(s"unwrap $whoIAm ($seq) $peerNetData $peerAppDataLocal")
       val s = engine.unwrap(peerNetData, peerAppDataLocal)
-      logger.debug(s"unwrap $whoIAm $s $peerNetData")
+      logger.debug(s"unwrap $whoIAm ($seq) $s $peerNetData")
       s
     } catch {
       handleError
@@ -322,9 +322,9 @@ trait WithSslEngine extends WithSequenceIterator with StrictLogging {
 
   private def wrap(myAppDataLocal: ByteBuffer, myNetData: ByteBuffer)(implicit seq: Int, engine: SSLEngine): SSLEngineResult =
     try {
-      logger.debug(s"wrap $whoIAm $myAppDataLocal $myNetData")
+      logger.debug(s"wrap $whoIAm ($seq) $myAppDataLocal $myNetData")
       val r = engine.wrap(myAppDataLocal, myNetData)
-      logger.debug(s"wrap $whoIAm $r $myAppDataLocal")
+      logger.debug(s"wrap $whoIAm ($seq) $r $myAppDataLocal")
       r
     } catch {
       handleError
