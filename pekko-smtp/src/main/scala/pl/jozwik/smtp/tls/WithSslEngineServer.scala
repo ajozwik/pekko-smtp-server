@@ -6,7 +6,6 @@ import javax.net.ssl.{SSLEngine, SSLEngineResult}
 
 trait WithSslEngineServer extends WithSslEngine {
 
-  override protected final val whoIAm: String       = "server"
   override protected final val whoContactMe: String = "client"
 
   protected override def handleRead(

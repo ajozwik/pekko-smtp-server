@@ -1,7 +1,7 @@
 package pl.jozwik.smtp.tls
 
 import org.apache.pekko.util.ByteString
-import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, SmtpResponses}
+import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, SmtpCodes, SmtpResponses}
 
 import java.io.{FileInputStream, InputStream}
 import java.net.InetSocketAddress
@@ -14,6 +14,7 @@ class NioSslServer(
     protocol: String,
     hostAddress: String,
     port: Int,
+    override protected val whoIAm: String = "NioSslServer",
     keyPath: => InputStream = new FileInputStream(EphemeralTls.serverKeyStoreFile),
     keystorePassword: String = TlsOpts.keystorePassword,
     keyPassword: String = TlsOpts.keystorePassword
@@ -29,7 +30,7 @@ class NioSslServer(
     serverSocker.bind(new InetSocketAddress(hostAddress, port))
   } catch {
     case e: Exception =>
-      logger.error(s"Failed to bind server socket channel. $port", e)
+      logger.error(s"$whoIAm Failed to bind server socket channel. $port", e)
       System.exit(1)
   }
 
@@ -40,13 +41,13 @@ class NioSslServer(
   def isBound: Boolean = serverSocker.isBound
 
   def start(): Unit = {
-    logger.trace(s"Initialized and waiting for new connections... $port")
+    logger.trace(s"$whoIAm Initialized and waiting for new connections... $port")
     mainLoop()
     logger.trace("Goodbye!")
   }
 
   protected def closeImpl(): Unit = {
-    logger.trace("Will now close server...")
+    logger.trace(s"$whoIAm Will now close server...")
     serverSocker.close()
     serverSocketChannel.close()
   }
@@ -63,8 +64,16 @@ class NioSslServer(
 
   private def accept(serverSocketChannel: ServerSocketChannel): Unit = Option(serverSocketChannel.accept()).foreach { socketChannel =>
     socketChannel.configureBlocking(false)
-    logger.trace(s"New connection request! ${socketChannel.getRemoteAddress}")
+    logger.trace(s"$whoIAm New connection request! ${socketChannel.getRemoteAddress}")
     socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
+    implicit val sc: SocketChannel     = socketChannel
+    implicit val seq: Int              = iterator.next()
+    implicit val en: Option[SSLEngine] = None
+    write(ByteBufferHelper.toByteBuffer(s"${SmtpCodes.SERVICE_READY} SMTP DEMO", Constants.CrLf))(
+      socketChannel.read,
+      writeToOutputBuffer,
+      () => socketChannel.close()
+    )
   }
 
   override protected def handleKeyImpl(key: SelectionKey)(ch: SelectableChannel): Unit = ch match {

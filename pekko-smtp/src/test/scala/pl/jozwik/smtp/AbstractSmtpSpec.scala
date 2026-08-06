@@ -24,10 +24,12 @@ object ActorSpec {
 trait ActorSpec extends StrictLogging {
 
   protected implicit val actorSystem: ActorSystem =
-    ActorSystem(s"test-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
+    ActorSystem(s"${getClass.getSimpleName}-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
 
   private val TIMEOUT                     = 3000
   protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
+
+  protected def tagged(role: String): String = s"$role[${getClass.getSimpleName}]"
 
 }
 
@@ -62,17 +64,17 @@ trait SmtpSpec extends ActorSpec with WithPort {
   protected def createClientActor(address: SocketAddress)    = new ClientWithActor(address)(actorSystem, readTimeout)
   protected def addressHandler: AddressHandler               = NopAddressHandler
   protected lazy val address: SocketAddress                  = SocketAddress(host, port)
-  protected final lazy val clientStream: StreamClient        = new StreamClient(address)
+  protected final lazy val clientStream: StreamClient        = new StreamClient(address, tagged("client"))
   protected final lazy val clientWithActor: ClientWithActor  = createClientActor(address)
-  private val connectionHandler                              = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, addressHandler)()
-  protected final val server: StreamServer                   = StreamServer((host, port) => Tcp().bind(host, port), port)(connectionHandler)
+  private def connectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, tagged(whoIAm), addressHandler)()
+  protected final val server: StreamServer      = StreamServer((host, port) => Tcp().bind(host, port), port, tagged("server"))(connectionHandler)
 }
 
 trait AbstractSmtpSpec extends AbstractWithActorSystemSpec with SmtpSpec {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    TestUtils.waitFor(!server.isBound, 10.millis)
+    TestUtils.waitFor(!server.isBound, 10.millis, "server")
   }
 
   override protected def afterAll(): Unit = {

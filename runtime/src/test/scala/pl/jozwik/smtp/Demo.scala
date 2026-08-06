@@ -5,13 +5,15 @@ import pl.jozwik.smtp.util.Constants.*
 
 import scala.util.Using
 
-trait Demo extends WithClient with StrictLogging {
+trait Demo extends WithNioSslClient with StrictLogging {
 
   protected def sendMail(name: String)(port: Int): Unit =
     Using.resource(
       createClient(name)(port)
     ) { implicit client =>
       client.connect()
+      val banner = client.waitForRead()
+      logger.trace(s"Banner: ${toMessage(banner)}")
       val ehloResponse = writeAndWaitForRead(s"$EHLO $name!")
       logger.trace(s"$EHLO Response ${toMessage(ehloResponse)}")
       val tlsResponse = client.startTls()

@@ -7,7 +7,7 @@ class DemoServerSpec extends AbstractAsyncSpec with WithPort {
 
   "ServerDemo " should {
     s"Client/Server demo" in {
-      lazy val demo = new DemoServer(port)
+      lazy val demo = new DemoServer(port, getClass.getSimpleName)
       demo.startServer()
 
       demo

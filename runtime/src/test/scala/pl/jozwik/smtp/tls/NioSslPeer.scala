@@ -83,7 +83,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
           close()
       }
     } else {
-      logger.trace(s"$whoIAm: Leave mainLoop")
+      logger.trace(s"$whoIAm: Leave mainLoop $isActive ${selector.isOpen}")
     }
 
   protected def setEngineModeAndStartHandshake(a: Attachment, useClientMode: Boolean)(

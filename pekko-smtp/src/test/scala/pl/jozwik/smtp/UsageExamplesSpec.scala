@@ -37,15 +37,15 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
     "work for Minimal SMTP Server and Client" in {
       val localSystem = ActorSystem("minimal-server")
       import localSystem.dispatcher
-      val consumer = (mail: Mail) => {
+      val consumer = (_: Mail) => {
         Future.successful(SuccessfulConsumed)
       }
 
-      val maxSize           = 1024 * 1024 // 1MB
-      val readTimeout       = 30.seconds
-      val connectionHandler = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, NopAddressHandler)()(localSystem)
-      val p                 = TestUtils.notOccupiedPortNumber
-      val server            = StreamServer((h, port) => Tcp().bind(h, port), p)(connectionHandler)(localSystem)
+      val maxSize                           = 1024 * 1024 // 1MB
+      val readTimeout                       = 30.seconds
+      def connectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, whoIAm, NopAddressHandler)()(localSystem)
+      val p                                 = TestUtils.notOccupiedPortNumber
+      val server                            = StreamServer((h, port) => Tcp().bind(h, port), p, getClass.getSimpleName)(connectionHandler)(localSystem)
 
       val address = SocketAddress(targetHost, p)
       val client  = new StreamClient(address)(localSystem)
@@ -77,22 +77,23 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
     "work for TLS Support" in {
       val localSystem = ActorSystem("tls-server")
       import localSystem.dispatcher
-      val consumer    = (mail: Mail) => Future.successful(SuccessfulConsumed)
+      val consumer    = (_: Mail) => Future.successful(SuccessfulConsumed)
       val maxSize     = 1024 * 1024
       val readTimeout = 30.seconds
 
       // Using EphemeralTls for reliable test material
       val tlsOpts = EphemeralTls.serverTlsOpts
 
-      val tlsConnectionHandler = ConnectionHandler.connectionHandler(
+      def tlsConnectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(
         maxSize,
         consumer,
         readTimeout,
+        whoIAm,
         NopAddressHandler
       )(Some(tlsOpts))(localSystem)
 
       val p      = TestUtils.notOccupiedPortNumber
-      val server = StreamServer((h, port) => Tcp().bind(h, port), p)(tlsConnectionHandler)(localSystem)
+      val server = StreamServer((h, port) => Tcp().bind(h, port), p, getClass.getSimpleName)(tlsConnectionHandler)(localSystem)
 
       val address = SocketAddress(targetHost, p)
       // Using EphemeralTls.clientTlsOpts to match server's trust

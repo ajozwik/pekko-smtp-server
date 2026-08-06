@@ -5,23 +5,31 @@ import pl.jozwik.smtp.DemoHelper.{TlsVersion, keyStoreClientInputStream, trustSt
 import pl.jozwik.smtp.server.consumer.{Consumer, LogConsumer}
 import pl.jozwik.smtp.server.{ServerOpts, StreamServerRunner}
 import pl.jozwik.smtp.util.{TestUtils, Utils}
-import pl.jozwik.smtp.{AbstractWithActorSystemSpec, WithClient, WithPort}
+import pl.jozwik.smtp.{AbstractWithActorSystemSpec, WithNioSslClient, WithPort}
 import pl.jozwik.smtp.util.Constants.*
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
-class TlsFailSpec extends AbstractWithActorSystemSpec with WithClient with WithPort {
+class TlsFailSpec extends AbstractWithActorSystemSpec with WithNioSslClient with WithPort {
   private val tlsOpts    = EphemeralTls.serverTlsOpts
   private val serverOpts = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)
-  private val run        = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, Option(tlsOpts))
+  private val run        = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, tagged("server"), Option(tlsOpts))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    TestUtils.waitFor(!run.isBound, 10.millis)
+    TestUtils.waitFor(!run.isBound, 10.millis, s"${run.getClass.getName}")
   }
 
   protected def createClient =
-    new NioSslClient(TlsVersion, "localhost", port, "client", keyStoreClientInputStream, TlsOpts.clientKeystorePassword, TlsOpts.clientKeystorePassword)(
+    new NioSslClient(
+      TlsVersion,
+      "localhost",
+      port,
+      tagged("client"),
+      keyStoreClientInputStream,
+      TlsOpts.clientKeystorePassword,
+      TlsOpts.clientKeystorePassword
+    )(
       trustStoreInputStream,
       TlsOpts.trustPassword
     )

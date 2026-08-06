@@ -25,11 +25,15 @@ abstract class SmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts:
   protected val sizeOfMailBody: Int = 10 * 1000
 
   private lazy val r =
-    new StreamServerRunner((host, port) => Tcp().bind(host, port))(ServerOpts(port, sizeOfMailBody, consumer, readTimeout = TestUtils.ReadTimeout), tlsOpts)
+    new StreamServerRunner((host, port) => Tcp().bind(host, port))(
+      ServerOpts(port, sizeOfMailBody, consumer, readTimeout = TestUtils.ReadTimeout),
+      getClass.getSimpleName,
+      tlsOpts
+    )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    TestUtils.waitFor(!r.isBound, 10.millis)
+    TestUtils.waitFor(!r.isBound, 10.millis, s"${r.getClass.getName}")
     logger.trace(s"${readAnswer(reader)}")
   }
 

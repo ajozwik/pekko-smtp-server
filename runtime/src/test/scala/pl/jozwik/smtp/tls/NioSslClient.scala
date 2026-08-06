@@ -41,26 +41,35 @@ class NioSslClient(
     socketChannel.configureBlocking(false)
     socketChannel.connect(new InetSocketAddress(remoteHost, remotePort))
     waitForConnect()
-    active.set(true)
+
   }
 
   def getLastRead: ByteString =
     lastRead.get()
 
+  def waitForRead(): ByteString = {
+    UtilsHelper.await(readLock, readCondition) {}
+    readAndClear
+  }
+
+  private def readAndClear =
+    lastRead.getAndSet(ByteString.empty)
+
   def startTls(): ByteString = {
     val b = writeAndWaitForRead(Utils.withEndOfLine(s"${Constants.STARTTLS}"))
+    logger.trace(s"startTls-response: ${b.utf8String}")
     createEngine()
     b
   }
 
   def writeAndWaitForRead(message: String): ByteString = {
     UtilsHelper.await(readLock, readCondition) {
-      logger.trace(s"writeAndWaitForRead ${message.trim} lastRead=${getLastRead.utf8String.trim}")
+      logger.trace(s"$whoIAm writeAndWaitForRead ${message.trim} lastRead=${getLastRead.utf8String.trim}")
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
       write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, writeToOutputBuffer, () => socketChannel.close())
     }
-    lastRead.getAndSet(ByteString.empty)
+    readAndClear
   }
 
   def writeMessage(message: String): Unit = {
@@ -83,7 +92,7 @@ class NioSslClient(
         () => socketChannel.close()
       )
     }
-    lastRead.getAndSet(ByteString.empty)
+    readAndClear
   }
 
   protected override def writeToOutputBuffer(b: ByteBuffer)(implicit sc: SocketChannel): Unit =
@@ -154,18 +163,19 @@ class NioSslClient(
   @tailrec
   private def waitForConnect(): Unit =
     if (socketChannel.finishConnect()) {
-      logger.trace(s"Connected with.. ${socketChannel.socket().getRemoteSocketAddress}")
+      logger.trace(s"$whoIAm Connected with.. ${socketChannel.socket().getRemoteSocketAddress}")
       executor.execute { () =>
         selectionKey
+        active.set(true)
         mainLoop()
       }
     } else {
-      logger.trace(s"Waiting for connection... ${socketChannel.socket().getRemoteSocketAddress}")
+      logger.trace(s"$whoIAm Waiting for connection... ${socketChannel.socket().getRemoteSocketAddress}")
       waitForConnect()
     }
 
   override protected def handleKeyImpl(key: SelectionKey)(ch: SelectableChannel): Unit =
-    logger.error(s"Unexpected channel: $ch")
+    logger.error(s"$whoIAm Unexpected channel: $ch")
 
   override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = {
     logger.trace(s"$whoIAm: Handshake finished peer  $remaining")
@@ -188,6 +198,7 @@ class NioSslClient(
   ): Unit =
     if (message.nonEmpty)
       UtilsHelper.signal(readLock, readCondition) {
+        logger.trace(s"$whoIAm readResponse: ${message.utf8String}")
         lastRead.set(message)
       }
     else {

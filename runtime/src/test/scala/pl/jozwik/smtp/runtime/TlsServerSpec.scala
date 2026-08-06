@@ -9,7 +9,7 @@ class TlsServerSpec extends AbstractAsyncSpec with WithPort {
   "TlsServer " should {
     s"Call Demo" in {
       logger.warn(s"Starting demo $timeLimit")
-      val test = new SmtpTest(port, EphemeralTls.serverTlsOpts)
+      val test = new SmtpTest(port, EphemeralTls.serverTlsOpts, getClass.getSimpleName)
       test
         .runDemo()
         .map { _ =>

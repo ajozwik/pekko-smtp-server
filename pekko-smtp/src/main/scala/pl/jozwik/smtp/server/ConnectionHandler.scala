@@ -26,15 +26,17 @@ object ConnectionHandler extends StrictLogging {
       maxSize: Long,
       consumer: Mail => Future[ConsumedResult],
       readTimeout: FiniteDuration,
+      whoIAm: String,
       addressHandler: AddressHandler = NopAddressHandler
   )(
       tlsOpts: Option[TlsOpts] = None
   )(implicit
       actorSystem: ActorSystem
-  ): Sink[Tcp.IncomingConnection, Future[Done]] =
+  ): Sink[Tcp.IncomingConnection, Future[Done]] = {
+    val prefix = s"$whoIAm "
     Sink.foreach[Tcp.IncomingConnection] { conn =>
       val remoteAddress = conn.remoteAddress
-      logger.trace(s"Incoming connection from: $remoteAddress ${conn.localAddress}")
+      logger.trace(s"${prefix}Incoming connection from: $remoteAddress ${conn.localAddress}")
       val flow                       = conn.flow
       val tls                        = new AtomicBoolean(false)
       val (newFlow, starttlsSupport) = tlsOpts match {
@@ -44,19 +46,19 @@ object ConnectionHandler extends StrictLogging {
               opts.trustStoreInputStream.call(),
               opts.trustPassword
             )
-          (flow.join(bidi(tls, engine)), true)
+          (flow.join(bidi(tls, engine, prefix)), true)
         case _ =>
           (flow, false)
       }
 
-      val logic = serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress)
+      val logic = serverLogic(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport, prefix)(remoteAddress)
         .watchTermination() { (_, future) =>
           import actorSystem.dispatcher
           future.onComplete {
             case Success(_) =>
-              logger.trace(s"Connection closed from: $remoteAddress")
+              logger.trace(s"${prefix}Connection closed from: $remoteAddress")
             case Failure(ex) =>
-              logger.error(s"Failed: $remoteAddress", ex)
+              logger.error(s"${prefix}Failed: $remoteAddress", ex)
           }
         }
 
@@ -65,6 +67,7 @@ object ConnectionHandler extends StrictLogging {
         .handleWith(logic)
       ()
     }
+  }
 
   private def dateNow = DateTimeFormatter.RFC_1123_DATE_TIME.format(now)
 
@@ -73,9 +76,10 @@ object ConnectionHandler extends StrictLogging {
 
   private def bidi(
       tls: AtomicBoolean,
-      createSSLEngine: () => SSLEngine
+      createSSLEngine: () => SSLEngine,
+      whoIAm: String
   ): scaladsl.BidiFlow[ByteString, ByteString, ByteString, ByteString, NotUsed] =
-    tlsWrapping.atop(StartTlsBidiFlow(tls, createSSLEngine)).reversed
+    tlsWrapping.atop(StartTlsBidiFlow(tls, createSSLEngine, whoIAm)).reversed
 
   private val tlsWrapping: scaladsl.BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     scaladsl.BidiFlow.fromFlows(
@@ -107,7 +111,8 @@ object ConnectionHandler extends StrictLogging {
       consumer: Mail => Future[ConsumedResult],
       readTimeout: FiniteDuration,
       tls: AtomicBoolean,
-      starttlsSupport: Boolean
+      starttlsSupport: Boolean,
+      prefix: String
   )(
       remoteAddress: InetSocketAddress
   )(implicit
@@ -122,12 +127,12 @@ object ConnectionHandler extends StrictLogging {
           .map { msg =>
             val msgStr        = msg.utf8String
             val msgStrTrimmed = msgStr.trim
-            logger.trace(s"${tls.get()} Smtp Server received: $msgStrTrimmed")
+            logger.trace(s"$prefix${tls.get()} Smtp Server received: $msgStrTrimmed")
             s"$msgStr${Constants.Delimiter}"
           }
           .via(handler(addressHandler, maxSize, consumer, readTimeout, tls, starttlsSupport)(remoteAddress))
           .map { msg =>
-            logger.trace(s"Smtp Out: ${msg.trim}")
+            logger.trace(s"${prefix}Smtp Out: ${msg.trim}")
             msg
           }
           .map(ByteString.apply)

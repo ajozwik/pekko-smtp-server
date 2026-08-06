@@ -22,7 +22,7 @@ object Main extends ScalaAppWithLogger {
 
   }
 
-  private[runtime] lazy val r = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, Option(tlsOpts))
+  private[runtime] lazy val r = new StreamServerRunner((host, port) => Tcp().bind(host, port))(serverOpts, "server", Option(tlsOpts))
   r.start()
 
 }

@@ -17,7 +17,10 @@ import javax.net.ssl.SSLEngine
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future, Promise}
 
-class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(implicit system: ActorSystem) extends SenderClient with WithSslEngineClient {
+class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, override protected val whoIAm: String = "client")(implicit
+    system: ActorSystem
+) extends SenderClient
+  with WithSslEngineClient {
   import system.dispatcher
 
   def this(serverAddress: SocketAddress)(implicit system: ActorSystem) =
@@ -25,6 +28,9 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None)(imp
 
   def this(serverAddress: SocketAddress, tlsOpts: TlsOpts)(implicit system: ActorSystem) =
     this(serverAddress.host, serverAddress.port, Option(tlsOpts))
+
+  def this(serverAddress: SocketAddress, whoIAm: String)(implicit system: ActorSystem) =
+    this(serverAddress.host, serverAddress.port, None, whoIAm)
 
   private val QueueSize                                               = 8
   private val timeout                                                 = 2.second

@@ -16,19 +16,20 @@ object StreamServer {
   private val address             = "0.0.0.0"
   private val defaultCloseTimeout = 3.seconds
 
-  def apply(listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]], port: Int)(
-      connectionHandler: => Sink[Tcp.IncomingConnection, Future[Done]]
+  def apply(listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]], port: Int, whoIAm: String)(
+      connectionHandler: String => Sink[Tcp.IncomingConnection, Future[Done]]
   )(implicit
       actorSystem: ActorSystem
   ): StreamServer =
-    new StreamServer(listenSource, address, port)(connectionHandler)
+    new StreamServer(listenSource, address, port, whoIAm)(connectionHandler(whoIAm))
 
 }
 
 class StreamServer private (
     listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]],
     address: String,
-    port: Int
+    port: Int,
+    whoIAm: String
 )(
     connectionHandler: => Sink[Tcp.IncomingConnection, Future[Done]]
 )(implicit
@@ -36,7 +37,9 @@ class StreamServer private (
 ) extends AutoCloseable
   with StrictLogging {
 
-  logger.trace(s"PORT=$port")
+  private def prefixed(msg: String): String = s"$whoIAm $msg"
+
+  logger.trace(prefixed(s"PORT=$port"))
 
   /** One switch shared by every accepted connection. Shutting it down completes the streams of the connections that are still open, instead of leaving them to
     * die together with the materializer (AbruptStageTerminationException).
@@ -56,9 +59,9 @@ class StreamServer private (
 
   binding onComplete {
     case Success(b) =>
-      logger.trace(s"Server started, listening on: ${b.localAddress}")
+      logger.trace(prefixed(s"Server started, listening on: ${b.localAddress}"))
     case Failure(e) =>
-      logger.error(s"Server could not be bound to $address:$port: ${e.getMessage}")
+      logger.error(prefixed(s"Server could not be bound to $address:$port: ${e.getMessage}"))
   }
 
   def isBound: Boolean = binding.isCompleted
@@ -68,13 +71,13 @@ class StreamServer private (
     */
   def closeAsync(): Future[Done] = binding.transformWith {
     case Success(b) =>
-      logger.trace(s"Server stopping, listening on: ${b.localAddress}")
+      logger.trace(prefixed(s"Server stopping, listening on: ${b.localAddress}"))
       for {
         _    <- b.unbind()
         done <- b.whenUnbound
       } yield {
         killSwitch.shutdown()
-        logger.trace(s"Server stopped, listening on: ${b.localAddress}")
+        logger.trace(prefixed(s"Server stopped, listening on: ${b.localAddress}"))
         done
       }
     case Failure(_) =>

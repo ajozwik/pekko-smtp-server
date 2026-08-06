@@ -16,12 +16,13 @@ trait SpecWithServer extends AbstractWithActorSystemSpec with WithPort {
 
   protected def createServer = new StreamServerRunner((host, port) => Tcp().bind(host, port))(
     ServerOpts(port, 10 * 1000, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout),
+    getClass.getSimpleName,
     Option(serverTlsOpts)
   )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    TestUtils.waitFor(!run.isBound, 10.millis)
+    TestUtils.waitFor(!run.isBound, 10.millis, s"${run.getClass.getName}")
   }
 
   override protected def afterAll(): Unit = {

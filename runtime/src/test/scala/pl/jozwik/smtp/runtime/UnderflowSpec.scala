@@ -1,6 +1,6 @@
 package pl.jozwik.smtp.runtime
 
-import pl.jozwik.smtp.WithClient
+import pl.jozwik.smtp.WithNioSslClient
 import pl.jozwik.smtp.server.SpecWithServer
 
 import scala.util.Using
@@ -9,14 +9,22 @@ import pl.jozwik.smtp.util.{TestUtils, Utils}
 
 import scala.concurrent.duration.DurationInt
 
-class UnderflowSpec extends SpecWithServer with WithClient {
+class UnderflowSpec extends SpecWithServer with WithNioSslClient {
 
   "Handle test UNDERFLOW" in {
     Using.resource(
-      createClient("client")(port)
+      createClient("clientUnderflow")(port)
     ) { implicit client =>
       client.connect()
-      TestUtils.waitFor(client.getLastRead.nonEmpty, 5.millis)
+      TestUtils.waitFor(
+        {
+          val last = client.getLastRead
+          logger.trace(s"Last: ${toMessage(last)} -> ${last.length}")
+          last.isEmpty
+        },
+        5.millis,
+        "serverUnderflow"
+      )
       val ehloResponse = writeAndWaitForRead(s"$EHLO test")
       logger.trace(s"$EHLO ${toMessage(ehloResponse)}")
       val tlsResponse = client.startTls()

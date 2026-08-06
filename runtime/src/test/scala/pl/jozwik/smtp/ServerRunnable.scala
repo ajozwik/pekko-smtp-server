@@ -4,10 +4,10 @@ import com.typesafe.scalalogging.StrictLogging
 import pl.jozwik.smtp.tls.{NioSslServer, TlsOpts}
 import pl.jozwik.smtp.DemoHelper.*
 
-class ServerRunnable(port: Int) extends Runnable with AutoCloseable with StrictLogging {
+class ServerRunnable(port: Int, whoIAm: String = "server") extends Runnable with AutoCloseable with StrictLogging {
 
   private lazy val server =
-    new NioSslServer(TlsVersion, "0.0.0.0", port, keyStoreServerInputStream, TlsOpts.keystorePassword, TlsOpts.keyPassword)(
+    new NioSslServer(TlsVersion, "0.0.0.0", port, whoIAm, keyStoreServerInputStream, TlsOpts.keystorePassword, TlsOpts.keyPassword)(
       trustStoreInputStream,
       TlsOpts.trustPassword
     )

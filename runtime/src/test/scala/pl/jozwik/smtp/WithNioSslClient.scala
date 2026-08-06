@@ -7,7 +7,7 @@ import pl.jozwik.smtp.util.Utils
 
 import java.nio.ByteBuffer
 
-trait WithClient {
+trait WithNioSslClient {
 
   protected def createClient(name: String)(port: Int) =
     new NioSslClient(TlsVersion, "localhost", port, name, keyStoreClientInputStream, TlsOpts.clientKeystorePassword, TlsOpts.clientKeystorePassword)(
