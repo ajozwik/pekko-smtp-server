@@ -8,7 +8,7 @@ import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Mail, SmtpCodes, Socket
 import Constants.*
 import org.apache.pekko.stream.OverflowStrategy
 import pl.jozwik.smtp.tls.TlsHelper.toApplicationBufferSize
-import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, TlsHelper, TlsOpts, WithSslEngineClient}
+import pl.jozwik.smtp.tls.{BufferAction, SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts, WithSslEngineClient}
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -32,8 +32,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   private val timeout   = 2.second
 
   protected val (applicationBufferSize: Int, packetBufferSize: Int) = TlsHelper.applicationPacketBufferSize
-
-  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
 
   private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =
     Tcp().outgoingConnection(host, port)
@@ -92,8 +90,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   private def isResponseSuccess(response: Option[Int]) =
     response.exists(r => r >= 200 && r < 400)
 
-  // --- STARTTLS support -----------------------------------------------------------------------------------------
-
   private def clientSslEngine(opts: TlsOpts): SSLEngine = {
     val context = SSLContextFactory.createContext(opts.protocol)(
       opts.keyStoreInputStream.call(),
@@ -115,9 +111,9 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   ): Future[Boolean] = {
     implicit val underflowBuffer: AtomicReference[ByteBuffer] = ByteBufferHelper.referenceByteBuffer
     implicit val e: SSLEngine                                 = clientSslEngine(opts)
-    val attachment                                            = setEngineModeAndStartHandshake(Attachment.empty, useClientMode = true)
+    val attachment                                            = setEngineModeAndStartHandshake(TlsEngineState.empty, useClientMode = true)
     for {
-      _ <- doHandshakeStep(attachment, readBlocking(sinkQueue))
+      _ <- doHandshakeStep(attachment, ByteBufferHelper.createBuffer())(readBlocking(sinkQueue))
       _ <-
         if (handshakeDone(attachment)) {
           Future.unit
@@ -294,19 +290,19 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   private def extractBytes(buf: ByteBuffer): ByteString =
     ByteString(buf.array().takeWhile(_ != 0))
 
-  private def handshakeDone(attachment: Attachment): Boolean =
+  private def handshakeDone(attachment: TlsEngineState): Boolean =
     !attachment.open.get() ||
       attachment.handshakeStatus.get() == HandshakeStatus.FINISHED ||
       attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING
 
-  private def doHandshakeStep(attachment: Attachment, readByteBuffer: ByteBuffer => Int)(implicit
+  private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(readByteBuffer: ByteBuffer => Int)(implicit
       e: SSLEngine,
       sourceQueue: SourceQueueWithComplete[ByteString],
       sinkQueue: SinkQueueWithCancel[ByteString]
   ): Future[Unit] = {
     implicit val seq: Int = iterator.next()
     val p                 = Promise[Unit]()
-    doHandshake(attachment)(
+    doHandshake(attachment, peerNetData)(
       readByteBuffer,
       writeToSource(p),
       closeConnection
@@ -321,7 +317,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def runHandshake(
-      attachment: Attachment
+      attachment: TlsEngineState
   )(implicit
       e: SSLEngine,
       sinkQueue: SinkQueueWithCancel[ByteString],
@@ -333,8 +329,10 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       b <- readByteBufferFuture(sinkQueue)
       _ <- b match {
         case Some(bytes) =>
+          val peerNetData = ByteBufferHelper.toByteBufferFlip(bytes)
+          logger.trace(s"$whoIAm: read: $peerNetData should: ${bytes.length}")
           for {
-            _ <- doHandshakeStep(attachment, BufferAction.copyTo(bytes))
+            _ <- doHandshakeStep(attachment, peerNetData)(ByteBufferHelper.fakeRead)
             _ <-
               if (handshakeDone(attachment)) {
                 Future.unit

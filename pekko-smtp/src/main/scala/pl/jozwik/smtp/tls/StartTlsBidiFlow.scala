@@ -28,7 +28,7 @@ object StartTlsBidiFlow {
       whoIAm: String
   ): Graph[BidiShape[SslTlsOutbound, ByteString, ByteString, SessionBytes], NotUsed] = {
     scaladsl.GraphDSL.create() { implicit b =>
-      implicit val attachment: AtomicReference[Attachment]  = new AtomicReference(Attachment.empty)
+      implicit val attachment: AtomicReference[TlsEngineState]  = new AtomicReference(TlsEngineState.empty)
       implicit val open: AtomicBoolean                      = new AtomicBoolean(true)
       val handshakeBuffer: AtomicReference[Seq[ByteString]] = new AtomicReference(Seq.empty)
       val bidiFlow                                          = new StartTlsBidiFlow(whoIAm)
@@ -43,36 +43,37 @@ object StartTlsBidiFlow {
 class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer {
   import StartTlsBidiFlow.dummySession
   protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
-  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
+
 
   private def fromNetwork(tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],
-      attachment: AtomicReference[Attachment],
+      attachment: AtomicReference[TlsEngineState],
       open: AtomicBoolean
   ): FlowShape[ByteString, SessionBytes] = {
     implicit val underflowBuffer: AtomicReference[ByteBuffer] = attachment.get().buffers.underflowBuffer
     b.add(scaladsl.Flow[ByteString].flatMap { bytes =>
       implicit val seq: Int = iterator.next()
-      logger.trace(s"fromNetwork ($seq) ${bytes.length}")
+      logger.trace(s"$whoIAm fromNetwork ($seq) ${bytes.length}")
       val list = if (tls.get) {
-        val l = attachment.get() match {
-          case a @ Attachment(Some(engine), buffers, handshakeStatus, _) =>
+        val peerNetData = ByteBufferHelper.toByteBufferFlip(bytes)
+        val l           = attachment.get() match {
+          case a @ TlsEngineState(Some(engine), buffers, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
             val bb                    =
               if (handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get() == HandshakeStatus.FINISHED) {
                 unwrapFromNetwork(ByteBufferHelper.toByteBufferFlip(bytes), handshakeBuffer)
               } else {
-                doHandshake(a)(
-                  BufferAction.copyTo(bytes),
+                doHandshake(a, peerNetData)(
+                  ByteBufferHelper.fakeRead,
                   addToHandshakeBuffer(handshakeBuffer),
                   Utils.fakeCall
                 )
                 val remainingAfterFinished = if (handshakeStatus.get() == HandshakeStatus.FINISHED) {
-                  val remaining = buffers.peerNetData.get()
-                  if (remaining.remaining() == 0) {
+                  if (peerNetData.remaining() == 0) {
                     None
                   } else {
-                    unwrapFromNetwork(remaining, handshakeBuffer)
+                    // unwrapFromNetwork(peerNetData, handshakeBuffer)
+                    None
                   }
                 } else {
                   None
@@ -126,14 +127,14 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
 
   private def toNetwork(createSSLEngine: () => SSLEngine, tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],
-      attachment: AtomicReference[Attachment]
+      attachment: AtomicReference[TlsEngineState]
   ): FlowShape[SslTlsOutbound, ByteString] =
     b.add(scaladsl.Flow[SslTlsOutbound].flatMap {
       case SendBytes(bytes) =>
         val str = bytes.utf8String.trim
         val s   = if (tls.get) {
           val toNetBytes = attachment.get() match {
-            case Attachment(Some(engine), _, handshakeStatus, _) =>
+            case TlsEngineState(Some(engine), _, handshakeStatus, _) =>
               val buf    = handshakeBuffer.getAndSet(Seq.empty)
               val holder = new AtomicReference[Seq[ByteString]](buf)
               if (handshakeStatus.get == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get == HandshakeStatus.FINISHED) {

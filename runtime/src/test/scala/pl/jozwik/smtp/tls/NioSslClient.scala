@@ -28,7 +28,7 @@ class NioSslClient(
 
   override protected val whoContactMe: String   = "server"
   private lazy val socketChannel: SocketChannel = SocketChannel.open()
-  private lazy val selectionKey: SelectionKey   = socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
+  private lazy val selectionKey: SelectionKey   = socketChannel.register(selector, SelectionKey.OP_READ, TlsEngineState.empty)
   private val lastRead                          = new AtomicReference(ByteString.empty)
   private val readLock: Lock                    = new ReentrantLock()
   private val readCondition: Condition          = readLock.newCondition
@@ -109,7 +109,7 @@ class NioSslClient(
   private def createEngine(): Unit = {
     implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
     implicit val seq: Int     = iterator.next()
-    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
+    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[TlsEngineState], useClientMode = true)(selectionKey)(
       socketChannel.read,
       writeToOutputBuffer,
       () => close()
@@ -117,7 +117,7 @@ class NioSslClient(
   }
 
   private def waitForEngine: Option[SSLEngine] = fromSelectionKey match {
-    case Attachment(e, _, s, _) if s.get() == HandshakeStatus.NOT_HANDSHAKING || s.get() == HandshakeStatus.FINISHED =>
+    case TlsEngineState(e, _, s, _) if s.get() == HandshakeStatus.NOT_HANDSHAKING || s.get() == HandshakeStatus.FINISHED =>
       e
     case a =>
       UtilsHelper.await(engineLock, engineCondition) {
@@ -126,12 +126,12 @@ class NioSslClient(
 
   }
 
-  private def fromSelectionKey: Attachment =
+  private def fromSelectionKey: TlsEngineState =
     selectionKey.attachment() match {
-      case a: Attachment =>
+      case a: TlsEngineState =>
         a
       case _ =>
-        sys.error(s"Attachment: ${selectionKey.attachment()}")
+        sys.error(s"TlsEngineState: ${selectionKey.attachment()}")
     }
 
   protected def closeImpl(): Unit = {
@@ -191,7 +191,7 @@ class NioSslClient(
     }
 
   override protected def readResponse(
-      a: Attachment
+      a: TlsEngineState
   )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean

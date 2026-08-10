@@ -8,8 +8,8 @@ trait WithSslEngineClient extends WithSslEngineClientBase {
   override protected val whoIAm: String       = "client"
   override protected val whoContactMe: String = "server"
 
-  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit  = logger.trace(s"$whoIAm: Handshake finished $remaining")
-  override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Handshake finished $remaining")
+  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit  = logger.trace(s"$whoIAm: Own Handshake finished $remaining")
+  override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Peer Handshake finished $remaining")
 }
 
 trait WithSslEngineClientBase extends WithSslEngine {

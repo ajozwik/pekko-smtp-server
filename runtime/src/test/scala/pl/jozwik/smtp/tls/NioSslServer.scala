@@ -58,14 +58,14 @@ class NioSslServer(
 
 //  override protected def createApplicationBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
 //    ByteBuffer.allocate(20)
-//
+
 //  override protected def createPacketBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
 //    ByteBuffer.allocate(20)
 
   private def accept(serverSocketChannel: ServerSocketChannel): Unit = Option(serverSocketChannel.accept()).foreach { socketChannel =>
     socketChannel.configureBlocking(false)
     logger.trace(s"$whoIAm New connection request! ${socketChannel.getRemoteAddress}")
-    socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
+    socketChannel.register(selector, SelectionKey.OP_READ, TlsEngineState.empty)
     implicit val sc: SocketChannel     = socketChannel
     implicit val seq: Int              = iterator.next()
     implicit val en: Option[SSLEngine] = None
@@ -84,7 +84,7 @@ class NioSslServer(
   }
 
   override protected def readResponse(
-      a: Attachment
+      a: TlsEngineState
   )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean

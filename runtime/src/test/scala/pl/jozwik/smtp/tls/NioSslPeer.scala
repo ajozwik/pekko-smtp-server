@@ -32,10 +32,9 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
 ) extends WithSslEngine
   with AutoCloseable {
 
-  protected lazy val selector: Selector                               = SelectorProvider.provider.openSelector()
-  protected val active: AtomicBoolean                                 = new AtomicBoolean(false)
-  protected lazy val executor: ExecutorService                        = Executors.newCachedThreadPool(NioSslPeer.daemonThreadFactory)
-  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set.empty
+  protected lazy val selector: Selector        = SelectorProvider.provider.openSelector()
+  protected val active: AtomicBoolean          = new AtomicBoolean(false)
+  protected lazy val executor: ExecutorService = Executors.newCachedThreadPool(NioSslPeer.daemonThreadFactory)
 
   protected lazy val context: SSLContext =
     SSLContextFactory.createContext(protocol)(keyPath, keystorePassword, keyPassword)(trustPath, trustPassword)
@@ -86,12 +85,12 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       logger.trace(s"$whoIAm: Leave mainLoop $isActive ${selector.isOpen}")
     }
 
-  protected def setEngineModeAndStartHandshake(a: Attachment, useClientMode: Boolean)(
+  protected def setEngineModeAndStartHandshake(a: TlsEngineState, useClientMode: Boolean)(
       selectionKey: SelectionKey
   )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, close: () => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
-    val attachment: Attachment = setEngineModeAndStartHandshake(a, useClientMode)
+    val attachment: TlsEngineState = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
-    doHandshake(attachment)(readByteBuffer, writeByteBuffer, close)
+    doHandshake(attachment, ByteBufferHelper.createBuffer())(readByteBuffer, writeByteBuffer, close)
   }
 
   protected def closeConnection(sc: SocketChannel): Unit
@@ -103,17 +102,20 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
           implicit val socket: SocketChannel = sc
           implicit val seq: Int              = iterator.next()
           key.attachment() match {
-            case a @ Attachment(Some(engine), _, status, _) if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
+            case a @ TlsEngineState(s @ Some(engine), _, status, _)
+                if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
               implicit val e: SSLEngine = engine
-              doHandshake(a)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
-            case a @ Attachment(e, b, _, open) =>
+              val peerNetData           = createPacketBuffer(s)
+              readToBuffer(sc, peerNetData)
+              doHandshake(a, peerNetData)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
+            case a @ TlsEngineState(e, b, _, open) =>
               implicit val o: AtomicBoolean                             = open
               implicit val underflowBuffer: AtomicReference[ByteBuffer] = b.underflowBuffer
               implicit val en                                           = e
               handleReadKeyLoop(key, a)
 
             case r =>
-              sys.error(s"Attachment: $r")
+              sys.error(s"TlsEngineState: $r")
           }
         case e =>
           handleKeyImpl(key)(e)
@@ -121,7 +123,14 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
       }
     }
 
-  private def handleReadKeyLoop(key: SelectionKey, a: Attachment)(implicit
+  private def readToBuffer(sc: SocketChannel, peerNetData: ByteBuffer)(implicit seq: Int) = {
+    sc.read(peerNetData)
+    val b = peerNetData.flip()
+    logger.trace(s"$whoIAm: readToBuffer ($seq) $b")
+    b
+  }
+
+  private def handleReadKeyLoop(key: SelectionKey, a: TlsEngineState)(implicit
       seq: Int,
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean,
@@ -141,7 +150,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     sc.write(b)
 
   private def readAndResponse(peerNetData: ByteBuffer)(
-      a: Attachment,
+      a: TlsEngineState,
       key: SelectionKey
   )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
@@ -172,7 +181,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
   }
 
   protected def readResponse(
-      a: Attachment
+      a: TlsEngineState
   )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean

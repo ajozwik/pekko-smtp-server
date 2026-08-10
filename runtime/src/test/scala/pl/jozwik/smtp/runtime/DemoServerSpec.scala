@@ -1,13 +1,13 @@
 package pl.jozwik.smtp.runtime
 
-import pl.jozwik.smtp.util.AbstractAsyncSpec
+import pl.jozwik.smtp.util.{AbstractAsyncSpec, WithTagged}
 import pl.jozwik.smtp.{DemoServer, WithPort}
 
-class DemoServerSpec extends AbstractAsyncSpec with WithPort {
+class DemoServerSpec extends AbstractAsyncSpec with WithTagged with WithPort {
 
   "ServerDemo " should {
     s"Client/Server demo" in {
-      lazy val demo = new DemoServer(port, getClass.getSimpleName)
+      lazy val demo = new DemoServer(port, tagged("server"))
       demo.startServer()
 
       demo

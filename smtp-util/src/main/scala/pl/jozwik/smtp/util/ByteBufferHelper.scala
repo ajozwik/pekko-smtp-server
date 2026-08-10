@@ -45,12 +45,6 @@ object ByteBufferHelper extends StrictLogging {
     (b1.slice(), b2.slice())
   }
 
-  def clearBuffer(buffer: ByteBuffer): ByteBuffer = {
-    val b = buffer.clear()
-    logger.debug(s"$b")
-    b
-  }
-
   def toByteString(message: ByteBuffer): ByteString =
     ByteString(message.flip())
 
