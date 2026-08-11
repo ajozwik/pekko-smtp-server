@@ -36,20 +36,20 @@ jobs:
     - name: Run tests
       shell: bash
       timeout-minutes: 10
-      run: sbt "++${{ matrix.scala }};clean;coverage;test"
+      run: sbt "++${{ matrix.scala }};cleanFull;coverage;test;shutdown"
 
     - name: Aggregate
       shell: bash
-      run: sbt "++${{ matrix.scala }};coverageAggregate"
+      run: sbt "++${{ matrix.scala }};coverageAggregate;shutdown"
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Upload coverage data to Coveralls
-      run: sbt "++${{ matrix.scala }};coveralls"
-      env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        COVERALLS_FLAG_NAME: Scala ${{ matrix.scala }}
+#    - name: Upload coverage data to Coveralls
+#      run: sbt "++${{ matrix.scala }};coveralls"
+#      env:
+#        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+#        COVERALLS_FLAG_NAME: Scala ${{ matrix.scala }}
 

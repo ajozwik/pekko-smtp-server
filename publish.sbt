@@ -1,34 +1,31 @@
-import sbt.Keys.localStaging
-import sbt.url
-
 val organizationUrl = "https://github.com/ajozwik"
 val projectUrl      = s"$organizationUrl/pekko-smtp-server"
 
-ThisBuild / organizationHomepage := Option(url(organizationUrl))
+organizationHomepage := Option(uri(organizationUrl))
 
-ThisBuild / scmInfo := Option(
+scmInfo := Option(
   ScmInfo(
-    url(projectUrl),
+    uri(projectUrl),
     "scm:git@github.com:ajozwik/pekko-smtp-server.git"
   )
 )
 
-ThisBuild / developers := List(
+developers := List(
   Developer(
     id = "ajozwik",
     name = "Andrzej Jozwik",
     email = "andrzej.jozwik@gmail.com",
-    url = url(organizationUrl)
+    url = uri(organizationUrl)
   )
 )
 
-ThisBuild / description          := "Smtp server based on pekko stream."
-ThisBuild / licenses             := Seq("MIT License" -> url("https://www.opensource.org/licenses/mit-license.php"))
-ThisBuild / homepage             := Option(url(projectUrl))
-ThisBuild / pomIncludeRepository := { _ => false }
-ThisBuild / publishMavenStyle    := true
+description          := "Smtp server based on pekko stream."
+licenses             := Seq("MIT License" -> uri("https://www.opensource.org/licenses/mit-license.php"))
+homepage             := Option(uri(projectUrl))
+pomIncludeRepository := { _ => false }
+publishMavenStyle    := true
 
-ThisBuild / publishTo := {
+publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
   if (isSnapshot.value) Option("central-snapshots" at centralSnapshots)
   else localStaging.value
@@ -36,4 +33,4 @@ ThisBuild / publishTo := {
 
 Test / publishArtifact := false
 
-ThisBuild / versionScheme := Option("semver-spec")
+versionScheme := Option("semver-spec")

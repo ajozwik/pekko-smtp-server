@@ -1,26 +1,26 @@
 import java.time.LocalDate
 import Versions.*
 
-val `scalaVersion_3_lts` = "3.3.8"
-val `scalaVersion_2.13`  = "2.13.18"
+val scalaVersion_3_lts  = "3.3.8"
+val `scalaVersion_2.13` = "2.13.18"
 
-ThisBuild / crossScalaVersions := Seq(`scalaVersion_2.13`, `scalaVersion_3_lts`)
+crossScalaVersions := Seq(`scalaVersion_2.13`, scalaVersion_3_lts)
 
-ThisBuild / scalaVersion := sys.props.getOrElse("scala.version", `scalaVersion_3_lts`)
+scalaVersion := sys.props.getOrElse("scala.version", scalaVersion_3_lts)
 
-ThisBuild / organization := "com.github.ajozwik"
+organization := "com.github.ajozwik"
 
 name := "pekko-smtp-server"
 
 val targetJdk = "17"
 
-ThisBuild / scalafixDependencies += "com.github.vovapolu" %% "scaluzzi" % "0.1.23"
+scalafixDependencies += "com.github.vovapolu" %% "scaluzzi" % "0.1.23"
 
-ThisBuild / libraryDependencySchemes ++= Seq(
+libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
-ThisBuild / scalacOptions ++= Seq(
+scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
   "-feature",
@@ -86,8 +86,7 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   )
 )
 
-lazy val `runtime` = projectName("runtime", file("runtime"))
-  .settings(publish / skip := true)
+lazy val `runtime` = projectName("runtime", file("runtime"), true)
   .dependsOn(`pekko-smtp`)
   .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test") *)
   .enablePlugins(PackPlugin)
@@ -102,12 +101,17 @@ lazy val `pekko-smtp` = projectName("pekko-smtp", file("pekko-smtp"))
 
 lazy val docs = project
   .in(file("smtp-docs"))
-  .settings(mdocVariables := Map("VERSION" -> version.value))
+  .settings(
+    name          := "smtp-docs",
+    mdocVariables := Map("VERSION" -> version.value)
+  )
   .dependsOn(runtime)
   .enablePlugins(MdocPlugin)
 
-def projectName(name: String, file: File): Project =
-  Project(name, file).settings(
+def projectName(id: String, file: File, skipPublish: Boolean = false): Project =
+  Project(id, file).settings(
+    name           := id,
+    publish / skip := skipPublish,
     libraryDependencies ++= Seq(
       `org.scalatest_scalatest`,
       `org.scalatestplus_scalacheck`
