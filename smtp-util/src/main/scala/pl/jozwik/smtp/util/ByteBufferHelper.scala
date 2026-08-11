@@ -8,11 +8,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 object ByteBufferHelper extends StrictLogging {
 
-  val ReadOnlyBuffer: ByteBuffer = createBuffer().asReadOnlyBuffer()
+  val ReadOnlyBuffer: ByteBuffer = createEmptyBuffer.asReadOnlyBuffer()
 
   def referenceByteBuffer: AtomicReference[ByteBuffer] = new AtomicReference(ReadOnlyBuffer)
 
-  def createBuffer(size: Int = 0): ByteBuffer = ByteBuffer.allocate(size)
+  def createEmptyBuffer: ByteBuffer       = createBuffer(0)
+  def createBuffer(size: Int): ByteBuffer = ByteBuffer.allocate(size)
 
   def createBuffer(currentCapacity: Int, proposedCapacity: Int): ByteBuffer =
     if (proposedCapacity > currentCapacity) {
@@ -20,8 +21,6 @@ object ByteBufferHelper extends StrictLogging {
     } else {
       createBuffer(currentCapacity * 2)
     }
-
-  val fakeRead: ByteBuffer => Int = _ => 0
 
   def mergeAndFlip(a: ByteBuffer, b: ByteBuffer): ByteBuffer =
     merge(a, b).flip()

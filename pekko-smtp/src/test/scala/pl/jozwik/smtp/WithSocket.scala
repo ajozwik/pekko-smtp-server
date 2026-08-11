@@ -9,7 +9,7 @@ import java.net.Socket
 
 trait WithPort extends StrictLogging {
 
-  protected lazy val port: Int = TestUtils.notOccupiedPortNumber
+  protected lazy val port: Int = TestUtils.notOccupiedPortNumber()
 
 }
 

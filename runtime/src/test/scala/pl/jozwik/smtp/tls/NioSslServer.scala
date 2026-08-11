@@ -70,7 +70,6 @@ class NioSslServer(
     implicit val seq: Int              = iterator.next()
     implicit val en: Option[SSLEngine] = None
     write(ByteBufferHelper.toByteBuffer(s"${SmtpCodes.SERVICE_READY} SMTP DEMO", Constants.CrLf))(
-      socketChannel.read,
       writeToOutputBuffer,
       () => socketChannel.close()
     )
@@ -85,7 +84,7 @@ class NioSslServer(
 
   override protected def readResponse(
       a: TlsEngineState
-  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(message: ByteString, key: SelectionKey)(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean
   ): Unit = {
@@ -97,11 +96,11 @@ class NioSslServer(
       implicit val en: Option[SSLEngine] = a.engine
       str match {
         case Constants.STARTTLS =>
-          write(ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}", Constants.CrLf))(readByteBuffer, writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"${SmtpResponses.TLS_SUPPORTED_RESPONSE}", Constants.CrLf))(writeByteBuffer, closeConn)
           implicit val e: SSLEngine = context.createSSLEngine()
-          setEngineModeAndStartHandshake(a, useClientMode = false)(key)(readByteBuffer, writeByteBuffer, closeConn)
+          setEngineModeAndStartHandshake(a, useClientMode = false)(key)(writeByteBuffer, closeConn)
         case _ =>
-          write(ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}", Constants.CrLf))(readByteBuffer, writeByteBuffer, closeConn)
+          write(ByteBufferHelper.toByteBuffer(s"Hello! I am your $whoIAm! ${a.engine.isDefined}", Constants.CrLf))(writeByteBuffer, closeConn)
       }
 
     }

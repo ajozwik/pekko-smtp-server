@@ -46,7 +46,7 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
       val maxSize                           = 1024 * 1024 // 1MB
       val readTimeout                       = 30.seconds
       def connectionHandler(whoIAm: String) = ConnectionHandler.connectionHandler(maxSize, consumer, readTimeout, whoIAm, NopAddressHandler)()(localSystem)
-      val p                                 = TestUtils.notOccupiedPortNumber
+      val p                                 = TestUtils.notOccupiedPortNumber()
       val server                            = StreamServer((h, port) => Tcp().bind(h, port), p, tagged("server"))(connectionHandler)(localSystem)
 
       val address = SocketAddress(targetHost, p)
@@ -92,10 +92,10 @@ class UsageExamplesSpec extends AbstractWithActorSystemSpec with WithPort {
         NopAddressHandler
       )(Some(tlsOpts))
 
-      val p      = TestUtils.notOccupiedPortNumber
+      val p      = TestUtils.notOccupiedPortNumber()
       val server = StreamServer((h, port) => Tcp().bind(h, port), p, tagged("server"))(tlsConnectionHandler)
 
-      val address = SocketAddress(targetHost, p)
+      val address   = SocketAddress(targetHost, p)
       val tlsClient = new StreamClient(address, tagged("client"), EphemeralTls.clientTlsOpts)
       val mail      = Mail(
         from = MailAddress("sender", "example.com"),

@@ -8,14 +8,13 @@ import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Mail, SmtpCodes, Socket
 import Constants.*
 import org.apache.pekko.stream.OverflowStrategy
 import pl.jozwik.smtp.tls.TlsHelper.toApplicationBufferSize
-import pl.jozwik.smtp.tls.{BufferAction, SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts, WithSslEngineClient}
+import pl.jozwik.smtp.tls.{SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts, WithSslEngineClient}
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.SSLEngine
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.{Future, Promise}
 
 class StreamClient(host: String, port: Int, override protected val whoIAm: String, tlsOpts: Option[TlsOpts] = None)(implicit system: ActorSystem)
   extends SenderClient
@@ -29,7 +28,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
     this(serverAddress.host, serverAddress.port, whoIAm, Option(tlsOpts))
 
   private val QueueSize = 8
-  private val timeout   = 2.second
 
   protected val (applicationBufferSize: Int, packetBufferSize: Int) = TlsHelper.applicationPacketBufferSize
 
@@ -113,13 +111,8 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
     implicit val e: SSLEngine                                 = clientSslEngine(opts)
     val attachment                                            = setEngineModeAndStartHandshake(TlsEngineState.empty, useClientMode = true)
     for {
-      _ <- doHandshakeStep(attachment, ByteBufferHelper.createBuffer())(readBlocking(sinkQueue))
-      _ <-
-        if (handshakeDone(attachment)) {
-          Future.unit
-        } else {
-          runHandshake(attachment)
-        }
+      _ <- doHandshakeStep(attachment, ByteBufferHelper.createEmptyBuffer)
+      _ <- runHandshake(attachment)
     } yield {
       val success = attachment.open.get() &&
         (attachment.handshakeStatus.get() == HandshakeStatus.FINISHED || attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING)
@@ -213,12 +206,11 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
 
   private def finishConnection(closeConn: () => Unit)(implicit
       engine: Option[SSLEngine],
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString]
   ): Unit = {
     implicit val seq: Int = iterator.next() - 1
     val p                 = Promise[Unit]()
-    closeConnection(readBlocking(sinkQueue), writeToSource(p), () => closeConn())
+    closeConnection(writeToSource(p), () => closeConn())
   }
 
   private def readPendingAndResponse(
@@ -268,7 +260,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
             val p                              = Promise[Unit]()
             val peerNetData                    = ByteBufferHelper.toByteBufferFlip(bytes)
             handleRead(peerNetData)(
-              ByteBufferHelper.fakeRead,
               buff => sourceQueue.offer(ByteString(buff)).onComplete { _ => p.trySuccess(()) },
               () => closeConn()
             ) match {
@@ -295,7 +286,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       attachment.handshakeStatus.get() == HandshakeStatus.FINISHED ||
       attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING
 
-  private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(readByteBuffer: ByteBuffer => Int)(implicit
+  private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(implicit
       e: SSLEngine,
       sourceQueue: SourceQueueWithComplete[ByteString],
       sinkQueue: SinkQueueWithCancel[ByteString]
@@ -303,7 +294,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
     implicit val seq: Int = iterator.next()
     val p                 = Promise[Unit]()
     doHandshake(attachment, peerNetData)(
-      readByteBuffer,
       writeToSource(p),
       closeConnection
     )
@@ -332,7 +322,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
           val peerNetData = ByteBufferHelper.toByteBufferFlip(bytes)
           logger.trace(s"$whoIAm: read: $peerNetData should: ${bytes.length}")
           for {
-            _ <- doHandshakeStep(attachment, peerNetData)(ByteBufferHelper.fakeRead)
+            _ <- doHandshakeStep(attachment, peerNetData)
             _ <-
               if (handshakeDone(attachment)) {
                 Future.unit
@@ -387,7 +377,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   }
 
   private def writeText(text: String, closeConn: () => Unit)(implicit
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString],
       engine: Option[SSLEngine]
   ): Future[Unit] =
@@ -397,7 +386,6 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
           implicit val seq: Int = iterator.next()
           val p                 = Promise[Unit]()
           write(ByteBuffer.wrap(chunk))(
-            readBlocking(sinkQueue),
             writeToSource(p),
             () => closeConn()
           )
@@ -406,13 +394,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       }
     } yield ()
 
-  private def readBlocking(sinkQueue: SinkQueue[ByteString])(buff: ByteBuffer) = {
-    val bytes = Await.result(readByteBufferFuture(sinkQueue), timeout).getOrElse(ByteString.empty)
-    BufferAction.copyTo(bytes)(buff)
-  }
-
   private def writeLine(line: String, closeConn: () => Unit)(implicit
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString],
       engine: Option[SSLEngine]
   ): Future[Unit] =

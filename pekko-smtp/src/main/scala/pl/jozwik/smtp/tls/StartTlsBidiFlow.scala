@@ -28,12 +28,12 @@ object StartTlsBidiFlow {
       whoIAm: String
   ): Graph[BidiShape[SslTlsOutbound, ByteString, ByteString, SessionBytes], NotUsed] = {
     scaladsl.GraphDSL.create() { implicit b =>
-      implicit val attachment: AtomicReference[TlsEngineState]  = new AtomicReference(TlsEngineState.empty)
-      implicit val open: AtomicBoolean                      = new AtomicBoolean(true)
-      val handshakeBuffer: AtomicReference[Seq[ByteString]] = new AtomicReference(Seq.empty)
-      val bidiFlow                                          = new StartTlsBidiFlow(whoIAm)
-      val fromClient: FlowShape[ByteString, SessionBytes]   = bidiFlow.fromNetwork(tls, handshakeBuffer)
-      val toClient: FlowShape[SslTlsOutbound, ByteString]   = bidiFlow.toNetwork(createSSLEngine, tls, handshakeBuffer)
+      implicit val attachment: AtomicReference[TlsEngineState] = new AtomicReference(TlsEngineState.empty)
+      implicit val open: AtomicBoolean                         = new AtomicBoolean(true)
+      val handshakeBuffer: AtomicReference[Seq[ByteString]]    = new AtomicReference(Seq.empty)
+      val bidiFlow                                             = new StartTlsBidiFlow(whoIAm)
+      val fromClient: FlowShape[ByteString, SessionBytes]      = bidiFlow.fromNetwork(tls, handshakeBuffer)
+      val toClient: FlowShape[SslTlsOutbound, ByteString]      = bidiFlow.toNetwork(createSSLEngine, tls, handshakeBuffer)
       BidiShape.fromFlows(toClient, fromClient)
     }
   }
@@ -42,8 +42,7 @@ object StartTlsBidiFlow {
 
 class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer {
   import StartTlsBidiFlow.dummySession
-  protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
-
+  protected val (applicationBufferSize, packetBufferSize) = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
 
   private def fromNetwork(tls: AtomicBoolean, handshakeBuffer: AtomicReference[Seq[ByteString]])(implicit
       b: GraphDSL.Builder[NotUsed],
@@ -57,14 +56,13 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
       val list = if (tls.get) {
         val peerNetData = ByteBufferHelper.toByteBufferFlip(bytes)
         val l           = attachment.get() match {
-          case a @ TlsEngineState(Some(engine), buffers, handshakeStatus, _) =>
+          case a @ TlsEngineState(Some(engine), _, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
             val bb                    =
               if (handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get() == HandshakeStatus.FINISHED) {
                 unwrapFromNetwork(ByteBufferHelper.toByteBufferFlip(bytes), handshakeBuffer)
               } else {
                 doHandshake(a, peerNetData)(
-                  ByteBufferHelper.fakeRead,
                   addToHandshakeBuffer(handshakeBuffer),
                   Utils.fakeCall
                 )
@@ -72,8 +70,7 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
                   if (peerNetData.remaining() == 0) {
                     None
                   } else {
-                    // unwrapFromNetwork(peerNetData, handshakeBuffer)
-                    None
+                    unwrapFromNetwork(peerNetData, handshakeBuffer)
                   }
                 } else {
                   None
@@ -116,7 +113,7 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
   ): Option[SessionBytes] = {
     implicit val en: Option[SSLEngine] = Option(engine)
 
-    handleRead(buffer)(ByteBufferHelper.fakeRead, addToHandshakeBuffer(handshakeBuffer), Utils.fakeCall) match {
+    handleRead(buffer)(addToHandshakeBuffer(handshakeBuffer), Utils.fakeCall) match {
       case (Some(buffer), _) =>
         val bs = ByteBufferHelper.toByteString(buffer)
         Option(SessionBytes(engine.getSession, bs))
@@ -140,7 +137,6 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
               if (handshakeStatus.get == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get == HandshakeStatus.FINISHED) {
                 if (str != SmtpResponses.HANDSHAKE_RESPONSE) {
                   write(bytes.asByteBuffer)(
-                    ByteBufferHelper.fakeRead,
                     b => {
                       holder.accumulateAndGet(
                         Seq(ByteString(b)),

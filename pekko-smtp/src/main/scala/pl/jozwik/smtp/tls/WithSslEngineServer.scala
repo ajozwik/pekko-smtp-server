@@ -10,17 +10,16 @@ trait WithSslEngineServer extends WithSslEngine {
 
   protected override def handleRead(
       peerNetData: ByteBuffer
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       engine: Option[SSLEngine],
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean
   ): (Option[ByteBuffer], Option[SSLEngineResult]) = {
     val closed = new AtomicBoolean(false)
-    read(peerNetData)(_ => (), closed.set)(readByteBuffer, writeByteBuffer, closeConn)
+    read(peerNetData)(_ => (), closed.set)(writeByteBuffer, closeConn)
 
   }
 
-  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit  = logger.trace(s"$whoIAm: Handshake finished $remaining")
-  override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Handshake finished $remaining")
+  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Handshake finished $remaining")
 }

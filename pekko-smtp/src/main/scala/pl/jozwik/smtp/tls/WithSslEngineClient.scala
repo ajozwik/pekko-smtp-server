@@ -8,20 +8,19 @@ trait WithSslEngineClient extends WithSslEngineClientBase {
   override protected val whoIAm: String       = "client"
   override protected val whoContactMe: String = "server"
 
-  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit  = logger.trace(s"$whoIAm: Own Handshake finished $remaining")
-  override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Peer Handshake finished $remaining")
+  override protected def ownHandshakeFinished(remaining: ByteBuffer): Unit = logger.trace(s"$whoIAm: Own Handshake finished $remaining")
 }
 
 trait WithSslEngineClientBase extends WithSslEngine {
 
   protected override def handleRead(
       peerNetData: ByteBuffer
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       engine: Option[SSLEngine],
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean
   ): (Option[ByteBuffer], Option[SSLEngineResult]) =
-    read(peerNetData)(_ => (), _ => ())(readByteBuffer, writeByteBuffer, closeConn)
+    read(peerNetData)(_ => (), _ => ())(writeByteBuffer, closeConn)
 
 }

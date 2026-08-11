@@ -67,7 +67,7 @@ class NioSslClient(
       logger.trace(s"$whoIAm writeAndWaitForRead ${message.trim} lastRead=${getLastRead.utf8String.trim}")
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
-      write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, writeToOutputBuffer, () => socketChannel.close())
+      write(ByteBufferHelper.toByteBuffer(message))(writeToOutputBuffer, () => socketChannel.close())
     }
     readAndClear
   }
@@ -76,7 +76,6 @@ class NioSslClient(
     implicit val seq: Int             = iterator.next()
     implicit val e: Option[SSLEngine] = waitForEngine
     write(ByteBufferHelper.toByteBuffer(message))(
-      socketChannel.read,
       writeToOutputBuffer,
       () => socketChannel.close()
     )
@@ -87,7 +86,6 @@ class NioSslClient(
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
       write(ByteBufferHelper.toByteBuffer(message))(
-        socketChannel.read,
         simulatePartialWrite,
         () => socketChannel.close()
       )
@@ -110,7 +108,6 @@ class NioSslClient(
     implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
     implicit val seq: Int     = iterator.next()
     setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[TlsEngineState], useClientMode = true)(selectionKey)(
-      socketChannel.read,
       writeToOutputBuffer,
       () => close()
     )
@@ -143,7 +140,6 @@ class NioSslClient(
     Utils.ignoreError {
       implicit val seq: Int = -1
       closeConnection(
-        socketChannel.read,
         writeToOutputBuffer,
         { () =>
           Utils.ignoreError {
@@ -178,6 +174,7 @@ class NioSslClient(
     logger.error(s"$whoIAm Unexpected channel: $ch")
 
   override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = {
+    super.peerHandshakeFinished(remaining)
     logger.trace(s"$whoIAm: Handshake finished peer  $remaining")
     UtilsHelper.signal(readLock, readCondition) {
       logger.trace(s"$whoIAm: Handshake finished readLock")
@@ -192,7 +189,7 @@ class NioSslClient(
 
   override protected def readResponse(
       a: TlsEngineState
-  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(message: ByteString, key: SelectionKey)(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean
   ): Unit =

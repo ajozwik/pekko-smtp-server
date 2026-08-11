@@ -27,7 +27,7 @@ abstract class SmtpServerSpec(consumer: Mail => Future[ConsumedResult], tlsOpts:
   private lazy val r =
     new StreamServerRunner((host, port) => Tcp().bind(host, port))(
       ServerOpts(port, sizeOfMailBody, consumer, readTimeout = TestUtils.ReadTimeout),
-      getClass.getSimpleName,
+      tagged("server"),
       tlsOpts
     )
 

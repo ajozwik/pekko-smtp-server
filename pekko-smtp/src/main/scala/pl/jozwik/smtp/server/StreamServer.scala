@@ -37,7 +37,7 @@ class StreamServer private (
 ) extends AutoCloseable
   with StrictLogging {
 
-  private def prefixed(msg: String): String = s"$whoIAm $msg"
+  private def prefixed(msg: String): String = s"$whoIAm $msg".trim
 
   logger.trace(prefixed(s"PORT=$port"))
 
@@ -76,17 +76,21 @@ class StreamServer private (
         _    <- b.unbind()
         done <- b.whenUnbound
       } yield {
-        killSwitch.shutdown()
         logger.trace(prefixed(s"Server stopped, listening on: ${b.localAddress}"))
-        done
+        closeStreams(done)
       }
-    case Failure(_) =>
-      killSwitch.shutdown()
-      Future.successful(Done)
+    case Failure(e) =>
+      logger.trace(prefixed(""), e)
+      Future.successful(closeStreams(Done))
   }
 
   def close(): Unit = close(StreamServer.defaultCloseTimeout)
 
-  def close(closeTimeout: FiniteDuration): Unit = Await.result(closeAsync(), closeTimeout)
+  private def close(closeTimeout: FiniteDuration): Unit = Await.result(closeAsync(), closeTimeout)
+
+  private def closeStreams(done: Done) = {
+    killSwitch.shutdown()
+    done
+  }
 
 }

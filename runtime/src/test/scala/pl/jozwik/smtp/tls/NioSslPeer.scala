@@ -87,13 +87,15 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
 
   protected def setEngineModeAndStartHandshake(a: TlsEngineState, useClientMode: Boolean)(
       selectionKey: SelectionKey
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, close: () => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
+  )(writeByteBuffer: ByteBuffer => Unit, close: () => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
     val attachment: TlsEngineState = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
-    doHandshake(attachment, ByteBufferHelper.createBuffer())(readByteBuffer, writeByteBuffer, close)
+    doHandshake(attachment, ByteBufferHelper.createEmptyBuffer)(writeByteBuffer, close)
   }
 
   protected def closeConnection(sc: SocketChannel): Unit
+
+  protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = ()
 
   private def handleKey(key: SelectionKey): Unit =
     if (key.isValid) {
@@ -107,11 +109,11 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
               implicit val e: SSLEngine = engine
               val peerNetData           = createPacketBuffer(s)
               readToBuffer(sc, peerNetData)
-              doHandshake(a, peerNetData)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
+              doHandshake(a, peerNetData)(writeToOutputBuffer, () => closeConnection(sc))
             case a @ TlsEngineState(e, b, _, open) =>
               implicit val o: AtomicBoolean                             = open
               implicit val underflowBuffer: AtomicReference[ByteBuffer] = b.underflowBuffer
-              implicit val en                                           = e
+              implicit val en: Option[SSLEngine]                        = e
               handleReadKeyLoop(key, a)
 
             case r =>
@@ -130,6 +132,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     b
   }
 
+  @tailrec
   private def handleReadKeyLoop(key: SelectionKey, a: TlsEngineState)(implicit
       seq: Int,
       underflowBuffer: AtomicReference[ByteBuffer],
@@ -141,7 +144,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     val count       = sc.read(peerNetData)
     peerNetData.flip()
     if (count > 0) {
-      readAndResponse(peerNetData)(a.clearBuffers, key)(sc.read, writeToOutputBuffer, () => closeConnection(sc))
+      readAndResponse(peerNetData)(a.clearBuffers, key)(writeToOutputBuffer, () => closeConnection(sc))
       handleReadKeyLoop(key, a)
     }
   }
@@ -152,19 +155,19 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
   private def readAndResponse(peerNetData: ByteBuffer)(
       a: TlsEngineState,
       key: SelectionKey
-  )(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean
   ): Unit = {
     implicit val en: Option[SSLEngine] = a.engine
-    handleRead(peerNetData)(readByteBuffer, writeByteBuffer, closeConn) match {
+    handleRead(peerNetData)(writeByteBuffer, closeConn) match {
       case (Some(message), _) =>
         val bs = ByteBufferHelper.toByteStringImmutable(message)
         if (bs.endsWith(Constants.DelimiterBytes)) {
           val b = ByteBufferHelper.merge(underflowBuffer.get(), message.flip())
           val m = ByteBufferHelper.toByteString(b)
-          readResponse(a)(m, key)(readByteBuffer, writeByteBuffer, closeConn)
+          readResponse(a)(m, key)(writeByteBuffer, closeConn)
           underflowBuffer.set(ByteBufferHelper.ReadOnlyBuffer)
         } else {
           underflowBuffer.accumulateAndGet(message.flip(), ByteBufferHelper.mergeAndFlip)
@@ -182,7 +185,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
 
   protected def readResponse(
       a: TlsEngineState
-  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+  )(message: ByteString, key: SelectionKey)(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean
   ): Unit
