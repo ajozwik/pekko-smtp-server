@@ -9,19 +9,27 @@ import pl.jozwik.smtp.util.Constants.*
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 object TestUtils extends StrictLogging {
 
   val ReadTimeout: FiniteDuration = 10.seconds
+  private val weakHashMap         = new java.util.WeakHashMap[Int, Int]()
 
-  def notOccupiedPortNumber: Int = {
-    val server = new ServerSocket(0)
-    server.setReuseAddress(true)
-    val number = server.getLocalPort
-    server.close()
-    logger.trace(s"Port number $number")
-    number
+  @tailrec
+  def notOccupiedPortNumber(repeat: Int = 3): Int = {
+    val number = Using.resource(new ServerSocket(0)) { server =>
+      server.setReuseAddress(true)
+      server.getLocalPort
+    }
+    Option(weakHashMap.put(number, number)) match {
+      case Some(_) if repeat > 0 =>
+        notOccupiedPortNumber(repeat - 1)
+      case _ =>
+        logger.trace(s"Port number $number")
+        number
+
+    }
   }
 
   def readAnswerOrError(reader: BufferedReader): Try[String] =

@@ -46,10 +46,10 @@ sealed trait ParameterHandler {
 }
 
 object SizeParameterHandler {
-  val DefaultMailSize: Long = 1024L * 1024
+  val DefaultMaxMailSize: Long = 1024L * 1024
 }
 
-final case class SizeParameterHandler(size: Long = SizeParameterHandler.DefaultMailSize) extends ParameterHandler {
+final case class SizeParameterHandler(size: Long = SizeParameterHandler.DefaultMaxMailSize) extends ParameterHandler {
   val key = "SIZE"
 
   def validate(t: String): Either[String, Unit] =

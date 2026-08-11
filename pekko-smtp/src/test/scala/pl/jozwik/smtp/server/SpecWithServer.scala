@@ -16,7 +16,7 @@ trait SpecWithServer extends AbstractWithActorSystemSpec with WithPort {
 
   protected def createServer = new StreamServerRunner((host, port) => Tcp().bind(host, port))(
     ServerOpts(port, 10 * 1000, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout),
-    getClass.getSimpleName,
+    tagged("server"),
     Option(serverTlsOpts)
   )
 

@@ -6,11 +6,9 @@ import scala.concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 
-class DemoServer(port: Int, testTag: String = "") extends Demo {
+class DemoServer(port: Int, testTag: String) extends Demo {
 
-  private def tagged(role: String): String = if (testTag.isEmpty) role else s"$role[$testTag]"
-
-  private val run: ServerRunnable = new ServerRunnable(port, tagged("server"))
+  private val run: ServerRunnable = new ServerRunnable(port, testTag)
 
   def startServer(): Unit = {
     val server = new Thread(run)
@@ -38,7 +36,7 @@ class DemoServer(port: Int, testTag: String = "") extends Demo {
 }
 
 object DemoServer extends ScalaAppWithLogger {
-  lazy val demo = new DemoServer(DemoHelper.Port)
+  lazy val demo = new DemoServer(DemoHelper.Port, tagged("server"))
   demo.startServer()
 
   demo.runDemo().onComplete { r =>

@@ -8,35 +8,28 @@ import pl.jozwik.smtp.util.{ByteBufferHelper, Constants, Mail, SmtpCodes, Socket
 import Constants.*
 import org.apache.pekko.stream.OverflowStrategy
 import pl.jozwik.smtp.tls.TlsHelper.toApplicationBufferSize
-import pl.jozwik.smtp.tls.{Attachment, BufferAction, SSLContextFactory, TlsOpts, WithSslEngineClient}
+import pl.jozwik.smtp.tls.{SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts, WithSslEngineClient}
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.SSLEngine
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.{Future, Promise}
 
-class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, override protected val whoIAm: String = "client")(implicit
-    system: ActorSystem
-) extends SenderClient
+class StreamClient(host: String, port: Int, override protected val whoIAm: String, tlsOpts: Option[TlsOpts] = None)(implicit system: ActorSystem)
+  extends SenderClient
   with WithSslEngineClient {
   import system.dispatcher
 
-  def this(serverAddress: SocketAddress)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port)
-
-  def this(serverAddress: SocketAddress, tlsOpts: TlsOpts)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port, Option(tlsOpts))
-
   def this(serverAddress: SocketAddress, whoIAm: String)(implicit system: ActorSystem) =
-    this(serverAddress.host, serverAddress.port, None, whoIAm)
+    this(serverAddress.host, serverAddress.port, whoIAm)
 
-  private val QueueSize                                               = 8
-  private val timeout                                                 = 2.second
-  private val dummySession                                            = javax.net.ssl.SSLContext.getDefault.createSSLEngine.getSession
-  protected val (applicationBufferSize, packetBufferSize)             = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
-  protected override def handshakeRepeatOnExtra: Set[HandshakeStatus] = Set(HandshakeStatus.NEED_WRAP)
+  def this(serverAddress: SocketAddress, whoIAm: String, tlsOpts: TlsOpts)(implicit system: ActorSystem) =
+    this(serverAddress.host, serverAddress.port, whoIAm, Option(tlsOpts))
+
+  private val QueueSize = 8
+
+  protected val (applicationBufferSize: Int, packetBufferSize: Int) = TlsHelper.applicationPacketBufferSize
 
   private val connection: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] =
     Tcp().outgoingConnection(host, port)
@@ -95,8 +88,6 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
   private def isResponseSuccess(response: Option[Int]) =
     response.exists(r => r >= 200 && r < 400)
 
-  // --- STARTTLS support -----------------------------------------------------------------------------------------
-
   private def clientSslEngine(opts: TlsOpts): SSLEngine = {
     val context = SSLContextFactory.createContext(opts.protocol)(
       opts.keyStoreInputStream.call(),
@@ -118,15 +109,10 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
   ): Future[Boolean] = {
     implicit val underflowBuffer: AtomicReference[ByteBuffer] = ByteBufferHelper.referenceByteBuffer
     implicit val e: SSLEngine                                 = clientSslEngine(opts)
-    val attachment                                            = setEngineModeAndStartHandshake(Attachment.empty, useClientMode = true)
+    val attachment                                            = setEngineModeAndStartHandshake(TlsEngineState.empty, useClientMode = true)
     for {
-      _ <- doHandshakeStep(attachment, readBlocking(sinkQueue))
-      _ <-
-        if (handshakeDone(attachment)) {
-          Future.unit
-        } else {
-          runHandshake(attachment)
-        }
+      _ <- doHandshakeStep(attachment, ByteBufferHelper.createEmptyBuffer)
+      _ <- runHandshake(attachment)
     } yield {
       val success = attachment.open.get() &&
         (attachment.handshakeStatus.get() == HandshakeStatus.FINISHED || attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING)
@@ -220,12 +206,11 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
 
   private def finishConnection(closeConn: () => Unit)(implicit
       engine: Option[SSLEngine],
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString]
   ): Unit = {
     implicit val seq: Int = iterator.next() - 1
     val p                 = Promise[Unit]()
-    closeConnection(readBlocking(sinkQueue), writeToSource(p), () => closeConn())
+    closeConnection(writeToSource(p), () => closeConn())
   }
 
   private def readPendingAndResponse(
@@ -275,7 +260,6 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
             val p                              = Promise[Unit]()
             val peerNetData                    = ByteBufferHelper.toByteBufferFlip(bytes)
             handleRead(peerNetData)(
-              ByteBufferHelper.fakeRead,
               buff => sourceQueue.offer(ByteString(buff)).onComplete { _ => p.trySuccess(()) },
               () => closeConn()
             ) match {
@@ -297,20 +281,19 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
   private def extractBytes(buf: ByteBuffer): ByteString =
     ByteString(buf.array().takeWhile(_ != 0))
 
-  private def handshakeDone(attachment: Attachment): Boolean =
+  private def handshakeDone(attachment: TlsEngineState): Boolean =
     !attachment.open.get() ||
       attachment.handshakeStatus.get() == HandshakeStatus.FINISHED ||
       attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING
 
-  private def doHandshakeStep(attachment: Attachment, readByteBuffer: ByteBuffer => Int)(implicit
+  private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(implicit
       e: SSLEngine,
       sourceQueue: SourceQueueWithComplete[ByteString],
       sinkQueue: SinkQueueWithCancel[ByteString]
   ): Future[Unit] = {
     implicit val seq: Int = iterator.next()
     val p                 = Promise[Unit]()
-    doHandshake(attachment)(
-      readByteBuffer,
+    doHandshake(attachment, peerNetData)(
       writeToSource(p),
       closeConnection
     )
@@ -324,7 +307,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def runHandshake(
-      attachment: Attachment
+      attachment: TlsEngineState
   )(implicit
       e: SSLEngine,
       sinkQueue: SinkQueueWithCancel[ByteString],
@@ -336,8 +319,10 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
       b <- readByteBufferFuture(sinkQueue)
       _ <- b match {
         case Some(bytes) =>
+          val peerNetData = ByteBufferHelper.toByteBufferFlip(bytes)
+          logger.trace(s"$whoIAm: read: $peerNetData should: ${bytes.length}")
           for {
-            _ <- doHandshakeStep(attachment, BufferAction.copyTo(bytes))
+            _ <- doHandshakeStep(attachment, peerNetData)
             _ <-
               if (handshakeDone(attachment)) {
                 Future.unit
@@ -392,7 +377,6 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
   }
 
   private def writeText(text: String, closeConn: () => Unit)(implicit
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString],
       engine: Option[SSLEngine]
   ): Future[Unit] =
@@ -402,7 +386,6 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
           implicit val seq: Int = iterator.next()
           val p                 = Promise[Unit]()
           write(ByteBuffer.wrap(chunk))(
-            readBlocking(sinkQueue),
             writeToSource(p),
             () => closeConn()
           )
@@ -411,13 +394,7 @@ class StreamClient(host: String, port: Int, tlsOpts: Option[TlsOpts] = None, ove
       }
     } yield ()
 
-  private def readBlocking(sinkQueue: SinkQueue[ByteString])(buff: ByteBuffer) = {
-    val bytes = Await.result(readByteBufferFuture(sinkQueue), timeout).getOrElse(ByteString.empty)
-    BufferAction.copyTo(bytes)(buff)
-  }
-
   private def writeLine(line: String, closeConn: () => Unit)(implicit
-      sinkQueue: SinkQueue[ByteString],
       sourceQueue: SourceQueue[ByteString],
       engine: Option[SSLEngine]
   ): Future[Unit] =

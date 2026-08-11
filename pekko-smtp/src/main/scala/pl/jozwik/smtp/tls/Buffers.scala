@@ -10,7 +10,6 @@ object Buffers {
   def apply(appBufferSize: Int, packetBufferSize: Int): Buffers =
     Buffers(
       new AtomicReference(ByteBuffer.allocate(packetBufferSize)),
-      new AtomicReference(ByteBuffer.allocate(packetBufferSize)),
       ByteBuffer.allocate(appBufferSize),
       new AtomicReference(ByteBuffer.allocate(appBufferSize))
     )
@@ -20,7 +19,6 @@ object Buffers {
 }
 
 final case class Buffers(
-    peerNetData: AtomicReference[ByteBuffer],
     myNetData: AtomicReference[ByteBuffer],
     myAppDataLocal: ByteBuffer,
     peerAppDataLocal: AtomicReference[ByteBuffer],

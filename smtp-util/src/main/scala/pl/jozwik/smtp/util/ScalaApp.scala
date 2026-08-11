@@ -5,4 +5,4 @@ import com.typesafe.scalalogging.StrictLogging
 @SuppressWarnings(Array("org.wartremover.warts.ScalaApp"))
 trait ScalaApp extends App
 
-trait ScalaAppWithLogger extends ScalaApp with StrictLogging
+trait ScalaAppWithLogger extends ScalaApp with WithTagged with StrictLogging

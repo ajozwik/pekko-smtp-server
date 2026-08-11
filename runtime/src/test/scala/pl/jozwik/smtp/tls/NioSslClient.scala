@@ -28,7 +28,7 @@ class NioSslClient(
 
   override protected val whoContactMe: String   = "server"
   private lazy val socketChannel: SocketChannel = SocketChannel.open()
-  private lazy val selectionKey: SelectionKey   = socketChannel.register(selector, SelectionKey.OP_READ, Attachment.empty)
+  private lazy val selectionKey: SelectionKey   = socketChannel.register(selector, SelectionKey.OP_READ, TlsEngineState.empty)
   private val lastRead                          = new AtomicReference(ByteString.empty)
   private val readLock: Lock                    = new ReentrantLock()
   private val readCondition: Condition          = readLock.newCondition
@@ -67,7 +67,7 @@ class NioSslClient(
       logger.trace(s"$whoIAm writeAndWaitForRead ${message.trim} lastRead=${getLastRead.utf8String.trim}")
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
-      write(ByteBufferHelper.toByteBuffer(message))(socketChannel.read, writeToOutputBuffer, () => socketChannel.close())
+      write(ByteBufferHelper.toByteBuffer(message))(writeToOutputBuffer, () => socketChannel.close())
     }
     readAndClear
   }
@@ -76,7 +76,6 @@ class NioSslClient(
     implicit val seq: Int             = iterator.next()
     implicit val e: Option[SSLEngine] = waitForEngine
     write(ByteBufferHelper.toByteBuffer(message))(
-      socketChannel.read,
       writeToOutputBuffer,
       () => socketChannel.close()
     )
@@ -87,7 +86,6 @@ class NioSslClient(
       implicit val seq: Int             = iterator.next()
       implicit val e: Option[SSLEngine] = waitForEngine
       write(ByteBufferHelper.toByteBuffer(message))(
-        socketChannel.read,
         simulatePartialWrite,
         () => socketChannel.close()
       )
@@ -109,15 +107,14 @@ class NioSslClient(
   private def createEngine(): Unit = {
     implicit val e: SSLEngine = context.createSSLEngine(remoteHost, remotePort)
     implicit val seq: Int     = iterator.next()
-    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[Attachment], useClientMode = true)(selectionKey)(
-      socketChannel.read,
+    setEngineModeAndStartHandshake(selectionKey.attachment().asInstanceOf[TlsEngineState], useClientMode = true)(selectionKey)(
       writeToOutputBuffer,
       () => close()
     )
   }
 
   private def waitForEngine: Option[SSLEngine] = fromSelectionKey match {
-    case Attachment(e, _, s, _) if s.get() == HandshakeStatus.NOT_HANDSHAKING || s.get() == HandshakeStatus.FINISHED =>
+    case TlsEngineState(e, _, s, _) if s.get() == HandshakeStatus.NOT_HANDSHAKING || s.get() == HandshakeStatus.FINISHED =>
       e
     case a =>
       UtilsHelper.await(engineLock, engineCondition) {
@@ -126,12 +123,12 @@ class NioSslClient(
 
   }
 
-  private def fromSelectionKey: Attachment =
+  private def fromSelectionKey: TlsEngineState =
     selectionKey.attachment() match {
-      case a: Attachment =>
+      case a: TlsEngineState =>
         a
       case _ =>
-        sys.error(s"Attachment: ${selectionKey.attachment()}")
+        sys.error(s"TlsEngineState: ${selectionKey.attachment()}")
     }
 
   protected def closeImpl(): Unit = {
@@ -143,7 +140,6 @@ class NioSslClient(
     Utils.ignoreError {
       implicit val seq: Int = -1
       closeConnection(
-        socketChannel.read,
         writeToOutputBuffer,
         { () =>
           Utils.ignoreError {
@@ -178,6 +174,7 @@ class NioSslClient(
     logger.error(s"$whoIAm Unexpected channel: $ch")
 
   override protected def peerHandshakeFinished(remaining: ByteBuffer): Unit = {
+    super.peerHandshakeFinished(remaining)
     logger.trace(s"$whoIAm: Handshake finished peer  $remaining")
     UtilsHelper.signal(readLock, readCondition) {
       logger.trace(s"$whoIAm: Handshake finished readLock")
@@ -191,8 +188,8 @@ class NioSslClient(
     }
 
   override protected def readResponse(
-      a: Attachment
-  )(message: ByteString, key: SelectionKey)(readByteBuffer: ByteBuffer => Int, writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
+      a: TlsEngineState
+  )(message: ByteString, key: SelectionKey)(writeByteBuffer: ByteBuffer => Unit, closeConn: () => Unit)(implicit
       seq: Int,
       open: AtomicBoolean
   ): Unit =

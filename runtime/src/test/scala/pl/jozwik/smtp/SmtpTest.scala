@@ -15,7 +15,6 @@ import scala.util.{Failure, Success}
 
 class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps, testTag: String = "") extends Demo {
 
-  private def tagged(role: String): String = if (testTag.isEmpty) role else s"$role[$testTag]"
   private val systemName                   = if (testTag.isEmpty) "SMTP" else s"SMTP-$testTag"
 
   private val serverOpts                   = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)

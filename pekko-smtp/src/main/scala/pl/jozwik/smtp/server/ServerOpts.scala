@@ -8,7 +8,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object ServerOpts {
   private val defaultPort = 1587
-  private def size        = RuntimeConstants.sizeKey.valueOrDefault(SizeParameterHandler.DefaultMailSize).toLong // max mail size
+  private def maxMailSize = RuntimeConstants.sizeKey.valueOrDefault(SizeParameterHandler.DefaultMaxMailSize).toLong
   private def port        = RuntimeConstants.portKey.valueOrDefault(defaultPort).toInt
 
   private def clazz: Consumer = {
@@ -20,7 +20,7 @@ object ServerOpts {
   }
 
   lazy val fromSystemProps: ServerOpts[Consumer] =
-    ServerOpts(port, size, clazz.consumer)
+    ServerOpts(port, maxMailSize, clazz.consumer)
 
 }
 

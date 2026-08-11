@@ -21,7 +21,7 @@ object ActorSpec {
   private[smtp] val number = Iterator from 1
 }
 
-trait ActorSpec extends StrictLogging {
+trait ActorSpec extends WithTagged with StrictLogging {
 
   protected implicit val actorSystem: ActorSystem =
     ActorSystem(s"${getClass.getSimpleName}-${ActorSpec.number.next()}", ConfigFactory.parseResources("application-test.conf"))
@@ -29,7 +29,6 @@ trait ActorSpec extends StrictLogging {
   private val TIMEOUT                     = 3000
   protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
 
-  protected def tagged(role: String): String = s"$role[${getClass.getSimpleName}]"
 
 }
 
