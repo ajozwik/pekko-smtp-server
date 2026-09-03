@@ -12,7 +12,6 @@ import pl.jozwik.smtp.tls.{SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.SSLEngine
 import scala.concurrent.{Future, Promise}
 
@@ -114,8 +113,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       _ <- doHandshakeStep(attachment, ByteBufferHelper.createEmptyBuffer)
       _ <- runHandshake(attachment)
     } yield {
-      val success = attachment.open.get() &&
-        (attachment.handshakeStatus.get() == HandshakeStatus.FINISHED || attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING)
+      val success = attachment.open.get() && TlsHelper.isNotHandshaking(attachment.handshakeStatus.get())
       if (success) {
         engine.set(Option(e))
       }
@@ -210,7 +208,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   ): Unit = {
     implicit val seq: Int = iterator.next() - 1
     val p                 = Promise[Unit]()
-    closeConnection(writeToSource(p), () => closeConn())
+    closeConnection(b => writeToSource(p)(b), closeConn)
   }
 
   private def readPendingAndResponse(
@@ -226,7 +224,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
   ) = {
 
     implicit val seq: Int = iterator.next()
-    readResponse()(() => closeConn()).map(toCodes)
+    readResponse()(closeConn).map(toCodes)
 
   }
 
@@ -261,11 +259,11 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
             val peerNetData                    = ByteBufferHelper.toByteBufferFlip(bytes)
             handleRead(peerNetData)(
               buff => sourceQueue.offer(ByteString(buff)).onComplete { _ => p.trySuccess(()) },
-              () => closeConn()
+              closeConn
             ) match {
               case (Some(buf), _) =>
                 pending.set(pending.get() ++ extractBytes(buf))
-                readLine(pending, () => closeConn())
+                readLine(pending, closeConn)
               case (None, _) =>
                 Future.successful(None)
             }
@@ -283,8 +281,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
 
   private def handshakeDone(attachment: TlsEngineState): Boolean =
     !attachment.open.get() ||
-      attachment.handshakeStatus.get() == HandshakeStatus.FINISHED ||
-      attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING
+      TlsHelper.isNotHandshaking(attachment.handshakeStatus.get())
 
   private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(implicit
       e: SSLEngine,
@@ -347,7 +344,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       open: AtomicBoolean
   ): Future[Seq[String]] =
     for {
-      opt <- readLine(pending, () => closeConn())
+      opt <- readLine(pending, closeConn)
       r   <- opt match {
         case Some(line) if line.length > 3 && line.charAt(3) == '-' => readResponse(acc :+ line)(closeConn)
         case Some(line)                                             => Future.successful(acc :+ line)
@@ -387,7 +384,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
           val p                 = Promise[Unit]()
           write(ByteBuffer.wrap(chunk))(
             writeToSource(p),
-            () => closeConn()
+            closeConn
           )
           p.future
         }

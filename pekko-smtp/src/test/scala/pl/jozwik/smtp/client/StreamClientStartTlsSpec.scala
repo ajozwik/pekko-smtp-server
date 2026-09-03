@@ -12,7 +12,10 @@ class StreamClientStartTlsSpec extends SpecWithServer {
   "StreamClient with STARTTLS" should {
 
     "run again" in {
-      createServer.isBound shouldBe false
+      val server = createServer
+      server.isBound shouldBe false
+      server.close()
+      succeed
     }
 
     "send a mail after upgrading the connection to TLS" in {

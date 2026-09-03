@@ -6,7 +6,7 @@ import pl.jozwik.smtp.actor.AbstractActor
 import scala.concurrent.duration.*
 
 object SenderActor {
-  def props(timeout: FiniteDuration = 2.minutes): Props = Props(new SenderActor(timeout))
+  def props(timeout: FiniteDuration): Props = Props(new SenderActor(timeout))
 }
 
 class SenderActor(timeout: FiniteDuration) extends AbstractActor {

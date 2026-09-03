@@ -57,8 +57,10 @@ class SmtpTimerGraphStageLogic(
     super.postStop()
   }
 
-  override protected def onTimer(tk: Any): Unit =
-    handleTimeout(tk)(shape.out)
+  override protected def onTimer(tk: Any): Unit = {
+    implicit val out: Outlet[String] = shape.out
+    handleTimeout(tk)
+  }
 
   private def inHandler(implicit in: Inlet[String], out: Outlet[String]) =
     new InHandler {

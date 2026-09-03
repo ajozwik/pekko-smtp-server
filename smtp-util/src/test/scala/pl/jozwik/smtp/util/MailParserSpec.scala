@@ -31,7 +31,8 @@ class MailParserSpec extends AbstractSpec {
     }
 
     "for wrong encoding test only" in {
-      val emailContent = readMail("smile.eml")(Codec.ISO8859)
+      implicit val enc: Codec = Codec.ISO8859
+      val emailContent        = readMail("smile.eml")
       emailContent.subject should not be None
     }
 

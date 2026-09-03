@@ -1,5 +1,7 @@
 package pl.jozwik.smtp.tls
 
+import pl.jozwik.smtp.util.Utils
+
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.{SSLEngine, SSLEngineResult}
@@ -21,6 +23,6 @@ trait WithSslEngineClientBase extends WithSslEngine {
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean
   ): (Option[ByteBuffer], Option[SSLEngineResult]) =
-    read(peerNetData)(_ => (), _ => ())(writeByteBuffer, closeConn)
+    read(peerNetData)(Utils.fakeCallT)(writeByteBuffer, closeConn)
 
 }

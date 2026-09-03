@@ -11,8 +11,8 @@ import scala.concurrent.Future
 
 class ClientWithActor(address: SocketAddress)(implicit actorSystem: ActorSystem, timeout: FiniteDuration) extends SenderClient with StrictLogging {
 
-  private val ref                 = actorSystem.actorOf(SenderActor.props())
   private implicit val t: Timeout = timeout
+  private val ref                 = actorSystem.actorOf(SenderActor.props(t.duration))
 
   def sendMail(mail: Mail): Future[Result] = {
     val future = ref ? MailWithAddress(mail, address)

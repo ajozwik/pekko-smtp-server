@@ -31,9 +31,12 @@ class UnderflowSpec extends SpecWithServer with WithNioSslClient {
       logger.trace(s"TLS response: ${toMessage(tlsResponse)}")
       val half = client.writeSplitAndWaitForRead(Utils.withEndOfLine(s"$EHLO test"))
       logger.trace(s"Half: ${toMessage(half)}")
-
-      val quit = client.writeSplitAndWaitForRead(Utils.withEndOfLine(s"$QUIT"))
-      logger.trace(s"Half: ${toMessage(quit)}")
+      val q    = Utils.withEndOfLine(s"$QUIT")
+      val quit = client.writeSplitAndWaitForRead(q)
+      logger.trace(s"Quit: ${toMessage(quit)}")
+      client.close()
+      client.writeMessage(q)
+      logger.trace("After quit")
       succeed
     }
   }

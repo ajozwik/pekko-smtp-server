@@ -51,13 +51,19 @@ object ByteBufferHelper extends StrictLogging {
     toByteString(message.duplicate())
 
   def copy(src: ByteBuffer, dst: AtomicReference[ByteBuffer]): Unit =
+    dst.set(cloneWithoutFlip(src))
+
+  def copyAndFlip(src: ByteBuffer, dst: AtomicReference[ByteBuffer]): Unit =
     dst.set(clone(src))
 
-  def clone(src: ByteBuffer): ByteBuffer = {
+  def cloneWithoutFlip(src: ByteBuffer): ByteBuffer = {
     val size = src.remaining()
     val n    = ByteBuffer.allocate(size)
-    n.put(src).flip()
+    n.put(src)
   }
+
+  def clone(src: ByteBuffer): ByteBuffer =
+    cloneWithoutFlip(src).flip()
 
   def toByteBufferFlip(bytes: ByteString): ByteBuffer =
     bytes.toByteBuffer

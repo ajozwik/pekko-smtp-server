@@ -4,7 +4,6 @@ import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.pekko.Done
 import org.apache.pekko.stream.scaladsl.{Sink, Source, Tcp}
-import pl.jozwik.smtp.server.{ConnectionHandler, ServerOpts, StreamServer}
 import pl.jozwik.smtp.server.consumer.Consumer
 import pl.jozwik.smtp.tls.TlsOpts
 
@@ -13,7 +12,7 @@ import scala.concurrent.Future
 class StreamServerRunner[T <: Consumer](listenSource: (String, Int) => Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]])(
     serverOpts: ServerOpts[T],
     whoIAm: String,
-    tlsOpts: Option[TlsOpts] = None
+    tlsOpts: Option[TlsOpts]
 )(implicit
     actorSystem: ActorSystem
 ) extends StrictLogging

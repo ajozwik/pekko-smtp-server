@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 
 class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps, testTag: String = "") extends Demo {
 
-  private val systemName                   = if (testTag.isEmpty) "SMTP" else s"SMTP-$testTag"
+  private val systemName = if (testTag.isEmpty) "SMTP" else s"SMTP-$testTag"
 
   private val serverOpts                   = ServerOpts[Consumer](port, 2048, LogConsumer.consumer, readTimeout = TestUtils.ReadTimeout)
   private implicit val system: ActorSystem = ActorSystem(s"$systemName-${serverOpts.port}")
@@ -33,8 +33,10 @@ class SmtpTest(port: Int, tlsOpts: TlsOpts = TlsOpts.fromSystemProps, testTag: S
     val futures = (1 to 1).map(i => Future(sendMail(tagged(s"client$i"))(port)))
 
     Future.sequence(futures).flatMap { _ =>
-      run.close()
-      system.terminate().map(t => logger.trace(s"$t"))
+      for {
+        _ <- run.closeAsync()
+        _ <- system.terminate().map(t => logger.trace(s"$t"))
+      } yield ()
     }
 
   }

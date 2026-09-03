@@ -59,7 +59,7 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
           case a @ TlsEngineState(Some(engine), _, handshakeStatus, _) =>
             implicit val e: SSLEngine = engine
             val bb                    =
-              if (handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get() == HandshakeStatus.FINISHED) {
+              if (TlsHelper.isNotHandshaking(handshakeStatus.get())) {
                 unwrapFromNetwork(ByteBufferHelper.toByteBufferFlip(bytes), handshakeBuffer)
               } else {
                 doHandshake(a, peerNetData)(
@@ -131,23 +131,23 @@ class StartTlsBidiFlow(protected val whoIAm: String) extends WithSslEngineServer
         val str = bytes.utf8String.trim
         val s   = if (tls.get) {
           val toNetBytes = attachment.get() match {
-            case TlsEngineState(Some(engine), _, handshakeStatus, _) =>
+            case TlsEngineState(s @ Some(_), _, handshakeStatus, _) =>
               val buf    = handshakeBuffer.getAndSet(Seq.empty)
               val holder = new AtomicReference[Seq[ByteString]](buf)
-              if (handshakeStatus.get == HandshakeStatus.NOT_HANDSHAKING || handshakeStatus.get == HandshakeStatus.FINISHED) {
-                if (str != SmtpResponses.HANDSHAKE_RESPONSE) {
-                  write(bytes.asByteBuffer)(
-                    b => {
-                      holder.accumulateAndGet(
-                        Seq(ByteString(b)),
-                        { (prev, next) =>
-                          prev ++ next
-                        }
-                      )
-                    },
-                    Utils.fakeCall
-                  )(iterator.next(), Option(engine))
-                }
+              if (TlsHelper.isNotHandshaking(handshakeStatus.get) && str != SmtpResponses.HANDSHAKE_RESPONSE) {
+                implicit val seq: Int              = iterator.next()
+                implicit val en: Option[SSLEngine] = s
+                write(bytes.asByteBuffer)(
+                  b => {
+                    holder.accumulateAndGet(
+                      Seq(ByteString(b)),
+                      { (prev, next) =>
+                        prev ++ next
+                      }
+                    )
+                  },
+                  Utils.fakeCall
+                )
               }
               holder.get
             case a =>
