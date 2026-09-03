@@ -2,7 +2,7 @@ package pl.jozwik.smtp.client
 
 import java.net.InetSocketAddress
 import java.time.LocalDateTime
-import org.apache.pekko.actor.{ActorRef, PoisonPill, Props}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import org.apache.pekko.io.Tcp.*
 import org.apache.pekko.io.{IO, Tcp}
 import org.apache.pekko.util.ByteString
@@ -26,7 +26,8 @@ class SenderActorHandler(senderRef: ActorRef, address: SocketAddress, mail: Mail
   import pl.jozwik.smtp.util.Constants.*
   import pl.jozwik.smtp.util.SmtpCodes.*
 
-  private val manager = IO(Tcp)(context.system)
+  private implicit def actorSystem: ActorSystem = context.system
+  private val manager                           = IO(Tcp)
 
   override def preStart(): Unit = {
     val inetAddress = InetSocketAddress.createUnresolved(address.host, address.port)

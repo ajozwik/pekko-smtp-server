@@ -29,7 +29,6 @@ trait ActorSpec extends WithTagged with StrictLogging {
   private val TIMEOUT                     = 3000
   protected implicit val timeout: Timeout = Timeout(TIMEOUT, TimeUnit.MILLISECONDS)
 
-
 }
 
 trait AbstractWithActorSystemSpec extends AbstractAsyncSpec with BeforeAndAfterAll with ActorSpec {
@@ -43,7 +42,7 @@ trait AbstractWithActorSystemSpec extends AbstractAsyncSpec with BeforeAndAfterA
     val t = intercept[T] {
       f
     }
-    logger.error(s"$t")
+    logger.error(s"$t", t)
     t
   }
 
@@ -55,12 +54,12 @@ trait SmtpSpec extends ActorSpec with WithPort {
 
   private val defaultMaxSize = 1024
 
-  protected def readTimeout: FiniteDuration = 30.seconds
+  protected implicit def readTimeout: FiniteDuration = 30.seconds
 
   protected def maxSize: Int = defaultMaxSize
 
   protected def consumer(mail: Mail): Future[ConsumedResult] = LogConsumer.consumer(mail)
-  protected def createClientActor(address: SocketAddress)    = new ClientWithActor(address)(actorSystem, readTimeout)
+  protected def createClientActor(address: SocketAddress)    = new ClientWithActor(address)
   protected def addressHandler: AddressHandler               = NopAddressHandler
   protected lazy val address: SocketAddress                  = SocketAddress(host, port)
   protected final lazy val clientStream: StreamClient        = new StreamClient(address, tagged("client"))

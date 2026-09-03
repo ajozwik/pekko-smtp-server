@@ -53,10 +53,12 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
     Utils.ignoreError {
       selector.wakeup()
       Utils.ignoreError {
-        val keys = selector.keys()
-        keys.forEach { k =>
-          if (k.isValid) {
-            k.cancel()
+        if (selector.isOpen) {
+          val keys = selector.keys()
+          keys.forEach { k =>
+            if (k.isValid) {
+              k.cancel()
+            }
           }
         }
       }
@@ -90,6 +92,7 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
   )(writeByteBuffer: ByteBuffer => Unit, close: () => Unit)(implicit seq: Int, e: SSLEngine): Unit = {
     val attachment: TlsEngineState = setEngineModeAndStartHandshake(a, useClientMode)
     selectionKey.attach(attachment)
+    logger.trace(s"$whoIAm attachment set")
     doHandshake(attachment, ByteBufferHelper.createEmptyBuffer)(writeByteBuffer, close)
   }
 
@@ -104,32 +107,45 @@ abstract class NioSslPeer(protocol: String)(keyPath: => InputStream, keystorePas
           implicit val socket: SocketChannel = sc
           implicit val seq: Int              = iterator.next()
           key.attachment() match {
-            case a @ TlsEngineState(s @ Some(engine), _, status, _)
-                if status.get() != HandshakeStatus.NOT_HANDSHAKING && status.get() != HandshakeStatus.FINISHED =>
+            case a @ TlsEngineState(Some(engine), _, status, _) if TlsHelper.isHandshaking(status.get()) =>
               implicit val e: SSLEngine = engine
-              val peerNetData           = createPacketBuffer(s)
-              readToBuffer(sc, peerNetData)
-              doHandshake(a, peerNetData)(writeToOutputBuffer, () => closeConnection(sc))
+              handleHandshakeLoop(a)
             case a @ TlsEngineState(e, b, _, open) =>
               implicit val o: AtomicBoolean                             = open
               implicit val underflowBuffer: AtomicReference[ByteBuffer] = b.underflowBuffer
               implicit val en: Option[SSLEngine]                        = e
               handleReadKeyLoop(key, a)
-
             case r =>
               sys.error(s"TlsEngineState: $r")
           }
         case e =>
           handleKeyImpl(key)(e)
-
       }
     }
 
-  private def readToBuffer(sc: SocketChannel, peerNetData: ByteBuffer)(implicit seq: Int) = {
-    sc.read(peerNetData)
-    val b = peerNetData.flip()
-    logger.trace(s"$whoIAm: readToBuffer ($seq) $b")
-    b
+  @tailrec
+  private def handleHandshakeLoop(a: TlsEngineState)(implicit sc: SocketChannel, engine: SSLEngine, seq: Int): Unit = {
+    implicit val s: Option[SSLEngine] = a.engine
+    val peerNetData                   = readToBuffer
+    if (peerNetData.hasRemaining) {
+      doHandshake(a, peerNetData)(writeToOutputBuffer, () => closeConnection(sc))
+      if (TlsHelper.isHandshaking(a.handshakeStatus.get())) {
+        handleHandshakeLoop(a)
+      }
+    }
+  }
+
+  private def readToBuffer(implicit s: Option[SSLEngine], sc: SocketChannel, seq: Int): ByteBuffer = {
+    val peerNetData = createPacketBuffer
+    sc.read(peerNetData) match {
+      case -1 =>
+        logger.error(s"$whoIAm: readToBuffer ($seq) EOF")
+        throw new RuntimeException(s"$whoIAm: readToBuffer ($seq) EOF")
+      case bytes =>
+        val b = peerNetData.flip()
+        logger.trace(s"$whoIAm: readToBuffer ($seq) $b $bytes")
+        b
+    }
   }
 
   @tailrec

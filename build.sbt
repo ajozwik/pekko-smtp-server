@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import Versions.*
 
-val scalaVersion_3_lts  = "3.3.8"
+val scalaVersion_3_lts  = "3.9.0"
 val `scalaVersion_2.13` = "2.13.18"
 
 crossScalaVersions := Seq(`scalaVersion_2.13`, scalaVersion_3_lts)
@@ -69,7 +69,7 @@ val wartConfig = Warts.allBut(
 
 publish / skip := true
 
-val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.6.1"
+val `ch.qos.logback_logback-classic`           = "ch.qos.logback"              % "logback-classic" % "1.6.3"
 val `com.typesafe.scala-logging_scala-logging` = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.6"
 val `org.apache.james_apache-mime4j`           = "org.apache.james"            % "apache-mime4j"   % "0.8.14"
 val `org.apache.pekko_akka-slf4j`              = "org.apache.pekko"           %% "pekko-slf4j"     % pekkoVersion
@@ -86,7 +86,8 @@ lazy val `smtp-util` = projectName("smtp-util", file("smtp-util")).settings(
   )
 )
 
-lazy val `runtime` = projectName("runtime", file("runtime"), true)
+lazy val `runtime` = projectName("runtime", file("runtime"), skipPublish = true)
+  .settings(Test / fork := true)
   .dependsOn(`pekko-smtp`)
   .dependsOn(Seq(`smtp-util`, `pekko-smtp`).map(_ % "test->test") *)
   .enablePlugins(PackPlugin)

@@ -6,6 +6,7 @@ import java.io.{File, FileInputStream, InputStream}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.Callable
+import scala.util.Properties
 import scala.jdk.CollectionConverters.*
 
 // Generates a throwaway self-signed keystore/truststore via the JDK's own keytool, once per JVM.
@@ -110,7 +111,7 @@ object EphemeralTls extends StrictLogging {
   }
 
   private def runKeytool(args: String*): Unit = {
-    val keytool = new File(new File(System.getProperty("java.home"), "bin"), "keytool").getAbsolutePath
+    val keytool = new File(new File(Properties.javaHome, "bin"), "keytool").getAbsolutePath
     val process = new ProcessBuilder((keytool :: args.toList).asJava).redirectErrorStream(true).start()
     val output  = new String(process.getInputStream.readAllBytes(), StandardCharsets.UTF_8)
     val exit    = process.waitFor()

@@ -12,7 +12,7 @@ import scala.util.{Failure, Success}
 
 class SmtpServerTimeoutSpec extends AbstractSmtpSpec with WithSocket {
 
-  override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(1.second)
+  override protected def readTimeout: FiniteDuration = (timeLimit / 2).min(500.millis)
 
   override protected def afterAll(): Unit = {
     close()
@@ -25,7 +25,8 @@ class SmtpServerTimeoutSpec extends AbstractSmtpSpec with WithSocket {
       readAnswer(reader)
       writeLine(writer, s"$HELO")
       val probablyTimeout = readAnswer(reader)
-      TimeUnit.MILLISECONDS.sleep(readTimeout.toMillis)
+      val tm              = readTimeout
+      TimeUnit.MILLISECONDS.sleep(tm.toMillis)
       readAnswerOrError(reader) match {
         case Success(v) =>
           fail(v)

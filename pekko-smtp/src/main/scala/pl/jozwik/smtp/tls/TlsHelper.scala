@@ -6,12 +6,20 @@ import scala.annotation.tailrec
 
 object TlsHelper {
 
+  val TLSv1_3: String = "TLSv1.3"
+
   val applicationPacketBufferSize: (Int, Int) = {
     val dummySession = SSLContext.getDefault.createSSLEngine.getSession
     val r            = (dummySession.getApplicationBufferSize, dummySession.getPacketBufferSize)
     dummySession.invalidate()
     r
   }
+
+  def isHandshaking(status: HandshakeStatus): Boolean =
+    !isNotHandshaking(status)
+
+  def isNotHandshaking(status: HandshakeStatus): Boolean =
+    status == HandshakeStatus.NOT_HANDSHAKING || status == HandshakeStatus.FINISHED
 
   def failedHandshakeResult(status: HandshakeStatus): SSLEngineResult = new SSLEngineResult(Status.CLOSED, status, 0, 0)
 

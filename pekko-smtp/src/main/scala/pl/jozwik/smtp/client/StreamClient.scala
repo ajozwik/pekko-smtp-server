@@ -12,7 +12,6 @@ import pl.jozwik.smtp.tls.{SSLContextFactory, TlsEngineState, TlsHelper, TlsOpts
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import javax.net.ssl.SSLEngine
 import scala.concurrent.{Future, Promise}
 
@@ -114,8 +113,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
       _ <- doHandshakeStep(attachment, ByteBufferHelper.createEmptyBuffer)
       _ <- runHandshake(attachment)
     } yield {
-      val success = attachment.open.get() &&
-        (attachment.handshakeStatus.get() == HandshakeStatus.FINISHED || attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING)
+      val success = attachment.open.get() && TlsHelper.isNotHandshaking(attachment.handshakeStatus.get())
       if (success) {
         engine.set(Option(e))
       }
@@ -283,8 +281,7 @@ class StreamClient(host: String, port: Int, override protected val whoIAm: Strin
 
   private def handshakeDone(attachment: TlsEngineState): Boolean =
     !attachment.open.get() ||
-      attachment.handshakeStatus.get() == HandshakeStatus.FINISHED ||
-      attachment.handshakeStatus.get() == HandshakeStatus.NOT_HANDSHAKING
+      TlsHelper.isNotHandshaking(attachment.handshakeStatus.get())
 
   private def doHandshakeStep(attachment: TlsEngineState, peerNetData: ByteBuffer)(implicit
       e: SSLEngine,
