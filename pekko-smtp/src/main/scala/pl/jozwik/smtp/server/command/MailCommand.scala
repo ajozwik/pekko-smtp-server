@@ -50,6 +50,7 @@ object MailCommand {
       case Left(error) =>
         response(error)
       case _ =>
+
         response(message)(acc.copy(from = from))
     }
   }

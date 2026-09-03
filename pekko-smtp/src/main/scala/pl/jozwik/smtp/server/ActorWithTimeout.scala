@@ -22,7 +22,7 @@ trait ActorWithTimeout extends AbstractActor {
 
   private val lastAccess: AtomicReference[LocalDateTime] = new AtomicReference(LocalDateTime.now())
 
-  val timeout: FiniteDuration
+  def timeout: FiniteDuration
 
   private val tick: FiniteDuration = timeout / 2
 
