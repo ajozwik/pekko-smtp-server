@@ -9,8 +9,8 @@ import scala.util.Using
 
 object SSLContextFactory extends StrictLogging {
 
-  def sslEngine(protocol: String = "TLSv1.3")(
-      keyStoreInputStream: => InputStream = TlsOpts.fromSystemProps.keyStoreInputStream.call(),
+  def sslEngine(protocol: String)(
+      keyStoreInputStream: => InputStream ,
       keystorePassword: String = TlsOpts.keystorePassword,
       keyPassword: String = TlsOpts.keystorePassword
   )(

@@ -23,12 +23,12 @@ case object NoDataResponse extends ResponseMessage
 final case class QuitResponse(message: String) extends ResponseMessage
 
 object MailAccumulator {
-  val empty: MailAccumulator                           = MailAccumulator(NeedHello)
-  def withHello(tls: Boolean = false): MailAccumulator = MailAccumulator(!NeedHello, tls = tls)
+  val empty: MailAccumulator                   = MailAccumulator(NeedHello)
+  def withHello(tls: Boolean): MailAccumulator = MailAccumulator(!NeedHello, tls = tls)
 }
 
 final case class MailAccumulator(
-    needHello: Boolean = false,
+    needHello: Boolean,
     from: MailAddress = MailAddress.empty,
     to: Seq[MailAddress] = Seq.empty[MailAddress],
     content: Content = Content(),

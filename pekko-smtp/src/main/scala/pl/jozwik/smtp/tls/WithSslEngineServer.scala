@@ -16,8 +16,7 @@ trait WithSslEngineServer extends WithSslEngine {
       underflowBuffer: AtomicReference[ByteBuffer],
       open: AtomicBoolean
   ): (Option[ByteBuffer], Option[SSLEngineResult]) = {
-    val closed = new AtomicBoolean(false)
-    read(peerNetData)(_ => (), closed.set)(writeByteBuffer, closeConn)
+    read(peerNetData)(_ => ())(writeByteBuffer, closeConn)
 
   }
 

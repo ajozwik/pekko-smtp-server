@@ -38,6 +38,7 @@ class UtilsSpec extends AbstractSpecScalaCheck {
     }
 
     "Address with spaces" in {
+      Utils.fakeCall() shouldBe ()
       val user   = "ajozwik"
       val domain = "jozwik.pl"
       toMailAddress(s" < $user@$domain >    ") shouldBe Right(MailAddress(user, domain))

@@ -52,21 +52,13 @@ class NioSslServer(
     serverSocketChannel.close()
   }
 
-  // For UNDERFLOW test
-  override protected def createBuffers(implicit e: SSLEngine): Buffers =
-    Buffers(20, 20)
-
-//  override protected def createApplicationBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
-//    ByteBuffer.allocate(20)
-
 //  override protected def createPacketBuffer(implicit e: Option[SSLEngine]): ByteBuffer =
 //    ByteBuffer.allocate(20)
 
-  private def accept(serverSocketChannel: ServerSocketChannel): Unit = Option(serverSocketChannel.accept()).foreach { socketChannel =>
+  private def accept(serverSocketChannel: ServerSocketChannel): Unit = Option(serverSocketChannel.accept()).foreach { implicit socketChannel =>
     socketChannel.configureBlocking(false)
     logger.trace(s"$whoIAm New connection request! ${socketChannel.getRemoteAddress}")
     socketChannel.register(selector, SelectionKey.OP_READ, TlsEngineState.empty)
-    implicit val sc: SocketChannel     = socketChannel
     implicit val seq: Int              = iterator.next()
     implicit val en: Option[SSLEngine] = None
     write(ByteBufferHelper.toByteBuffer(s"${SmtpCodes.SERVICE_READY} SMTP DEMO", Constants.CrLf))(
@@ -90,7 +82,7 @@ class NioSslServer(
   ): Unit = {
     val str = message.utf8String.trim
     if (str.nonEmpty) {
-      logger.trace(s"$whoIAm: ($seq) Received message from the $whoContactMe: $str")
+      logger.trace(s"$whoIAm: ($seq) Received message from the $whoContactMe: ${str.split(Constants.CrLf).mkString(" -- ")}")
     }
     if (open.get()) {
       implicit val en: Option[SSLEngine] = a.engine

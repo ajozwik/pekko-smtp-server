@@ -18,7 +18,7 @@ final class Thunk private (f: () => Unit) {
 }
 
 object Thunk {
-  implicit def fromByName(f: => Unit): Thunk = new Thunk(() => f)
+  implicit def fromByName[T](f: => T): Thunk = new Thunk(() => f)
 }
 
 object Utils extends StrictLogging {
@@ -52,7 +52,9 @@ object Utils extends StrictLogging {
         Left(error)
     }
 
-  val fakeCall: () => Unit = () => ()
+  val fakeCall: () => Unit = () => fakeCallT(None)
+
+  def fakeCallT[T](t: T): Unit = ()
 
   def ignoreError(f: => Unit): Unit =
     try {

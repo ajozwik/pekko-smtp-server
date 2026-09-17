@@ -7,7 +7,7 @@ class SSLContextFactorySpec extends AbstractSpec {
   "SSLContextFactory" should {
     "Fail for wrong arguments" in {
       intercept[Exception] {
-        SSLContextFactory.sslEngine("Fake")()()()
+        SSLContextFactory.sslEngine("Fake")(TlsOpts.fromSystemProps.keyStoreInputStream.call())()()
       }
     }
   }

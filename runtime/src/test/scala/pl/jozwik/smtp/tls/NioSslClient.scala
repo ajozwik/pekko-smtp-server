@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
 import javax.net.ssl.SSLEngine
-import javax.net.ssl.SSLEngineResult.HandshakeStatus
 import scala.annotation.tailrec
 
 class NioSslClient(
@@ -51,9 +50,6 @@ class NioSslClient(
     UtilsHelper.await(readLock, readCondition) {}
     readAndClear
   }
-
-  private def readAndClear =
-    lastRead.getAndSet(ByteString.empty)
 
   def startTls(): ByteString = {
     val b = writeAndWaitForRead(Utils.withEndOfLine(s"${Constants.STARTTLS}"))
@@ -96,6 +92,9 @@ class NioSslClient(
   protected override def writeToOutputBuffer(b: ByteBuffer)(implicit sc: SocketChannel): Unit =
     simulatePartialWrite(b)
 
+  private def readAndClear =
+    lastRead.getAndSet(ByteString.empty)
+
   private def simulatePartialWrite(b: ByteBuffer): Unit = {
     val (x, y) = ByteBufferHelper.split(b, b.limit() / 2)
     sc.write(x)
@@ -114,7 +113,7 @@ class NioSslClient(
   }
 
   private def waitForEngine: Option[SSLEngine] = fromSelectionKey match {
-    case TlsEngineState(e, _, s, _) if s.get() == HandshakeStatus.NOT_HANDSHAKING || s.get() == HandshakeStatus.FINISHED =>
+    case TlsEngineState(e, _, s, _) if TlsHelper.isNotHandshaking(s.get()) =>
       e
     case a =>
       UtilsHelper.await(engineLock, engineCondition) {
@@ -142,13 +141,14 @@ class NioSslClient(
       closeConnection(
         writeToOutputBuffer,
         { () =>
-          Utils.ignoreError {
+          Utils.ignoreErrors(
             if (selectionKey.isValid) {
               selectionKey.cancel()
-            }
-            socketChannel.shutdownInput()
+            },
+            socketChannel.shutdownInput(),
             socketChannel.shutdownOutput()
-          }
+          )
+
           socketChannel.close()
         }
       )
